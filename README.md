@@ -1,7 +1,7 @@
 # Zpravobot.news
-Repo for Zpravobot.news filter code
-
 Zpravobot.news 📰🤖 (means Newsbot.news in Czech) is run by Daniel Šnor as a public utility 🖥️⌨️, which🪞popular and majority 🇨🇿 X/🐦 accounts bringing to 🐘 otherwise missing 📰, ⚽️🏒🏎️, information about 📱⌚️💻📡, 🎞️🎶🎭, and sometimes 🤣🤪.
+
+This project is focused on developing the IFTTT applet filter script used on the IFTTT server for bots (applets), fulfilling Mastodon server users with content.
 
 The server used is a standard Mastodon server with several hundred users. Bot farm at IFTTT fulfils users, where every bot (custom IFTTT applet) has its filter script, which manages the source of information, proceeding and the final state of posts published on the Mastodon server.
 
