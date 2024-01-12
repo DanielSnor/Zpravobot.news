@@ -12,7 +12,6 @@ function replaceAll(str: string, replacements: Record<string, string>, caseSensi
   return str
 }
 
-
 // BS content hack
 function contentHackBS(str: string): string {
   return str.replace(/(Post by[^>]+:)/gi, "");
@@ -31,9 +30,9 @@ function getContent(entryContent: any, entryTitle: any): string {
 
 // is commercial in post? check
 function isCommercialInPost(str: string): boolean {
+  if (SETTINGS.COMMERCIAL_SENTENCE === "") return false;
   const regex = new RegExp(SETTINGS.COMMERCIAL_SENTENCE, "gi");
-  if (regex.test(str)) return true;
-  return false;
+  return regex.test(str)
 }
 
 // is image in post? check
@@ -400,7 +399,7 @@ function trimContent(str: string): string {
 
 // image  URL shortening - if image ends with ==, it will be shorten for this two chars
 function trimImageUrl(str: string): string {
-  return str.endsWith("==")
+  return str.substring(-2) === "=="
     ? str.substring(0, str.length - 2)
     : str;
 }
@@ -418,7 +417,7 @@ function composeResultContent(
   let resultFeedAuthor = "";
 
   // content blocks based on POST_FROM
-  if (["NT", "TW"].includes(SETTINGS.POST_FROM)) {
+  if (["NT", "TW"].indexOf(SETTINGS.POST_FROM) !== -1) {
     // for NT & TW posts get resultFeedAuthor
     resultFeedAuthor = SETTINGS.SHOULD_PREFER_REAL_NAME
       ? feedAuthorRealName
@@ -498,7 +497,7 @@ let resultUrl = (SETTINGS.SHOW_FEEDURL_INSTD_POSTURL ? feedUrl : entryUrl)
 resultUrl = replaceAmpersands(resultUrl);
 
 // images from nitter need some special care
-if (["Image", "Gif", "Video"].includes(entryTitle)) {
+if (["Image", "Gif", "Video"].indexOf(entryTitle) !== -1) {
   const requestBody = `status=${resultUrl}`;
   MakerWebhooks.makeWebRequest.setBody(requestBody);
 } else if (
@@ -510,7 +509,7 @@ if (["Image", "Gif", "Video"].includes(entryTitle)) {
     && !SETTINGS.REPOST_ALLOWED
   )
   // if post contains commercial based on SETTINGS.COMMERCIAL_SENTENCE
-  || isCommercialInPost(resultContent)
+  || isCommercialInPost(entryTitle)
 ) {
   MakerWebhooks.makeWebRequest.skip();
 } else {
