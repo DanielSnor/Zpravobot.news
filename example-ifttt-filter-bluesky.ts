@@ -1,23 +1,23 @@
 ///////////////////////////////////////////////////////////////////////////////
-// settings for IFTTT 🐦‍⬛ webhook filter v0.9.2 - 12.1.2024
+// settings for IFTTT 🦋 webhook filter v0.9.2 - 12.1.2024
 ///////////////////////////////////////////////////////////////////////////////
 const SETTINGS = {
   AMPERSAND_REPLACEMENT: ` a `, // replacement for & char
   COMMERCIAL_SENTENCE: "", // "" | "Komerční sdělení:"
-  POST_FROM: "NT", // "BS" | "NT" | "RSS" | "TW" | "YT"
+  POST_FROM: "BS", // "BS" | "NT" | "RSS" | "TW" | "YT"
   POST_LENGTH: 4750, // 0 - 5000 chars
-  POST_SOURCE: `https://nitter.cz/`, // "" | `https://nitter.cz/` | `https://twitter.com/`
-  POST_TARGET: `https://twitter.com/`, // "" | `https://nitter.cz/` | `https://twitter.com/`
-  USER_INSTANCE: "twitter.com", // "" | ".bsky.social" | "instagram.com" | "twitter.com" | "x.com" | "youtube.com"
-  QUOTE_SENTENCE: "📝💬🐦‍⬛", // "" | "komentoval příspěvek od" | "📝💬🦋" | "📝💬🐦‍⬛"
+  POST_SOURCE: "", // "" | `https://nitter.cz/` | `https://twitter.com/`
+  POST_TARGET: "", //  "" | `https://nitter.cz/` | `https://twitter.com/`
+  USER_INSTANCE: ".bsky.social", // "" | ".bsky.social" | "instagram.com" | "twitter.com" | "x.com" | "youtube.com"
+  QUOTE_SENTENCE: "📝💬🦋", // "" | "komentoval příspěvek od" | "📝💬🦋" | "📝💬🐦‍⬛"
   REPOST_ALLOWED: true, // true | false
-  REPOST_SENTENCE: "📤🐦‍⬛", // "" | "sdílí" | "📤🦋" | "📤🐦‍⬛"
+  REPOST_SENTENCE: "📤🦋", // "" | "sdílí" | "📤🦋" | "📤🐦‍⬛"
   SHOULD_PREFER_REAL_NAME: true, // true | false
   SHOW_FEEDURL_INSTD_POSTURL: false, // true | false
   SHOW_IMAGEURL: false, // true | false
-  SHOW_ORIGIN_POSTURL_PERM: false, // true | false
+  SHOW_ORIGIN_POSTURL_PERM: true, // true | false
   STATUS_IMAGEURL_SENTENCE: "🖼️", // "" | "🖼️"
-  STATUS_URL_SENTENCE: "🔗", // "" | "🔗" | "🗣️🎙️👇👇👇\n" | "YT 📺👇👇👇\n"
+  STATUS_URL_SENTENCE: "🔗", // "" | "🔗" | "\n🗣️🎙️👇👇👇\n" | "\nYT 📺👇👇👇\n"
 };
 
 // content hack - replace ZZZZZ and KKKKK with the beginning and the end of content designated to remove
@@ -58,9 +58,9 @@ function getContent(entryContent: any, entryTitle: any): string {
 
 // is commercial in post? check
 function isCommercialInPost(str: string): boolean {
-  if (SETTINGS.COMMERCIAL_SENTENCE === "") return false;
   const regex = new RegExp(SETTINGS.COMMERCIAL_SENTENCE, "gi");
-  return regex.test(str)
+  if (regex.test(str)) return true;
+  return false;
 }
 
 // is image in post? check
@@ -95,7 +95,7 @@ function isUrlIncluded(str: string): boolean {
   return regex.test(str);
 }
 
-// Replaces the substring specified by the key with a string of value
+// replaces the substring specified by the key with a string of value
 function replaceAll(str: string, replacements: Record<string, string>, caseSensitive = false): string {
   for (const find in replacements) {
 	const regex = new RegExp(find, caseSensitive ? 'g' : 'ig')
@@ -437,7 +437,7 @@ function trimContent(str: string): string {
 
 // image  URL shortening - if image ends with ==, it will be shorten for this two chars
 function trimImageUrl(str: string): string {
-  return str.substring(-2) === "=="
+  return str.endsWith("==")
 	? str.substring(0, str.length - 2)
 	: str;
 }
@@ -455,7 +455,7 @@ function composeResultContent(
   let resultFeedAuthor = "";
 
   // content blocks based on POST_FROM
-  if (["NT", "TW"].indexOf(SETTINGS.POST_FROM) !== -1) {
+  if (["NT", "TW"].includes(SETTINGS.POST_FROM)) {
 	// for NT & TW posts get resultFeedAuthor
 	resultFeedAuthor = SETTINGS.SHOULD_PREFER_REAL_NAME
 	  ? feedAuthorRealName
@@ -535,7 +535,7 @@ let resultUrl = (SETTINGS.SHOW_FEEDURL_INSTD_POSTURL ? feedUrl : entryUrl)
 resultUrl = replaceAmpersands(resultUrl);
 
 // images from nitter need some special care
-if (["Image", "Gif", "Video"].indexOf(entryTitle) !== -1) {
+if (["Image", "Gif", "Video"].includes(entryTitle)) {
   const requestBody = `status=${resultUrl}`;
   MakerWebhooks.makeWebRequest.setBody(requestBody);
 } else if (
@@ -547,7 +547,7 @@ if (["Image", "Gif", "Video"].indexOf(entryTitle) !== -1) {
 	&& !SETTINGS.REPOST_ALLOWED
   )
   // if post contains commercial based on SETTINGS.COMMERCIAL_SENTENCE
-  || isCommercialInPost(entryTitle)
+  || isCommercialInPost(resultContent)
 ) {
   MakerWebhooks.makeWebRequest.skip();
 } else {

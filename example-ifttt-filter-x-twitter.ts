@@ -4,9 +4,9 @@
 const SETTINGS = {
   AMPERSAND_REPLACEMENT: ` a `, // replacement for & char
   COMMERCIAL_SENTENCE: "", // "" | "Komerční sdělení:"
-  POST_FROM: "NT", // "BS" | "NT" | "RSS" | "TW" | "YT"
+  POST_FROM: "TW", // "BS" | "NT" | "RSS" | "TW" | "YT"
   POST_LENGTH: 4750, // 0 - 5000 chars
-  POST_SOURCE: `https://nitter.cz/`, // "" | `https://nitter.cz/` | `https://twitter.com/`
+  POST_SOURCE: `https://twitter.com/`, // "" | `https://nitter.cz/` | `https://twitter.com/`
   POST_TARGET: `https://twitter.com/`, // "" | `https://nitter.cz/` | `https://twitter.com/`
   USER_INSTANCE: "twitter.com", // "" | ".bsky.social" | "instagram.com" | "twitter.com" | "x.com" | "youtube.com"
   QUOTE_SENTENCE: "📝💬🐦‍⬛", // "" | "komentoval příspěvek od" | "📝💬🦋" | "📝💬🐦‍⬛"
@@ -17,7 +17,7 @@ const SETTINGS = {
   SHOW_IMAGEURL: false, // true | false
   SHOW_ORIGIN_POSTURL_PERM: false, // true | false
   STATUS_IMAGEURL_SENTENCE: "🖼️", // "" | "🖼️"
-  STATUS_URL_SENTENCE: "🔗", // "" | "🔗" | "🗣️🎙️👇👇👇\n" | "YT 📺👇👇👇\n"
+  STATUS_URL_SENTENCE: "🔗", // "" | "🔗" | "\n🗣️🎙️👇👇👇\n" | "\nYT 📺👇👇👇\n"
 };
 
 // content hack - replace ZZZZZ and KKKKK with the beginning and the end of content designated to remove
@@ -26,15 +26,15 @@ function contentHack(str: string): string {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// connector for IFTTT 🦋🐦‍⬛📙📘 webhook v0.8.12 - 28.12.2023
+// connector for IFTTT 🐦‍⬛ webhook v0.8.12 - 28.12.2023
 ///////////////////////////////////////////////////////////////////////////////
-const entryContent = String(Feed.newFeedItem.EntryContent);
-const entryTitle = String(Feed.newFeedItem.EntryTitle);
-const entryUrl = String(Feed.newFeedItem.EntryUrl);
-const entryImageUrl = String(Feed.newFeedItem.EntryImageUrl);
-const entryAuthor = String(Feed.newFeedItem.EntryAuthor);
-const feedTitle = String(Feed.newFeedItem.FeedTitle);
-const feedUrl = String(Feed.newFeedItem.FeedUrl);
+const entryContent = String(Twitter.newTweetFromSearch.Text);
+const entryTitle = String();
+const entryUrl = String(Twitter.newTweetFromSearch.LinkToTweet);
+const entryImageUrl = String(Twitter.newTweetFromSearch.UserImageUrl);
+const entryAuthor = String(Twitter.newTweetFromSearch.UserName);
+const feedTitle = String(Twitter.newTweetFromSearch.CreatedAt);
+const feedUrl = String();
 
 ///////////////////////////////////////////////////////////////////////////////
 // IFTTT 🦋🐦‍⬛📙📘🐦📺 webhook filter v0.9.2 - 12.1.2024

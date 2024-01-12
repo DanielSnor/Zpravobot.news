@@ -1,16 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋🐦‍⬛📙📘🐦📺 webhook filter v0.9.1 - 2.1.2024
+// IFTTT 🦋🐦‍⬛📙📘🐦📺 webhook filter v0.9.2 - 12.1.2024
 ///////////////////////////////////////////////////////////////////////////////
-
-// Replaces the substring specified by the key with a string of value
-function replaceAll(str: string, replacements: Record<string, string>, caseSensitive = false): string {
-  for (const find in replacements) {
-    const regex = new RegExp(find, caseSensitive ? 'g' : 'ig')
-    const replaceValue = replacements[find];
-    str = str.replace(regex, replaceValue);
-  }
-  return str
-}
 
 // BS content hack
 function contentHackBS(str: string): string {
@@ -65,6 +55,16 @@ function isResponseToSomeoneElse(
 function isUrlIncluded(str: string): boolean {
   const regex = new RegExp("((https|http)://)", "gi");
   return regex.test(str);
+}
+
+// Replaces the substring specified by the key with a string of value
+function replaceAll(str: string, replacements: Record<string, string>, caseSensitive = false): string {
+  for (const find in replacements) {
+    const regex = new RegExp(find, caseSensitive ? 'g' : 'ig')
+    const replaceValue = replacements[find];
+    str = str.replace(regex, replaceValue);
+  }
+  return str
 }
 
 // & char replacement
