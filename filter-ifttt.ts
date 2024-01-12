@@ -12,7 +12,6 @@ function replaceAll(str: string, replacements: Record<string, string>, caseSensi
   return str
 }
 
-
 // BS content hack
 function contentHackBS(str: string): string {
   return str.replace(/(Post by[^>]+:)/gi, "");
@@ -31,9 +30,9 @@ function getContent(entryContent: any, entryTitle: any): string {
 
 // is commercial in post? check
 function isCommercialInPost(str: string): boolean {
+  if (SETTINGS.COMMERCIAL_SENTENCE === "") return false;
   const regex = new RegExp(SETTINGS.COMMERCIAL_SENTENCE, "gi");
-  if (regex.test(str)) return true;
-  return false;
+  return regex.test(str)
 }
 
 // is image in post? check
