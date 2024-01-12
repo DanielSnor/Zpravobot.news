@@ -461,8 +461,7 @@ function composeResultContent(
   resultContent = replaceCzechCharacters(resultContent);
   resultContent = replaceSpecialCharacters(resultContent);
   resultContent = replaceAmpersands(resultContent);
-  // Missing function!
-  // resultContent = contentHack(resultContent);
+  resultContent = contentHack(resultContent);
   resultContent = trimContent(resultContent);
 
   return resultContent;
@@ -509,9 +508,9 @@ if (["Image", "Gif", "Video"].includes(entryTitle)) {
     isRepost(entryTitle)
     && !isRepostOwn(entryTitle, entryAuthor)
     && !SETTINGS.REPOST_ALLOWED
-    // if post contains commercial based on SETTINGS.COMMERCIAL_SENTENCE
-    // && isCommercialInPost(resultContent)
   )
+  // if post contains commercial based on SETTINGS.COMMERCIAL_SENTENCE
+  || isCommercialInPost(resultContent)
 ) {
   MakerWebhooks.makeWebRequest.skip();
 } else {
