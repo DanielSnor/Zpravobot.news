@@ -509,7 +509,7 @@ if (["Image", "Gif", "Video"].indexOf(entryTitle) !== -1) {
     && !SETTINGS.REPOST_ALLOWED
   )
   // if post contains commercial based on SETTINGS.COMMERCIAL_SENTENCE
-  || isCommercialInPost(resultContent)
+  || isCommercialInPost(entryTitle)
 ) {
   MakerWebhooks.makeWebRequest.skip();
 } else {
