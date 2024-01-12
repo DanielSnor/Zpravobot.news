@@ -399,7 +399,7 @@ function trimContent(str: string): string {
 
 // image  URL shortening - if image ends with ==, it will be shorten for this two chars
 function trimImageUrl(str: string): string {
-  return str.endsWith("==")
+  return str.substring(-2) === "=="
     ? str.substring(0, str.length - 2)
     : str;
 }
@@ -417,7 +417,7 @@ function composeResultContent(
   let resultFeedAuthor = "";
 
   // content blocks based on POST_FROM
-  if (["NT", "TW"].includes(SETTINGS.POST_FROM)) {
+  if (["NT", "TW"].indexOf(SETTINGS.POST_FROM) !== -1) {
     // for NT & TW posts get resultFeedAuthor
     resultFeedAuthor = SETTINGS.SHOULD_PREFER_REAL_NAME
       ? feedAuthorRealName
@@ -497,7 +497,7 @@ let resultUrl = (SETTINGS.SHOW_FEEDURL_INSTD_POSTURL ? feedUrl : entryUrl)
 resultUrl = replaceAmpersands(resultUrl);
 
 // images from nitter need some special care
-if (["Image", "Gif", "Video"].includes(entryTitle)) {
+if (["Image", "Gif", "Video"].indexOf(entryTitle) !== -1) {
   const requestBody = `status=${resultUrl}`;
   MakerWebhooks.makeWebRequest.setBody(requestBody);
 } else if (
