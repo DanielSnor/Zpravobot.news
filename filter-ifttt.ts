@@ -397,6 +397,13 @@ function trimContent(str: string): string {
   return str.substring(0, trimmedText.lastIndexOf(" ")) + " […]";
 }
 
+// last horizontal ellipsis hack - if content ends with …, it will be replaced by  + " […]"
+function trimContentEndEllipsis(str: string): string {
+  return str.substring(-1) === "…"
+    ? str.substring(0, str.length - 1) + " […]"
+    : str;
+}
+
 // image  URL shortening - if image ends with ==, it will be shorten for this two chars
 function trimImageUrl(str: string): string {
   return str.substring(-2) === "=="
@@ -462,6 +469,7 @@ function composeResultContent(
   resultContent = replaceAmpersands(resultContent);
   resultContent = contentHack(resultContent);
   resultContent = trimContent(resultContent);
+  resultContent = trimContentEndEllipsis(resultContent);
 
   return resultContent;
 }
