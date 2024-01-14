@@ -60,7 +60,7 @@ Your replacement has to stay between those apostrophe chars, without that the wh
 
 
 ### COMMERCIAL_SENTENCE - string
-In case some of the original posts are commercial, you can use this option to eliminate them. Insert Commercial notification (i.e. "Advertisement:") and in case that post contents text Advertisement:, post proceeding will be skipped. 
+In case some of the original posts are commercial, you can use this option to eliminate them. Insert Commercial notification (i.e. "Advertisement:"), and if that post begins with text Advertisement:, the proceeding will be skipped.
 
 Example:
 ```
@@ -84,6 +84,7 @@ You have to use only one of the following options:
 - "RSS" (RSS)
 - "TW" (X/Twitter)
 - "YT" (YouTube)
+
 Replacement has to stay between quotation marks.
 
 
@@ -95,33 +96,33 @@ Example:
 POST_LENGTH: 4750
 ```
 
-Consider this length, as the post URL will also be included.
+It is good to consider this length, as the post URL will also be included, so you have to think of it.
 
 
 ### POST_SOURCE - string
-TBD
+POST_SOURCE and POST_TARGET are used together when your source is on server A, but you want to target your link to server B. I am using it, i.e. for tweets. As Twitter limits the number of requests, it is easier and more reliable to use the Nitter server as a source but Twitter as a target because almost all Mastodon clients can show the Twitter links as a snippet, but almost no one does the same with the Nitter link.
 
 Example:
 ```
-POST_SOURCE: ""
+POST_SOURCE: `https://nitter.cz/`
 ```
 
-Your replacement has to stay between quotation marks.
+Your replacement has to stay between apostrophes or as two empty quotation marks.
 
 
 ### POST_TARGET - string
-TBD
+POST_SOURCE and POST_TARGET are used together when your source is on server A, but you want to target your link to server B. I am using it, i.e. for tweets. As Twitter limits the number of requests, it is easier and more reliable to use the Nitter server as a source but Twitter as a target because almost all Mastodon clients can show the Twitter links as a snippet, but almost no one does the same with the Nitter link. 
 
 Example:
 ```
-POST_TARGET: ""
+POST_TARGET: `https://twitter.com/`
 ```
 
-Your replacement has to stay between quotation marks.
+Your replacement has to stay between apostrophes or as two empty quotation marks.
 
 
 ### USER_INSTANCE - string
-TBD
+
 
 Example:
 ```
