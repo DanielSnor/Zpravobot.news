@@ -2,11 +2,11 @@
 
 This document is focused on explaining all settings possibilities for the IFTTT filter script, including the default behaviours. 
 
-You need to understand the output is composed from several parts:
+You need to understand the output is composed of several parts:
 
 - content (text which came from the original post)
-- picture (url link to picture attached to original post)
-- posturl (url link to original post)
+- image URL (URL link to the first picture attached to the original post)
+- post URL (URL link to the original post)
 
 Those three parts will be included in the output.
 
@@ -122,7 +122,7 @@ Your replacement has to stay between apostrophes or as two empty quotation marks
 
 
 ### USER_INSTANCE - string
-
+If someone is mentioned in the original post from Nitter or X/Twitter, it is usually as *@someone*, which is pretty enough there, but on Mastodon, it isn't as clients expect *@username@userserver*. USER_INSTANCE contains the name of the user server, and if the script proceeding finds @someone's username, it will change it from @username to @username@userserver. Initially, it is for Twitter; I can imagine using it, i.e. for Instagram.
 
 Example:
 ```
