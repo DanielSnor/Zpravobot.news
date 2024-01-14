@@ -243,7 +243,7 @@ STATUS_IMAGEURL_SENTENCE: "🖼️"
 
 Output:
 ```
-🖼️ https://server.cz/obrazek/link-na-obrazek…
+🖼️ https://server.com/image/link-to-image
 ```
 
 Your replacement has to stay between quotation marks. You can also use emojis or formatting.
@@ -259,7 +259,7 @@ STATUS_URL_SENTENCE: "🔗"
 
 Output:
 ```
-🔗 https://server.cz/clanek/link-na-clanek…
+🔗 https://server.com/post/link-to-post
 ```
 
 Your replacement has to stay between quotation marks. You can also use emojis or formatting.
