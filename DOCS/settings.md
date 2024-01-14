@@ -8,7 +8,16 @@ You need to understand the output is composed of several parts:
 - image URL (URL link to the first picture attached to the original post)
 - post URL (URL link to the original post)
 
-Those three parts will be included in the output.
+Those three parts will be included in the output:
+
+> This is an example of output.
+> 
+> #zpravobot
+>
+> 🖼️ https://server.com/image/link-to-image
+> 
+> 🔗 https://server.com/post/link-to-post
+
 
 ---
 
