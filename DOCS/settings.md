@@ -133,11 +133,16 @@ Your replacement has to stay between quotation marks.
 
 
 ### QUOTE_SENTENCE - string
-TBD
+Sentences mentioned in the filter scripts settings are meant to replace RE: or QUOTE: used for marking reposts or quotes of someone else's posts.
 
 Example:
 ```
 QUOTE_SENTENCE: "📝💬🦋"
+```
+
+Output:
+```
+danielsnor.bsky.social 📝💬🦋 zpravobot.news:
 ```
 
 Your replacement has to stay between quotation marks. You can also use emojis or formatting.
@@ -154,11 +159,16 @@ REPOST_ALLOWED: true
 Only true or false values are valid.
 
 ### REPOST_SENTENCE - string
-TBD
+Sentences mentioned in the filter scripts settings are meant to replace RE: or QUOTE: used for marking reposts or quotes of someone else's posts.
 
 Example:
 ```
-REPOST_SENTENCE: "📤🦋"
+REPOST_SENTENCE: "📤🐦‍⬛"
+```
+
+Output:
+```
+Daniel Šnor 📤🐦‍⬛ @zpravobotnews@twitter.com:
 ```
 
 Your replacement has to stay between quotation marks. You can also use emojis or formatting.
