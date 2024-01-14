@@ -71,7 +71,7 @@ Your replacement has to stay between quotation marks.
 
 
 ### POST_FROM - string
-This option gives the script the information about the post source. Without this script, it will fail, so be careful with it.
+This option gives the script the information about the post source. The filter script will fail without proper settings in this option, so be careful with it.
 
 Example:
 ```
@@ -79,11 +79,11 @@ POST_FROM: "NT"
 ```
 
 You have to use only one of the following options: 
-- "BS" (BlueSky)
-- "NT" (Nitter.cz)
-- "RSS" (RSS)
-- "TW" (X/Twitter)
-- "YT" (YouTube)
+- "BS" for BlueSky
+- "NT" for Nitter
+- "RSS" for RSS
+- "TW" for X/Twitter
+- "YT" for YouTube
 
 Replacement has to stay between quotation marks.
 
@@ -140,7 +140,7 @@ Example:
 QUOTE_SENTENCE: "📝💬🦋"
 ```
 
-Your replacement have to stay between quotation marks. You can use also emojis or formatting.
+Your replacement has to stay between quotation marks. You can also use emojis or formatting.
 
 
 ### REPOST_ALLOWED - boolean
@@ -161,7 +161,7 @@ Example:
 REPOST_SENTENCE: "📤🦋"
 ```
 
-Your replacement have to stay between quotation marks. You can use also emojis or formatting.
+Your replacement has to stay between quotation marks. You can also use emojis or formatting.
 
 ### SHOULD_PREFER_REAL_NAME - boolean
 TBD
@@ -215,7 +215,7 @@ Example:
 STATUS_IMAGEURL_SENTENCE: "🖼️"
 ```
 
-Your replacement have to stay between quotation marks. You can use also emojis or formatting.
+Your replacement has to stay between quotation marks. You can also use emojis or formatting.
 
 
 ### STATUS_URL_SENTENCE - string
@@ -226,7 +226,7 @@ Example:
 STATUS_URL_SENTENCE: "🔗"
 ```
 
-Your replacement has to stay between quotation marks. You can use also emojis or formatting. I am using "\n🗣️🎙️👇👇👇\n" for podcasts and "\nYT 📺👇👇👇\n" for YouTube.
+Your replacement has to stay between quotation marks. You can also use emojis or formatting. I am using "\n🗣️🎙️👇👇👇\n" for podcasts and "\nYT 📺👇👇👇\n" for YouTube.
 
 
 ## Content Hack
