@@ -10,6 +10,7 @@ You need to understand the output is composed of several parts:
 
 Those three parts will be included in the output.
 
+---
 
 ## Basic Information
 Filter scripts in IFTTT are run as "scrips in script over script", so you have to be very careful with using special chars and very often manage them with escape chars.  
@@ -45,6 +46,7 @@ function contentHack(str: string): string {
 }
 ```
 
+---
 
 ## Settings options
 
@@ -122,7 +124,7 @@ Your replacement has to stay between apostrophes or as two empty quotation marks
 
 
 ### USER_INSTANCE - string
-If someone is mentioned in the original post from Nitter or X/Twitter, it is usually as *@someone*, which is pretty enough there, but on Mastodon, it isn't as clients expect *@username@userserver*. USER_INSTANCE contains the name of the user server, and if the script proceeding finds @someone's username, it will change it from *@username* to expected *@username@userserver*. Initially, it is for Twitter; I can imagine using it, i.e. for Instagram.
+If someone is mentioned in the original post from Nitter or X/Twitter, it is usually as **@someone**, which is pretty enough there, but on Mastodon, it isn't as clients expect **@username@userserver**. USER_INSTANCE contains the name of the user server, and if the script proceeding finds @someone's username, it will change it from **@username** to expected **@username@userserver**. Initially, it is for Twitter; I can imagine using it, i.e. for Instagram.
 
 Example:
 ```
@@ -149,7 +151,7 @@ Your replacement has to stay between quotation marks. You can also use emojis or
 
 
 ### REPOST_ALLOWED - boolean
-REPOST_ALLOWED option is a boolean and changes the behaviour of the filter script. If this is true, reposts of someone else's are allowed and will be reposted. In case this is not wanted because you are interested only in original posts and not reposting, set it to false, and all reposts will be skipped.
+REPOST_ALLOWED option is a boolean and changes the behaviour of the filter script. If this is true, reposts of someone else's are allowed and will be reposted. If this is not wanted because you are interested only in original posts and not reposting, you can just set it to false, and all reposts will be skipped.
 
 Example:
 ```
@@ -174,7 +176,7 @@ Output:
 Your replacement has to stay between quotation marks. You can also use emojis or formatting.
 
 ### SHOULD_PREFER_REAL_NAME - boolean
-You can use the real author's name instead of *@username*. In that case, you can set SHOULD_PREFER_REAL_NAME to true, and every mention of the post author's username will be changed to his real name, i.e. **@danielsnor** will be changed to **Daniel Šnor**.
+You can use the real author's name instead of **@username**. In that case, you can set SHOULD_PREFER_REAL_NAME to true, and every mention of the post author's username will be changed to his real name, i.e. **@danielsnor** will be changed to **Daniel Šnor**.
 
 Example:
 ```
@@ -223,7 +225,7 @@ Only true or false values are valid.
 
 
 ### STATUS_IMAGEURL_SENTENCE - string
-TBD
+STATUS_URL_SENTENCE is used as an introduction for the image URL. Normally, I have here "🖼️".
 
 Example:
 ```
@@ -239,7 +241,7 @@ Your replacement has to stay between quotation marks. You can also use emojis or
 
 
 ### STATUS_URL_SENTENCE - string
-TBD
+STATUS_URL_SENTENCE is used as an introduction for the post URL. Normally, I have here "🔗", but I am also using "\n🗣️🎙️👇👇👇\n" for podcasts and "\nYT 📺👇👇👇\n" for YouTube.
 
 Example:
 ```
@@ -251,8 +253,9 @@ Output:
 🔗 https://server.cz/clanek/link-na-clanek…
 ```
 
-Your replacement has to stay between quotation marks. You can also use emojis or formatting. I am using "\n🗣️🎙️👇👇👇\n" for podcasts and "\nYT 📺👇👇👇\n" for YouTube.
+Your replacement has to stay between quotation marks. You can also use emojis or formatting.
 
+---
 
 ## Content Hack
 In case the source has some specific outputs (i.e. text "Published by Someone, Somewhere"), you can use the content hack to filter those unwanted outputs. When you replace chars ZZZZZ with the beginning and KKKKK with the end of the unwanted text block, it will disappear from the final output. You can also create a chain of those replacements in case you want to block more variants, as you can see in the following example:
@@ -265,6 +268,7 @@ function contentHack(str: string): string {
 }
 ```
 
+---
 
 ## That's all, folks
 That's all, folks. I hope the explanation clarifies the configuration possibilities for modifying the output and everything is crystal clear now. Otherwise, you can still contact me via social networks or the About.me page.
