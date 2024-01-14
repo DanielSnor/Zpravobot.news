@@ -56,7 +56,7 @@ Example:
 AMPERSAND_REPLACEMENT: ` a `
 ```
 
-Your replacement has to stay between those apostrophe chars, without that the whole script will fail.
+Your replacement has to stay between those apostrophe chars; without that, the whole script will fail.
 
 
 ### COMMERCIAL_SENTENCE - string
@@ -71,7 +71,7 @@ Your replacement has to stay between quotation marks.
 
 
 ### POST_FROM - string
-This option gives the script the information about the post source. The filter script will fail without proper settings in this option, so be careful with it.
+This option gives the script information about the post source. The filter script will fail without proper settings in this option, so be careful with it.
 
 Example:
 ```
@@ -122,7 +122,7 @@ Your replacement has to stay between apostrophes or as two empty quotation marks
 
 
 ### USER_INSTANCE - string
-If someone is mentioned in the original post from Nitter or X/Twitter, it is usually as *@someone*, which is pretty enough there, but on Mastodon, it isn't as clients expect *@username@userserver*. USER_INSTANCE contains the name of the user server, and if the script proceeding finds @someone's username, it will change it from @username to @username@userserver. Initially, it is for Twitter; I can imagine using it, i.e. for Instagram.
+If someone is mentioned in the original post from Nitter or X/Twitter, it is usually as *@someone*, which is pretty enough there, but on Mastodon, it isn't as clients expect *@username@userserver*. USER_INSTANCE contains the name of the user server, and if the script proceeding finds @someone's username, it will change it from *@username* to expected *@username@userserver*. Initially, it is for Twitter; I can imagine using it, i.e. for Instagram.
 
 Example:
 ```
@@ -133,7 +133,7 @@ Your replacement has to stay between quotation marks.
 
 
 ### QUOTE_SENTENCE - string
-Sentences mentioned in the filter scripts settings are meant to replace RE: or QUOTE: used for marking reposts or quotes of someone else's posts.
+A quote sentence replaces QUOTE: textation for marking quotes from someone else's posts.
 
 Example:
 ```
@@ -149,7 +149,7 @@ Your replacement has to stay between quotation marks. You can also use emojis or
 
 
 ### REPOST_ALLOWED - boolean
-TBD
+REPOST_ALLOWED option is a boolean and changes the behaviour of the filter script. If this is true, reposts of someone else's are allowed and will be reposted. In case this is not wanted because you are interested only in original posts and not reposting, set it to false, and all reposts will be skipped.
 
 Example:
 ```
@@ -159,7 +159,7 @@ REPOST_ALLOWED: true
 Only true or false values are valid.
 
 ### REPOST_SENTENCE - string
-Sentences mentioned in the filter scripts settings are meant to replace RE: or QUOTE: used for marking reposts or quotes of someone else's posts.
+The repost sentence replaces RE: textation for marking reposts from someone else's posts.
 
 Example:
 ```
@@ -168,24 +168,29 @@ REPOST_SENTENCE: "📤🐦‍⬛"
 
 Output:
 ```
-Daniel Šnor 📤🐦‍⬛ @zpravobotnews@twitter.com:
+@danielsnor 📤🐦‍⬛ @zpravobotnews@twitter.com:
 ```
 
 Your replacement has to stay between quotation marks. You can also use emojis or formatting.
 
 ### SHOULD_PREFER_REAL_NAME - boolean
-TBD
+You can use the real author's name instead of *@username*. In that case, you can set SHOULD_PREFER_REAL_NAME to true, and every mention of the post author's username will be changed to his real name, i.e. **@danielsnor** will be changed to **Daniel Šnor**.
 
 Example:
 ```
 SHOULD_PREFER_REAL_NAME: true
 ```
 
+Output:
+```
+Daniel Šnor 📤🐦‍⬛ @zpravobotnews@twitter.com:
+```
+
 Only true or false values are valid.
 
 
 ### SHOW_FEEDURL_INSTD_POSTURL - boolean
-TBD
+In some special cases, you should prefer to link not directly to the post but to the feed (it doesn't matter if Twitter names it Posts or another word); just set SHOW_FEEDURL_INSTD_POSTURL to true.
 
 Example:
 ```
@@ -196,7 +201,7 @@ Only true or false values are valid.
 
 
 ### SHOW_IMAGEURL - boolean
-TBD
+By default, images are shown as a part of a snippet made by a post URL link, but in some special cases, you should prefer to show the image URL separately. If so  set SHOW_IMAGEURL to true.
 
 Example:
 ```
@@ -207,7 +212,7 @@ Only true or false values are valid.
 
 
 ### SHOW_ORIGIN_POSTURL_PERM - boolean
-TBD
+By default, if some URL appears in the content, the post URL is not shown to avoid the confusion of Mastodon clients during the rendering timeline. If you will need to show it permanently, set SHOW_IMAGEURL to true.
 
 Example:
 ```
@@ -225,6 +230,11 @@ Example:
 STATUS_IMAGEURL_SENTENCE: "🖼️"
 ```
 
+Output:
+```
+🖼️ https://server.cz/obrazek/link-na-obrazek…
+```
+
 Your replacement has to stay between quotation marks. You can also use emojis or formatting.
 
 
@@ -234,6 +244,11 @@ TBD
 Example:
 ```
 STATUS_URL_SENTENCE: "🔗"
+```
+
+Output:
+```
+🔗 https://server.cz/clanek/link-na-clanek…
 ```
 
 Your replacement has to stay between quotation marks. You can also use emojis or formatting. I am using "\n🗣️🎙️👇👇👇\n" for podcasts and "\nYT 📺👇👇👇\n" for YouTube.
