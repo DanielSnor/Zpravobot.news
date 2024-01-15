@@ -14,6 +14,9 @@ Quotes from BlueSky don't show the proper author of the original post
 ### Nitter quotes
 Quotes from Nitter don't show a snippet of the original post
 
+### isCommercialInPost()
+Function isCommercialInPost() works fine for Nitter, but not for RSS. Need to rewrite.
+
 ---
 
 ## Already solved errors
