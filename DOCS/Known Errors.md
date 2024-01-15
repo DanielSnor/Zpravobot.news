@@ -2,6 +2,9 @@
 
 ## Current errors
 
+### trimContentEndEllipsis()
+Function trimContentEndEllipsis() does not work at this moment.
+
 ### Ampersands in URLs
 Even though this problem was solved, it returns - at minimum in image URLs.
 
