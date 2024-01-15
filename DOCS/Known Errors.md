@@ -20,6 +20,9 @@ Quotes from Nitter don't show a snippet of the original post
 Function isCommercialInPost() works fine for Nitter, but not for RSS. Need to rewrite.
 (musíme to vymyslet jinak - možná getContent a změna proměnné?!, potom isCommerciaInPost?)
 
+### isCommercialInPost()
+Function isCommercialInPost() works fine for Nitter, but not for RSS. Need to rewrite.
+
 ---
 
 ## Already solved errors
