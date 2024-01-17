@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// settings for IFTTT 📙📘 webhook filter v0.9.2 - 12.1.2024
+// settings for IFTTT 📙📘 webhook filter v0.9.3 - 17.1.2024
 ///////////////////////////////////////////////////////////////////////////////
 const SETTINGS = {
   AMPERSAND_REPLACEMENT: ` a `, // replacement for & char
@@ -26,7 +26,7 @@ function contentHack(str: string): string {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// connector for IFTTT 🦋🐦‍⬛📙📘 webhook v0.8.12 - 28.12.2023
+// connector for IFTTT 🦋🐦‍⬛📙📘 webhook v0.9.3 - 17.1.2024
 ///////////////////////////////////////////////////////////////////////////////
 const entryContent = String(Feed.newFeedItem.EntryContent);
 const entryTitle = String(Feed.newFeedItem.EntryTitle);
@@ -37,7 +37,7 @@ const feedTitle = String(Feed.newFeedItem.FeedTitle);
 const feedUrl = String(Feed.newFeedItem.FeedUrl);
 
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋🐦‍⬛📙📘🐦📺 webhook filter v0.9.2 - 12.1.2024
+// IFTTT 🦋🐦‍⬛📙📘🐦📺 webhook filter v0.9.3 - 17.1.2024
 ///////////////////////////////////////////////////////////////////////////////
 
 // BS content hack
@@ -98,9 +98,9 @@ function isUrlIncluded(str: string): boolean {
 // Replaces the substring specified by the key with a string of value
 function replaceAll(str: string, replacements: Record<string, string>, caseSensitive = false): string {
   for (const find in replacements) {
-	const regex = new RegExp(find, caseSensitive ? 'g' : 'ig')
-	const replaceValue = replacements[find];
-	str = str.replace(regex, replaceValue);
+    const regex = new RegExp(find, caseSensitive ? 'g' : 'ig')
+    const replaceValue = replacements[find];
+    str = str.replace(regex, replaceValue);
   }
   return str
 }
@@ -110,162 +110,162 @@ function replaceAmpersands(str: string): string {
   const words = str.split(" ");
 
   return words
-	.map((word: string) => {
-	  return isUrlIncluded(word)
-		? encodeURI(word)
-		: replaceAll(word, {
-		  '&amp;': SETTINGS.AMPERSAND_REPLACEMENT,
-		  '&#38;': SETTINGS.AMPERSAND_REPLACEMENT,
-		  '&#038;': SETTINGS.AMPERSAND_REPLACEMENT,
-		  '&;': SETTINGS.AMPERSAND_REPLACEMENT,
-		});
-	})
-	.join(" ");
+    .map((word: string) => {
+      return isUrlIncluded(word)
+        ? encodeURI(word)
+        : replaceAll(word, {
+          '&amp;': SETTINGS.AMPERSAND_REPLACEMENT,
+          '&#38;': SETTINGS.AMPERSAND_REPLACEMENT,
+          '&#038;': SETTINGS.AMPERSAND_REPLACEMENT,
+          '&;': SETTINGS.AMPERSAND_REPLACEMENT,
+        });
+    })
+    .join(" ");
 }
 
 // basic text formatting replacement
 function replaceBasicFormatting(str: string): string {
   return replaceAll(str, {
-	'<br>': '\n',
-	'</p>': '\n',
+    '<br>': '\n',
+    '</p>': '\n',
   })
 }
 
 // czech chars replacement
 function replaceCzechCharacters(str: string): string {
   return replaceAll(str, {
-	'&#193;': 'Á',
-	'&Aacute;': 'Á',
-	'A&#769;': 'Á',
-	'&#196;': 'Ä',
-	'&Auml;': 'Ä',
-	'A&#776;': 'Ä',
-	'&#201;': 'É',
-	'&Eacute;': 'É',
-	'E&#769;': 'É',
-	'&#203;': 'Ë',
-	'&Euml;': 'Ë',
-	'E&#776;': 'Ë',
-	'&#205;': 'Í',
-	'&Lacute;': 'Í',
-	'I&#769;': 'Í',
-	'&#207;': 'Ï',
-	'&Luml;': 'Ï',
-	'I&#776;': 'Ï',
-	'&#211;': 'Ó',
-	'&Oacute;': 'Ó',
-	'O&#769;': 'Ó',
-	'&#214;': 'Ö',
-	'&Ouml;': 'Ö',
-	'O&#776;': 'Ö',
-	'&#218;': 'Ú',
-	'&Uacute;': 'Ú',
-	'U&#769;': 'Ú',
-	'&#220;': 'Ü',
-	'&Uuml;': 'Ü',
-	'U&#776;': 'Ü',
-	'&#221;': 'Ý',
-	'&Yacute;': 'Ý',
-	'Y&#769;': 'Ý',
-	'&#225;': 'á',
-	'&aacute;': 'á',
-	'a&#769;': 'á',
-	'&#228;': 'ä',
-	'&auml;': 'ä',
-	'a&#776;': 'ä',
-	'&#233;': 'é',
-	'&eacute;': 'é',
-	'e&#769;': 'é',
-	'&#235;': 'ë',
-	'&euml;': 'ë',
-	'e&#776;': 'ë',
-	'&#237;': 'í',
-	'&iacute;': 'í',
-	'i&#769;': 'í',
-	'&#239;': 'ï',
-	'&iuml;': 'ï',
-	'i&#776;': 'ï',
-	'&#243;': 'ó',
-	'&oacute;': 'ó',
-	'o&#769;': 'ó',
-	'&#246;': 'ö',
-	'&ouml;': 'ö',
-	'o&#776;': 'ö',
-	'&#250;': 'ú',
-	'&uacute;': 'ú',
-	'u&#769;': 'ú',
-	'&#252;': 'ü',
-	'&uuml;': 'ü',
-	'u&#776;': 'ü',
-	'&#253;': 'ý',
-	'&yacute;': 'ý',
-	'y&#769;': 'ý',
-	'&#268;': 'Č',
-	'&Ccaron;': 'Č',
-	'C&#780;': 'Č',
-	'&#269;': 'č',
-	'&ccaron;': 'č',
-	'c&#780;': 'č',
-	'&#270;': 'Ď',
-	'&Dcaron;': 'Ď',
-	'D&#780;': 'Ď',
-	'&#271;': 'ď',
-	'&dcaron;': 'ď',
-	'd&#780;': 'ď',
-	'&#282;': 'Ě',
-	'&Ecaron;': 'Ě',
-	'E&#780;': 'Ě',
-	'&#283;': 'ě',
-	'&ecaron;': 'ě',
-	'e&#780;': 'ě',
-	'&#327;': 'Ň',
-	'&Ncaron;': 'Ň',
-	'N&#780;': 'Ň',
-	'&#328;': 'ň',
-	'&ncaron;': 'ň',
-	'n&#780;': 'ň',
-	'&#336;': 'Ő',
-	'&Odblac;': 'Ő',
-	'O&#778;': 'Ő',
-	'&#337;': 'ő',
-	'&odblac;': 'ő',
-	'o&#778;': 'ő',
-	'&#344;': 'Ř',
-	'&Rcaron;': 'Ř',
-	'R&#780;': 'Ř',
-	'&#345;': 'ř',
-	'&rcaron;': 'ř',
-	'r&#780;': 'ř',
-	'&#352;': 'Š',
-	'&Scaron;': 'Š',
-	'S&#780;': 'Š',
-	'&#353;': 'š',
-	'&scaron;': 'š',
-	's&#780;': 'š',
-	'&#356;': 'Ť',
-	'&Tcaron;': 'Ť',
-	'T&#780;': 'Ť',
-	'&#357;': 'ť',
-	'&tcaron;': 'ť',
-	't&#780;': 'ť',
-	'&#366;': 'Ů',
-	'&Uring;': 'Ů',
-	'U&#778;': 'Ů',
-	'&#367;': 'ů',
-	'&uring;': 'ů',
-	'u&#778;': 'ů',
-	'&#368;': 'Ű',
-	'&Udblac;': 'Ű',
-	'U&#369;': 'Ű',
-	'&#369;': 'ű',
-	'&udblac;': 'ű',
-	'u&#369;': 'ű',
-	'&#381;': 'Ž',
-	'&Zcaron;': 'Ž',
-	'Z&#780;': 'Ž',
-	'&#382;': 'ž',
-	'&zcaron;': 'ž',
-	'z&#780;': 'ž',
+    '&#193;': 'Á',
+    '&Aacute;': 'Á',
+    'A&#769;': 'Á',
+    '&#196;': 'Ä',
+    '&Auml;': 'Ä',
+    'A&#776;': 'Ä',
+    '&#201;': 'É',
+    '&Eacute;': 'É',
+    'E&#769;': 'É',
+    '&#203;': 'Ë',
+    '&Euml;': 'Ë',
+    'E&#776;': 'Ë',
+    '&#205;': 'Í',
+    '&Lacute;': 'Í',
+    'I&#769;': 'Í',
+    '&#207;': 'Ï',
+    '&Luml;': 'Ï',
+    'I&#776;': 'Ï',
+    '&#211;': 'Ó',
+    '&Oacute;': 'Ó',
+    'O&#769;': 'Ó',
+    '&#214;': 'Ö',
+    '&Ouml;': 'Ö',
+    'O&#776;': 'Ö',
+    '&#218;': 'Ú',
+    '&Uacute;': 'Ú',
+    'U&#769;': 'Ú',
+    '&#220;': 'Ü',
+    '&Uuml;': 'Ü',
+    'U&#776;': 'Ü',
+    '&#221;': 'Ý',
+    '&Yacute;': 'Ý',
+    'Y&#769;': 'Ý',
+    '&#225;': 'á',
+    '&aacute;': 'á',
+    'a&#769;': 'á',
+    '&#228;': 'ä',
+    '&auml;': 'ä',
+    'a&#776;': 'ä',
+    '&#233;': 'é',
+    '&eacute;': 'é',
+    'e&#769;': 'é',
+    '&#235;': 'ë',
+    '&euml;': 'ë',
+    'e&#776;': 'ë',
+    '&#237;': 'í',
+    '&iacute;': 'í',
+    'i&#769;': 'í',
+    '&#239;': 'ï',
+    '&iuml;': 'ï',
+    'i&#776;': 'ï',
+    '&#243;': 'ó',
+    '&oacute;': 'ó',
+    'o&#769;': 'ó',
+    '&#246;': 'ö',
+    '&ouml;': 'ö',
+    'o&#776;': 'ö',
+    '&#250;': 'ú',
+    '&uacute;': 'ú',
+    'u&#769;': 'ú',
+    '&#252;': 'ü',
+    '&uuml;': 'ü',
+    'u&#776;': 'ü',
+    '&#253;': 'ý',
+    '&yacute;': 'ý',
+    'y&#769;': 'ý',
+    '&#268;': 'Č',
+    '&Ccaron;': 'Č',
+    'C&#780;': 'Č',
+    '&#269;': 'č',
+    '&ccaron;': 'č',
+    'c&#780;': 'č',
+    '&#270;': 'Ď',
+    '&Dcaron;': 'Ď',
+    'D&#780;': 'Ď',
+    '&#271;': 'ď',
+    '&dcaron;': 'ď',
+    'd&#780;': 'ď',
+    '&#282;': 'Ě',
+    '&Ecaron;': 'Ě',
+    'E&#780;': 'Ě',
+    '&#283;': 'ě',
+    '&ecaron;': 'ě',
+    'e&#780;': 'ě',
+    '&#327;': 'Ň',
+    '&Ncaron;': 'Ň',
+    'N&#780;': 'Ň',
+    '&#328;': 'ň',
+    '&ncaron;': 'ň',
+    'n&#780;': 'ň',
+    '&#336;': 'Ő',
+    '&Odblac;': 'Ő',
+    'O&#778;': 'Ő',
+    '&#337;': 'ő',
+    '&odblac;': 'ő',
+    'o&#778;': 'ő',
+    '&#344;': 'Ř',
+    '&Rcaron;': 'Ř',
+    'R&#780;': 'Ř',
+    '&#345;': 'ř',
+    '&rcaron;': 'ř',
+    'r&#780;': 'ř',
+    '&#352;': 'Š',
+    '&Scaron;': 'Š',
+    'S&#780;': 'Š',
+    '&#353;': 'š',
+    '&scaron;': 'š',
+    's&#780;': 'š',
+    '&#356;': 'Ť',
+    '&Tcaron;': 'Ť',
+    'T&#780;': 'Ť',
+    '&#357;': 'ť',
+    '&tcaron;': 'ť',
+    't&#780;': 'ť',
+    '&#366;': 'Ů',
+    '&Uring;': 'Ů',
+    'U&#778;': 'Ů',
+    '&#367;': 'ů',
+    '&uring;': 'ů',
+    'u&#778;': 'ů',
+    '&#368;': 'Ű',
+    '&Udblac;': 'Ű',
+    'U&#369;': 'Ű',
+    '&#369;': 'ű',
+    '&udblac;': 'ű',
+    'u&#369;': 'ű',
+    '&#381;': 'Ž',
+    '&Zcaron;': 'Ž',
+    'Z&#780;': 'Ž',
+    '&#382;': 'ž',
+    '&zcaron;': 'ž',
+    'z&#780;': 'ž',
   }, true)
 }
 
@@ -282,8 +282,8 @@ function replaceQuotedBS(
 ): string {
   const regex = new RegExp("(\\[quote\\])");
   return str.replace(
-	regex,
-	`${resultFeedAuthor} ${SETTINGS.QUOTE_SENTENCE} ${entryAuthor}:\n\n`
+    regex,
+    `${resultFeedAuthor} ${SETTINGS.QUOTE_SENTENCE} ${entryAuthor}:\n\n`
   );
 }
 
@@ -295,8 +295,8 @@ function replaceReposted(
 ): string {
   const regex = new RegExp("^(RT ([^>]+): )");
   return str.replace(
-	regex,
-	`${resultFeedAuthor} ${SETTINGS.REPOST_SENTENCE} ${entryAuthor}:\n\n`
+    regex,
+    `${resultFeedAuthor} ${SETTINGS.REPOST_SENTENCE} ${entryAuthor}:\n\n`
   );
 }
 
@@ -308,8 +308,8 @@ function replaceRepostedBS(
 ): string {
   const regex = new RegExp("^(Repost ([^>]+): )");
   return str.replace(
-	regex,
-	`${resultFeedAuthor} ${SETTINGS.REPOST_SENTENCE} ${entryAuthor}:\n\n`
+    regex,
+    `${resultFeedAuthor} ${SETTINGS.REPOST_SENTENCE} ${entryAuthor}:\n\n`
   );
 }
 
@@ -322,96 +322,96 @@ function replaceResponseTo(str: string) {
 // special chars replacement
 function replaceSpecialCharacters(str: string): string {
   return replaceAll(str, {
-	'&#09;': ' ',
-	'&#009;': ' ',
-	'&#10;': ' ',
-	'&#010;': ' ',
-	'&#13;': ' ',
-	'&#013;': ' ',
-	'&#32;': ' ',
-	'&#032;': ' ',
-	'&#33;': '!',
-	'&#033;': '!',
-	'&excl;': '!',
-	'&#34;': '"',
-	'&#034;': '"',
-	'&quot;': '"',
-	'&#37;': '%',
-	'&#037;': '%',
-	'&percnt;': '%',
-	'&#39;': '‘',
-	'&#039;': '‘',
-	'&apos;': '‘',
-	'&#40;': '(',
-	'&#040;': '(',
-	'&lpar;': '(',
-	'&#41;': ')',
-	'&#041;': ')',
-	'&rpar;': ')',
-	'&#46;': '.',
-	'&#046;': '.',
-	'&period;': '.',
-	'&#60;': '<',
-	'&#060;': '<',
-	'&lt;': '<',
-	'&#61;': '=',
-	'&#061;': '=',
-	'&equals;': '=',
-	'&#62;': '>',
-	'&#062;': '>',
-	'&gt;': '>',
-	'&#160;': ' ',
-	'&nbsp;': ' ',
-	'&#173;': '',
-	'&#xAD;': '',
-	'&shy;': '',
-	'&#8192;': ' ',
-	'&#8193;': ' ',
-	'&#8194;': ' ',
-	'&#8195;': ' ',
-	'&#8196;': ' ',
-	'&#8197;': ' ',
-	'&#8198;': ' ',
-	'&#8199;': ' ',
-	'&#8200;': ' ',
-	'&#8201;': ' ',
-	'&#8202;': ' ',
-	'&#8203;': ' ',
-	'&#8204;': ' ',
-	'&#8205;': ' ',
-	'&#8206;': ' ',
-	'&#8207;': ' ',
-	'&#8208;': '-',
-	'&#x2010;': '-',
-	'&hyphen;': '-',
-	'&#8209;': '-',
-	'&#x2011;': '-',
-	'&#8211;': '–',
-	'&ndash;': '–',
-	'&#8212;': '—',
-	'&mdash;': '—',
-	'&#8216;': '‘',
-	'&lsquo;': '‘',
-	'&#8217;': '’',
-	'&rsquo;': '’',
-	'&#8218;': '‚',
-	'&sbquo;': '‚',
-	'&#8219;': '‛',
-	'&#8220;': '“',
-	'&ldquo;': '“',
-	'&#8221;': '”',
-	'&rdquo;': '”',
-	'&#8222;': '„',
-	'&bdquo;': '„',
-	'&#8223;': '‟',
-	'&#8230;': '…',
-	'&hellip;': '…',
-	'&#8242;': '′',
-	'&prime;': '′',
-	'&#8243;': '″',
-	'&Prime;': '″',
-	'&#8722;': '-',
-	'&minus;': '-',
+    '&#09;': ' ',
+    '&#009;': ' ',
+    '&#10;': ' ',
+    '&#010;': ' ',
+    '&#13;': ' ',
+    '&#013;': ' ',
+    '&#32;': ' ',
+    '&#032;': ' ',
+    '&#33;': '!',
+    '&#033;': '!',
+    '&excl;': '!',
+    '&#34;': '"',
+    '&#034;': '"',
+    '&quot;': '"',
+    '&#37;': '%',
+    '&#037;': '%',
+    '&percnt;': '%',
+    '&#39;': '‘',
+    '&#039;': '‘',
+    '&apos;': '‘',
+    '&#40;': '(',
+    '&#040;': '(',
+    '&lpar;': '(',
+    '&#41;': ')',
+    '&#041;': ')',
+    '&rpar;': ')',
+    '&#46;': '.',
+    '&#046;': '.',
+    '&period;': '.',
+    '&#60;': '<',
+    '&#060;': '<',
+    '&lt;': '<',
+    '&#61;': '=',
+    '&#061;': '=',
+    '&equals;': '=',
+    '&#62;': '>',
+    '&#062;': '>',
+    '&gt;': '>',
+    '&#160;': ' ',
+    '&nbsp;': ' ',
+    '&#173;': '',
+    '&#xAD;': '',
+    '&shy;': '',
+    '&#8192;': ' ',
+    '&#8193;': ' ',
+    '&#8194;': ' ',
+    '&#8195;': ' ',
+    '&#8196;': ' ',
+    '&#8197;': ' ',
+    '&#8198;': ' ',
+    '&#8199;': ' ',
+    '&#8200;': ' ',
+    '&#8201;': ' ',
+    '&#8202;': ' ',
+    '&#8203;': ' ',
+    '&#8204;': ' ',
+    '&#8205;': ' ',
+    '&#8206;': ' ',
+    '&#8207;': ' ',
+    '&#8208;': '-',
+    '&#x2010;': '-',
+    '&hyphen;': '-',
+    '&#8209;': '-',
+    '&#x2011;': '-',
+    '&#8211;': '–',
+    '&ndash;': '–',
+    '&#8212;': '—',
+    '&mdash;': '—',
+    '&#8216;': '‘',
+    '&lsquo;': '‘',
+    '&#8217;': '’',
+    '&rsquo;': '’',
+    '&#8218;': '‚',
+    '&sbquo;': '‚',
+    '&#8219;': '‛',
+    '&#8220;': '“',
+    '&ldquo;': '“',
+    '&#8221;': '”',
+    '&rdquo;': '”',
+    '&#8222;': '„',
+    '&bdquo;': '„',
+    '&#8223;': '‟',
+    '&#8230;': '…',
+    '&hellip;': '…',
+    '&#8242;': '′',
+    '&prime;': '′',
+    '&#8243;': '″',
+    '&Prime;': '″',
+    '&#8722;': '-',
+    '&minus;': '-',
   });
 }
 
@@ -422,8 +422,8 @@ function replaceUserNames(
 ): string {
   // Adds POST_TARGET to all @usernames except the skipName
   const regex = new RegExp(
-	`(?<![a-zA-Z0-9])(?!${skipName})(@([a-zA-Z0-9_]+))`,
-	"gi"
+    `(?<![a-zA-Z0-9])(?!${skipName})(@([a-zA-Z0-9_]+))`,
+    "gi"
   );
   return str.replace(regex, `$1@${SETTINGS.USER_INSTANCE}`);
 }
@@ -435,11 +435,18 @@ function trimContent(str: string): string {
   return str.substring(0, trimmedText.lastIndexOf(" ")) + " […]";
 }
 
+// last horizontal ellipsis hack - if content ends with …, it will be replaced by  + " […]"
+function trimContentEndEllipsis(str: string): string {
+  return str.substring(-1) === "…"
+    ? str.substring(0, str.length - 1) + " […]"
+    : str;
+}
+
 // image  URL shortening - if image ends with ==, it will be shorten for this two chars
 function trimImageUrl(str: string): string {
   return str.substring(-2) === "=="
-	? str.substring(0, str.length - 2)
-	: str;
+    ? str.substring(0, str.length - 2)
+    : str;
 }
 
 // resultContent composition
@@ -456,41 +463,41 @@ function composeResultContent(
 
   // content blocks based on POST_FROM
   if (["NT", "TW"].indexOf(SETTINGS.POST_FROM) !== -1) {
-	// for NT & TW posts get resultFeedAuthor
-	resultFeedAuthor = SETTINGS.SHOULD_PREFER_REAL_NAME
-	  ? feedAuthorRealName
-	  : feedAuthorUserName;
-	// for NT & TW posts just entryTitle
-	resultContent = entryTitle;
-	resultContent = replaceReposted(
-	  resultContent,
-	  resultFeedAuthor,
-	  entryAuthor
-	);
-	resultContent = replaceResponseTo(resultContent);
-	resultContent = replaceUserNames(
-	  resultContent,
-	  feedAuthorUserName,
-	);
+    // for NT & TW posts get resultFeedAuthor
+    resultFeedAuthor = SETTINGS.SHOULD_PREFER_REAL_NAME
+      ? feedAuthorRealName
+      : feedAuthorUserName;
+    // for NT & TW posts just entryTitle
+    resultContent = entryTitle;
+    resultContent = replaceReposted(
+      resultContent,
+      resultFeedAuthor,
+      entryAuthor
+    );
+    resultContent = replaceResponseTo(resultContent);
+    resultContent = replaceUserNames(
+      resultContent,
+      feedAuthorUserName,
+    );
   } else if (SETTINGS.POST_FROM === "BS"){
-	// for BS posts get resultFeedAuthor from feedTitle
-	resultFeedAuthor = feedTitle.substring(feedTitle.indexOf("(") + 1, feedTitle.indexOf(")"));
-	// for BS posts resultContent entryTitle + entryContent
-	resultContent = `${entryTitle}:\n${entryContent}`;
-	resultContent = replaceRepostedBS(
-	  resultContent,
-	  resultFeedAuthor,
-	  entryAuthor
-	);
-	resultContent = replaceQuotedBS(
-	  resultContent,
-	  resultFeedAuthor,
-	  entryAuthor
-	);
-	resultContent = contentHackBS(resultContent);
+    // for BS posts get resultFeedAuthor from feedTitle
+    resultFeedAuthor = feedTitle.substring(feedTitle.indexOf("(") + 1, feedTitle.indexOf(")"));
+    // for BS posts resultContent entryTitle + entryContent
+    resultContent = `${entryTitle}:\n${entryContent}`;
+    resultContent = replaceRepostedBS(
+      resultContent,
+      resultFeedAuthor,
+      entryAuthor
+    );
+    resultContent = replaceQuotedBS(
+      resultContent,
+      resultFeedAuthor,
+      entryAuthor
+    );
+    resultContent = contentHackBS(resultContent);
   } else {
-	// for posts from RSS getContent
-	resultContent = getContent(entryContent, entryTitle);
+    // for posts from RSS getContent
+    resultContent = getContent(entryContent, entryTitle);
   }
 
   resultContent = replaceBasicFormatting(resultContent);
@@ -500,6 +507,7 @@ function composeResultContent(
   resultContent = replaceAmpersands(resultContent);
   resultContent = contentHack(resultContent);
   resultContent = trimContent(resultContent);
+  resultContent = trimContentEndEllipsis(resultContent);
 
   return resultContent;
 }
@@ -517,11 +525,11 @@ function composeResultStatus(
 
   // modification of status in case when showing the image is enabled
   if (isImageInPost(entryImageUrl) && SETTINGS.SHOW_IMAGEURL) {
-	resultStatus = `${resultStatus}\n${SETTINGS.STATUS_IMAGEURL_SENTENCE} ${resultImageUrl}`;
+    resultStatus = `${resultStatus}\n${SETTINGS.STATUS_IMAGEURL_SENTENCE} ${resultImageUrl}`;
   }
 
   if (!isUrlIncluded(resultContent) || SETTINGS.SHOW_ORIGIN_POSTURL_PERM) {
-	resultStatus = `${resultStatus}\n${SETTINGS.STATUS_URL_SENTENCE} ${resultUrl}`;
+    resultStatus = `${resultStatus}\n${SETTINGS.STATUS_URL_SENTENCE} ${resultUrl}`;
   }
 
   return resultStatus;
@@ -542,26 +550,27 @@ if (["Image", "Gif", "Video"].indexOf(entryTitle) !== -1) {
   // if post is response to someone else or repost are not allowed, skip it
   isResponseToSomeoneElse(entryTitle, entryAuthor)
   || (
-	isRepost(entryTitle)
-	&& !isRepostOwn(entryTitle, entryAuthor)
-	&& !SETTINGS.REPOST_ALLOWED
+    isRepost(entryTitle)
+    && !isRepostOwn(entryTitle, entryAuthor)
+    && !SETTINGS.REPOST_ALLOWED
   )
   // if post contains commercial based on SETTINGS.COMMERCIAL_SENTENCE
   || isCommercialInPost(entryTitle)
+  || isCommercialInPost(entryContent)
 ) {
   MakerWebhooks.makeWebRequest.skip();
 } else {
   // otherwise start with composing the result content
   const resultContent = composeResultContent(
-	entryTitle,
-	entryAuthor,
-	feedTitle
+    entryTitle,
+    entryAuthor,
+    feedTitle
   );
 
   // composing of the result status
   const resultStatus = composeResultStatus(
-	resultContent,
-	entryImageUrl
+    resultContent,
+    entryImageUrl
   );
 
   // return of the status to IFTTT
