@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋🐦‍⬛📙📘🐦📺 webhook filter v0.9.2 - 12.1.2024
+// IFTTT 🦋🐦‍⬛📙📘🐦📺 webhook filter v0.9.3 - 17.1.2024
 ///////////////////////////////////////////////////////////////////////////////
 
 // BS content hack
@@ -518,6 +518,7 @@ if (["Image", "Gif", "Video"].indexOf(entryTitle) !== -1) {
   )
   // if post contains commercial based on SETTINGS.COMMERCIAL_SENTENCE
   || isCommercialInPost(entryTitle)
+  || isCommercialInPost(entryContent)
 ) {
   MakerWebhooks.makeWebRequest.skip();
 } else {
