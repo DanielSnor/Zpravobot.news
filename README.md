@@ -25,4 +25,4 @@ Folder ./CONNECTORS contain - surprise surprise - connectors. You can find a spe
 
 For more information about settings on the Mastodon user side, please look at https://hyperborea.org/journal/2017/12/mastodon-iftt/.
 
-(Prague, Jan 12, 2024)
+(Prague, Jan 17, 2024)
