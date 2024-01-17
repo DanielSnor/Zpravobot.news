@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// connector for IFTTT 🦋🐦‍⬛📙📘 webhook v0.8.12 - 28.12.2023
+// connector for IFTTT 🦋🐦‍⬛📙📘 webhook v0.9.3 - 17.1.2024
 ///////////////////////////////////////////////////////////////////////////////
 const entryContent = String(Feed.newFeedItem.EntryContent);
 const entryTitle = String(Feed.newFeedItem.EntryTitle);
