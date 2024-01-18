@@ -15,6 +15,9 @@ Quotes from BlueSky don't show the proper author of the original post
 Quotes from Nitter don't show a snippet of the original post
 (podmínka pokud je v contentu URL obsahující twitter/nitter, nahradit post URL tímto URL?)
 
+### Fix-2024-06: Twitter replies and quotes
+Replies and quotes from Twitter don't work. As they previously worked, DS probably caused it when the universal script was composed, and some functions weren't included in the Twitter branch. We have to compare the current script with the historical one. This fix has low priority as Twitter isn't currently used at Zpravobot.news.
+
 ---
 
 ## Already solved errors
