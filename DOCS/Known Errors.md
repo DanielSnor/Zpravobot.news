@@ -18,6 +18,10 @@ Quotes from Nitter don't show a snippet of the original post
 ### Fix-2024-06: Twitter replies and quotes
 Replies and quotes from Twitter don't work. As they previously worked, DS probably caused it when the universal script was composed, and some functions weren't included in the Twitter branch. We have to compare the current script with the historical one. This fix has low priority as Twitter isn't currently used at Zpravobot.news.
 
+### Fix-2024-07: Empty spaces in EntryContent
+Sometimes post contains several or many empty spaces at the end of EntryContent followed by […]. Empty spaces could be also in front of the URL.
+example: https://zpravobot.news/@Pocketlint/111855317689168502
+
 ---
 
 ## Already solved errors
