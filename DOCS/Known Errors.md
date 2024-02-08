@@ -14,6 +14,15 @@ Quotes from BlueSky don't show the proper author of the original post
 ### Fix-2024-04: Nitter quotes
 Quotes from Nitter don't show a snippet of the original post
 (podmínka pokud je v contentu URL obsahující twitter/nitter, nahradit post URL tímto URL?)
+> Příklad hodnot:
+> * EntryUrl: https://nitter.cz/JakubSzanto/status/1755532277436580328#m
+> * EntryPublished: February 08, 2024 at 11:01AM
+> * FeedTitle: Jakub Szántó / @JakubSzanto
+> * EntryAuthor: @JakubSzanto
+> * EntryContent: `<p>🙏🏽</p> <p><a href="https://nitter.cz/Torchcz/status/1736172268969926969#m">nitter.cz/Torchcz/status/1736172268969926969#m</a></p>`
+> * EntryImageUrl: https://ifttt.com/images/no_image_card.png
+> * EntryTitle: 🙏🏽
+> * FeedUrl: https://nitter.cz/JakubSzanto
 
 ### Fix-2024-06: Twitter replies and quotes
 Replies and quotes from Twitter don't work. As they previously worked, DS probably caused it when the universal script was composed, and some functions weren't included in the Twitter branch. We have to compare the current script with the historical one. This fix has low priority as Twitter isn't currently used at Zpravobot.news.
