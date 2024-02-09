@@ -407,7 +407,7 @@ function trimContent(str: string): string {
 
 // image  URL shortening - if image ends with ==, it will be shorten for this two chars
 function trimImageUrl(str: string): string {
-  return str.substring(-2) === "=="
+  return str.substring(str.length - 2) === "=="
     ? str.substring(0, str.length - 2)
     : str;
 }
