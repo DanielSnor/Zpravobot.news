@@ -74,7 +74,7 @@ function replaceAmpersands(str: string): string {
   return words
     .map((word: string) => {
       return isUrlIncluded(word)
-        ? encodeURI(word)
+        ? encodeURI(word.replace('&amp;', '%26'))
         : replaceAll(word, {
           '&amp;': SETTINGS.AMPERSAND_REPLACEMENT,
           '&#38;': SETTINGS.AMPERSAND_REPLACEMENT,
@@ -392,23 +392,30 @@ function replaceUserNames(
 
 // content shortening - if content is longer than POST_LENGHT, it will be shorten to POST_LENGHT, then to last space + […]
 function trimContent(str: string): string {
-  if (str.length <= SETTINGS.POST_LENGTH) return str;
-  const trimmedText = str.substring(0, SETTINGS.POST_LENGTH);
-  return str.substring(0, trimmedText.lastIndexOf(" ")) + " […]";
-}
+  if (str.substring(str.length - 2) === " …") {
+    str = str.substring(0, str.length - 1) + "[…]";
+  } else if (str.substring(str.length - 1) === "…") {
+    str = str.substring(0, str.length - 1) + " […]";
+  }
 
-// last horizontal ellipsis hack - if content ends with …, it will be replaced by  + " […]"
-function trimContentEndEllipsis(str: string): string {
-  return str.substring(-1) === "…"
-    ? str.substring(0, str.length - 1) + " […]"
-    : str;
+  if (str.length <= SETTINGS.POST_LENGTH) return str;
+
+  const trimmedText = str.substring(0, SETTINGS.POST_LENGTH - 1).trim();
+
+  return str.substring(0, trimmedText.lastIndexOf(" ")) + " […]"
 }
 
 // image  URL shortening - if image ends with ==, it will be shorten for this two chars
 function trimImageUrl(str: string): string {
-  return str.substring(-2) === "=="
+  return str.substring(str.length - 2) === "=="
     ? str.substring(0, str.length - 2)
     : str;
+}
+
+function findRepostUrl(str: string): string | null {
+  const regex = new RegExp('href="(?<url>https:\/\/(nitter\.cz|twitter\.com)[^"]+)"', 'gi')
+  const matches = regex.exec(str)
+  return matches ? matches[1] : null
 }
 
 // resultContent composition
@@ -469,7 +476,6 @@ function composeResultContent(
   resultContent = replaceAmpersands(resultContent);
   resultContent = contentHack(resultContent);
   resultContent = trimContent(resultContent);
-  resultContent = trimContentEndEllipsis(resultContent);
 
   return resultContent;
 }
@@ -490,7 +496,13 @@ function composeResultStatus(
     resultStatus = `${resultStatus}\n${SETTINGS.STATUS_IMAGEURL_SENTENCE} ${resultImageUrl}`;
   }
 
-  if (!isUrlIncluded(resultContent) || SETTINGS.SHOW_ORIGIN_POSTURL_PERM) {
+  const repostUrl = findRepostUrl(resultContent)
+  if (repostUrl) {
+    resultUrl = repostUrl
+  } else if (
+    SETTINGS.SHOW_ORIGIN_POSTURL_PERM
+    || !(isUrlIncluded(resultContent) || isImageInPost(entryImageUrl))
+  ) {
     resultStatus = `${resultStatus}\n${SETTINGS.STATUS_URL_SENTENCE} ${resultUrl}`;
   }
 
