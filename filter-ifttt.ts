@@ -74,7 +74,7 @@ function replaceAmpersands(str: string): string {
   return words
     .map((word: string) => {
       return isUrlIncluded(word)
-        ? encodeURI(word)
+        ? encodeURI(word.replace('&amp;', '%26'))
         : replaceAll(word, {
           '&amp;': SETTINGS.AMPERSAND_REPLACEMENT,
           '&#38;': SETTINGS.AMPERSAND_REPLACEMENT,
