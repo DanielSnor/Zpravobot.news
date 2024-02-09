@@ -476,7 +476,6 @@ function composeResultContent(
   resultContent = replaceAmpersands(resultContent);
   resultContent = contentHack(resultContent);
   resultContent = trimContent(resultContent);
-  resultContent = trimContentEndEllipsis(resultContent);
 
   return resultContent;
 }
