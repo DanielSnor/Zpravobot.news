@@ -7,6 +7,7 @@ Function trimContentEndEllipsis() does not work at this moment.
 
 ### Fix-2024-02: Ampersands in URLs
 Even though this problem was solved, it returns - at minimum in image URLs.
+(Problém identifikován: v URL obrázku je místo znaku & řetězec `&amp;`. Asi by stačilo tento řetězec v URL nahradit řetězcem `%26`)
 
 ### Fix-2024-03: BlueSky quotes
 Quotes from BlueSky don't show the proper author of the original post
