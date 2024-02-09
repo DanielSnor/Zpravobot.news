@@ -499,7 +499,10 @@ function composeResultStatus(
   const repostUrl = findRepostUrl(resultContent)
   if (repostUrl) {
     resultUrl = repostUrl
-  } else if (!isUrlIncluded(resultContent) || SETTINGS.SHOW_ORIGIN_POSTURL_PERM) {
+  } else if (
+    SETTINGS.SHOW_ORIGIN_POSTURL_PERM
+    || !(isUrlIncluded(resultContent) || isImageInPost(entryImageUrl))
+  ) {
     resultStatus = `${resultStatus}\n${SETTINGS.STATUS_URL_SENTENCE} ${resultUrl}`;
   }
 
