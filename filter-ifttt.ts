@@ -392,16 +392,17 @@ function replaceUserNames(
 
 // content shortening - if content is longer than POST_LENGHT, it will be shorten to POST_LENGHT, then to last space + […]
 function trimContent(str: string): string {
-  if (str.length <= SETTINGS.POST_LENGTH) return str;
-  const trimmedText = str.substring(0, SETTINGS.POST_LENGTH);
-  return str.substring(0, trimmedText.lastIndexOf(" ")) + " […]";
-}
+  if (str.substring(str.length - 2) === " …") {
+    str = str.substring(0, str.length - 1) + "[…]";
+  } else if (str.substring(str.length - 1) === "…") {
+    str = str.substring(0, str.length - 1) + " […]";
+  }
 
-// last horizontal ellipsis hack - if content ends with …, it will be replaced by  + " […]"
-function trimContentEndEllipsis(str: string): string {
-  return str.substring(-1) === "…"
-    ? str.substring(0, str.length - 1) + " […]"
-    : str;
+  if (str.length <= SETTINGS.POST_LENGTH) return str;
+
+  const trimmedText = str.substring(0, SETTINGS.POST_LENGTH - 1).trim();
+
+  return str.substring(0, trimmedText.lastIndexOf(" ")) + " […]"
 }
 
 // image  URL shortening - if image ends with ==, it will be shorten for this two chars
