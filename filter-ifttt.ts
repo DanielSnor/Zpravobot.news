@@ -411,6 +411,12 @@ function trimImageUrl(str: string): string {
     : str;
 }
 
+function findRepostUrl(str: string): string | null {
+  const regex = new RegExp('href="(?<url>https:\/\/(nitter\.cz|twitter\.com)[^"]+)"', 'gi')
+  const matches = regex.exec(str)
+  return matches ? matches[1] : null
+}
+
 // resultContent composition
 function composeResultContent(
   entryTitle: string,
@@ -490,7 +496,10 @@ function composeResultStatus(
     resultStatus = `${resultStatus}\n${SETTINGS.STATUS_IMAGEURL_SENTENCE} ${resultImageUrl}`;
   }
 
-  if (!isUrlIncluded(resultContent) || SETTINGS.SHOW_ORIGIN_POSTURL_PERM) {
+  const repostUrl = findRepostUrl(resultContent)
+  if (repostUrl) {
+    resultUrl = repostUrl
+  } else if (!isUrlIncluded(resultContent) || SETTINGS.SHOW_ORIGIN_POSTURL_PERM) {
     resultStatus = `${resultStatus}\n${SETTINGS.STATUS_URL_SENTENCE} ${resultUrl}`;
   }
 
