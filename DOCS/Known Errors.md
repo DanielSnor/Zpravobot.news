@@ -2,9 +2,6 @@
 
 ## Current errors
 
-### Fix-2024-01: trimContentEndEllipsis()
-Function trimContentEndEllipsis() does not work at this moment.
-
 ### Fix-2024-02: Ampersands in URLs
 Even though this problem was solved, it returns - at minimum in image URLs.
 (Problém identifikován: v URL obrázku je místo znaku & řetězec `&amp;`. Asi by stačilo tento řetězec v URL nahradit řetězcem `%26`)
@@ -44,6 +41,9 @@ If post contains only simple text without any URL or added picture, it doesn't m
 Function isCommercialInPost() works fine for Nitter, but not for RSS. Need to rewrite.
 (musíme to vymyslet jinak - možná getContent a změna proměnné?!, potom isCommerciaInPost?)
 
-Millions of old bugs before the repo was started...d8-D
+### Fix-2024-01: trimContentEndEllipsis()
+Function trimContentEndEllipsis() does not work at this moment.
 
-(2024-01-17)
+### Millions of old bugs before the repo was started...d8-D
+
+(2024-02-12)
