@@ -29,10 +29,6 @@ Replies and quotes from Twitter don't work. As they previously worked, DS probab
 Sometimes post contains several or many empty spaces at the end of EntryContent followed by […]. Empty spaces could be also in front of the URL.
 example: https://zpravobot.news/@Pocketlint/111855317689168502
 
-### Fix-2024-08: Text post only also contains URL to original post
-If post contains only simple text without any URL or added picture, it doesn't make sense to show there also link to the original post. User can comment it in original location when will use way Avatar-link to original profile-post.
-(pokud zpracovavany post neobsahuje URL ani link na obrazek, URL na originalni post se nezobrazi podobne jako v pripade, kdy post obsahuje URL)
-
 ---
 
 ## Already solved errors
@@ -44,6 +40,10 @@ Function isCommercialInPost() works fine for Nitter, but not for RSS. Need to re
 ### Fix-2024-01: trimContentEndEllipsis()
 Function trimContentEndEllipsis() does not work at this moment.
 
+### Fix-2024-08: Text post only also contains URL to original post
+If post contains only simple text without any URL or added picture, it doesn't make sense to show there also link to the original post. User can comment it in original location when will use way Avatar-link to original profile-post.
+(pokud zpracovavany post neobsahuje URL ani link na obrazek, URL na originalni post se nezobrazi podobne jako v pripade, kdy post obsahuje URL)
+
 ### Millions of old bugs before the repo was started...d8-D
 
-(2024-02-12)
+(2024-02-13)
