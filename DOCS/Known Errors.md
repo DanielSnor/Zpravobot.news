@@ -2,10 +2,6 @@
 
 ## Current errors
 
-### Fix-2024-02: Ampersands in URLs
-Even though this problem was solved, it returns - at minimum in image URLs.
-(Problém identifikován: v URL obrázku je místo znaku & řetězec `&amp;`. Asi by stačilo tento řetězec v URL nahradit řetězcem `%26`)
-
 ### Fix-2024-03: BlueSky quotes
 Quotes from BlueSky don't show the proper author of the original post
 
@@ -44,6 +40,10 @@ Function trimContentEndEllipsis() does not work at this moment.
 If post contains only simple text without any URL or added picture, it doesn't make sense to show there also link to the original post. User can comment it in original location when will use way Avatar-link to original profile-post.
 (pokud zpracovavany post neobsahuje URL ani link na obrazek, URL na originalni post se nezobrazi podobne jako v pripade, kdy post obsahuje URL)
 
+### Fix-2024-02: Ampersands in URLs
+Even though this problem was solved, it returns - at minimum in image URLs.
+(Problém identifikován: v URL obrázku je místo znaku & řetězec `&amp;`. Asi by stačilo tento řetězec v URL nahradit řetězcem `%26`)
+
 ### Millions of old bugs before the repo was started...d8-D
 
-(2024-02-13)
+(2024-02-15)
