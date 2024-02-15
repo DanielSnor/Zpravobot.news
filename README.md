@@ -7,7 +7,7 @@ The server used is a standard Mastodon server with several hundred users. Bot fa
 
 The original target was to have the only script for the following sources:
 - BlueSky
-- Nitter
+- ~~Nitter~~
 - RSS
 - X/Twitter
 - YouTube
