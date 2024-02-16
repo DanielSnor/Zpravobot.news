@@ -5,6 +5,10 @@
 ### Fix-2024-03: BlueSky quotes
 Quotes from BlueSky don't show the proper author of the original post
 
+---
+
+## Errors putted on hold
+
 ### Fix-2024-04: Nitter quotes
 Quotes from Nitter don't show a snippet of the original post
 (podmínka pokud je v contentu URL obsahující twitter/nitter, nahradit post URL tímto URL?)
@@ -18,9 +22,6 @@ Quotes from Nitter don't show a snippet of the original post
 > * EntryTitle: 🙏🏽
 > * FeedUrl: https://nitter.cz/JakubSzanto
 
-### Fix-2024-06: Twitter replies and quotes
-Replies and quotes from Twitter don't work. As they previously worked, DS probably caused it when the universal script was composed, and some functions weren't included in the Twitter branch. We have to compare the current script with the historical one. This fix has low priority as Twitter isn't currently used at Zpravobot.news.
-
 ### Fix-2024-07: Empty spaces in EntryContent
 Sometimes post contains several or many empty spaces at the end of EntryContent followed by […]. Empty spaces could be also in front of the URL.
 example: https://zpravobot.news/@Pocketlint/111855317689168502
@@ -29,12 +30,8 @@ example: https://zpravobot.news/@Pocketlint/111855317689168502
 
 ## Already solved errors
 
-### Fix-2024-05: isCommercialInPost()
-Function isCommercialInPost() works fine for Nitter, but not for RSS. Need to rewrite.
-(musíme to vymyslet jinak - možná getContent a změna proměnné?!, potom isCommerciaInPost?)
-
-### Fix-2024-01: trimContentEndEllipsis()
-Function trimContentEndEllipsis() does not work at this moment.
+### Fix-2024-06: Twitter replies and quotes
+Replies and quotes from Twitter don't work. As they previously worked, DS probably caused it when the universal script was composed, and some functions weren't included in the Twitter branch. We have to compare the current script with the historical one. This fix has low priority as Twitter isn't currently used at Zpravobot.news.
 
 ### Fix-2024-08: Text post only also contains URL to original post
 If post contains only simple text without any URL or added picture, it doesn't make sense to show there also link to the original post. User can comment it in original location when will use way Avatar-link to original profile-post.
@@ -43,6 +40,13 @@ If post contains only simple text without any URL or added picture, it doesn't m
 ### Fix-2024-02: Ampersands in URLs
 Even though this problem was solved, it returns - at minimum in image URLs.
 (Problém identifikován: v URL obrázku je místo znaku & řetězec `&amp;`. Asi by stačilo tento řetězec v URL nahradit řetězcem `%26`)
+
+### Fix-2024-01: trimContentEndEllipsis()
+Function trimContentEndEllipsis() does not work at this moment.
+
+### Fix-2024-05: isCommercialInPost()
+Function isCommercialInPost() works fine for Nitter, but not for RSS. Need to rewrite.
+(musíme to vymyslet jinak - možná getContent a změna proměnné?!, potom isCommerciaInPost?)
 
 ### Millions of old bugs before the repo was started...d8-D
 
