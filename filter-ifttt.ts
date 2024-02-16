@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋🐦‍⬛📙📘🐦📺 webhook filter v0.9.3 - 17.1.2024
+// IFTTT 🦋🐦‍⬛📙📘🐦📺 webhook filter v0.9.4 - 16.2.2024
 ///////////////////////////////////////////////////////////////////////////////
 
 // BS content hack
@@ -431,7 +431,24 @@ function composeResultContent(
   let resultFeedAuthor = "";
 
   // content blocks based on POST_FROM
-  if (["NT", "TW"].indexOf(SETTINGS.POST_FROM) !== -1) {
+  if (SETTINGS.POST_FROM === "BS"){
+    // for BS posts get resultFeedAuthor from feedTitle
+  resultFeedAuthor = feedTitle.substring(feedTitle.indexOf("(") + 1, feedTitle.indexOf(")"));
+  // for BS posts resultContent entryTitle + entryContent
+  resultContent = `${entryTitle}:\n${entryContent}`;
+  resultContent = replaceRepostedBS(
+    resultContent,
+    resultFeedAuthor,
+    entryAuthor
+  );
+  resultContent = replaceQuotedBS(
+    resultContent,
+    resultFeedAuthor,
+    entryAuthor
+  );
+  resultContent = contentHackBS(resultContent);
+  } else if (SETTINGS.POST_FROM === "NT"){
+    // ⬇️ ☠️ dead zone - don't touch it ⬇️
     // for NT & TW posts get resultFeedAuthor
     resultFeedAuthor = SETTINGS.SHOULD_PREFER_REAL_NAME
       ? feedAuthorRealName
@@ -448,22 +465,24 @@ function composeResultContent(
       resultContent,
       feedAuthorUserName,
     );
-  } else if (SETTINGS.POST_FROM === "BS"){
-    // for BS posts get resultFeedAuthor from feedTitle
-    resultFeedAuthor = feedTitle.substring(feedTitle.indexOf("(") + 1, feedTitle.indexOf(")"));
-    // for BS posts resultContent entryTitle + entryContent
-    resultContent = `${entryTitle}:\n${entryContent}`;
-    resultContent = replaceRepostedBS(
+    // ⬆️ ☠️ dead zone - don't touch it ⬆️
+    } else if (SETTINGS.POST_FROM === "TW"){
+    // for NT & TW posts get resultFeedAuthor
+    resultFeedAuthor = SETTINGS.SHOULD_PREFER_REAL_NAME
+      ? feedAuthorRealName
+      : feedAuthorUserName;
+    // for NT & TW posts just entryTitle
+    resultContent = entryTitle;
+    resultContent = replaceReposted(
       resultContent,
       resultFeedAuthor,
       entryAuthor
     );
-    resultContent = replaceQuotedBS(
+    resultContent = replaceResponseTo(resultContent);
+    resultContent = replaceUserNames(
       resultContent,
-      resultFeedAuthor,
-      entryAuthor
+      feedAuthorUserName,
     );
-    resultContent = contentHackBS(resultContent);
   } else {
     // for posts from RSS getContent
     resultContent = getContent(entryContent, entryTitle);
