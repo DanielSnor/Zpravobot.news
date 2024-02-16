@@ -26,3 +26,11 @@ Folder ./CONNECTORS contain - surprise surprise - connectors. You can find a spe
 For more information about settings on the Mastodon user side, please look at https://hyperborea.org/journal/2017/12/mastodon-iftt/.
 
 (Prague, Jan 17, 2024)
+
+## Feb 16, 2024 Update
+
+On February 15, 2024, it was reported that Twitter terminated the ability to sync tweets to Nitter for anonymous reading. As a result, Nitter.cz, which served as a data source for many robots at Zpravobot.news, was discontinued and synchronization was stopped. 
+
+This development means that my focus will now largely shift to Twitter/IFTTT sync, as well as BS/IFTTT and RSS/IFTTT, while all work related to Nitter will be put on hold. 
+
+Thank you for your understanding.
