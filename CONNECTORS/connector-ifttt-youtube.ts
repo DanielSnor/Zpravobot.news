@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// connector for IFTTT 📺 webhook v0.9.3 - 17.1.2024
+// connector for IFTTT 📺 webhook - 17.1.2024
 ///////////////////////////////////////////////////////////////////////////////
 const entryContent = String(Youtube.newPublicVideoFromSubscriptions.Description);
 const entryTitle = String(Youtube.newPublicVideoFromSubscriptions.Title);

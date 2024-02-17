@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// connector for IFTTT 🐦‍⬛ webhook v0.9.4 - 16.2.2024
+// connector for IFTTT 🐦‍⬛ webhook - 17.2.2024
 ///////////////////////////////////////////////////////////////////////////////
 const entryContent = String(Twitter.newTweetFromSearch.Text);
 const entryTitle = String(Twitter.newTweetFromSearch.Text);
