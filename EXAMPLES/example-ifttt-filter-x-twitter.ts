@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// settings for IFTTT 🐦‍⬛ webhook filter v0.9.4 - 16.2.2024
+// settings for IFTTT 🐦‍⬛ webhook filter - 17.2.2024
 ///////////////////////////////////////////////////////////////////////////////
 const SETTINGS = {
   AMPERSAND_REPLACEMENT: ` a `, // replacement for & char
@@ -26,7 +26,7 @@ function contentHack(str: string): string {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// connector for IFTTT 🐦‍⬛ webhook v0.9.4 - 16.2.2024
+// connector for IFTTT 🐦‍⬛ webhook - 17.2.2024
 ///////////////////////////////////////////////////////////////////////////////
 const entryContent = String(Twitter.newTweetFromSearch.Text);
 const entryTitle = String(Twitter.newTweetFromSearch.Text);
@@ -37,7 +37,7 @@ const feedTitle = String(Twitter.newTweetFromSearch.UserName);
 const feedUrl = String();
 
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋🐦‍⬛📙📘🐦📺 webhook filter v0.9.4 - 16.2.2024
+// IFTTT 🦋🐦‍⬛📙📘🐦📺 webhook filter v0.9.4 - 17.2.2024
 ///////////////////////////////////////////////////////////////////////////////
 
 // BS content hack
