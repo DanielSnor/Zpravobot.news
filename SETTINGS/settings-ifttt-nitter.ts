@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// settings for IFTTT 🐦‍⬛ webhook filter v0.9.3 - 17.1.2024
+// settings for IFTTT 🐦‍⬛ webhook filter - 17.2.2024
 ///////////////////////////////////////////////////////////////////////////////
 const SETTINGS = {
   AMPERSAND_REPLACEMENT: ` a `, // replacement for & char
@@ -16,8 +16,8 @@ const SETTINGS = {
   SHOW_FEEDURL_INSTD_POSTURL: false, // true | false
   SHOW_IMAGEURL: false, // true | false
   SHOW_ORIGIN_POSTURL_PERM: false, // true | false
-  STATUS_IMAGEURL_SENTENCE: "🖼️", // "" | "🖼️"
-  STATUS_URL_SENTENCE: "🔗", // "" | "🔗" | "🗣️🎙️👇👇👇\n" | "YT 📺👇👇👇\n"
+  STATUS_IMAGEURL_SENTENCE: "", // "" | "🖼️"
+  STATUS_URL_SENTENCE: "", // "" | "🔗" | "🗣️🎙️👇👇👇\n" | "YT 📺👇👇👇\n"
 };
 
 // content hack - replace ZZZZZ and KKKKK with the beginning and the end of content designated to remove
