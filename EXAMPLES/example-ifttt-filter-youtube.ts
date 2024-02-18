@@ -117,7 +117,7 @@ function replaceAmpersands(str: string): string {
           '&amp;': SETTINGS.AMPERSAND_REPLACEMENT,
           '&#38;': SETTINGS.AMPERSAND_REPLACEMENT,
           '&#038;': SETTINGS.AMPERSAND_REPLACEMENT,
-          '&;': SETTINGS.AMPERSAND_REPLACEMENT,
+          '&': SETTINGS.AMPERSAND_REPLACEMENT,
         });
     })
     .join(" ");
