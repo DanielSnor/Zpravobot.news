@@ -405,15 +405,8 @@ function trimContent(str: string): string {
   return str.substring(0, trimmedText.lastIndexOf(" ")) + " […]"
 }
 
-// image  URL shortening - if image ends with ==, it will be shorten for this two chars
-function trimImageUrl(str: string): string {
-  return str.substring(str.length - 2) === "=="
-    ? str.substring(0, str.length - 2)
-    : str;
-}
-
 function findRepostUrl(str: string): string | null {
-  const regex = new RegExp('href="(?<url>https:\/\/(nitter\.cz|twitter\.com)[^"]+)"', 'gi')
+  const regex = new RegExp('href="(?<url>https:\/\/twitter\.com[^"]+)"', 'gi')
   const matches = regex.exec(str)
   return matches ? matches[1] : null
 }
@@ -447,31 +440,12 @@ function composeResultContent(
     entryAuthor
   );
   resultContent = contentHackBS(resultContent);
-  } else if (SETTINGS.POST_FROM === "NT"){
-    // ⬇️ ☠️ dead zone - don't touch it ⬇️
-    // for NT & TW posts get resultFeedAuthor
+  } else if (SETTINGS.POST_FROM === "TW"){
+    // for TW posts get resultFeedAuthor
     resultFeedAuthor = SETTINGS.SHOULD_PREFER_REAL_NAME
       ? feedAuthorRealName
       : feedAuthorUserName;
-    // for NT & TW posts just entryTitle
-    resultContent = entryTitle;
-    resultContent = replaceReposted(
-      resultContent,
-      resultFeedAuthor,
-      entryAuthor
-    );
-    resultContent = replaceResponseTo(resultContent);
-    resultContent = replaceUserNames(
-      resultContent,
-      feedAuthorUserName,
-    );
-    // ⬆️ ☠️ dead zone - don't touch it ⬆️
-    } else if (SETTINGS.POST_FROM === "TW"){
-    // for NT & TW posts get resultFeedAuthor
-    resultFeedAuthor = SETTINGS.SHOULD_PREFER_REAL_NAME
-      ? feedAuthorRealName
-      : feedAuthorUserName;
-    // for NT & TW posts just entryTitle
+    // for TW posts just entryTitle
     resultContent = entryTitle;
     resultContent = replaceReposted(
       resultContent,
@@ -505,7 +479,6 @@ function composeResultStatus(
   entryImageUrl: string
 ): string {
   let resultStatus = `${resultContent}\n`;
-  let resultImageUrl = trimImageUrl(entryImageUrl);
 
   // removing ampersands from image url
   resultImageUrl = replaceAmpersands(resultImageUrl);
@@ -535,11 +508,8 @@ let resultUrl = (SETTINGS.SHOW_FEEDURL_INSTD_POSTURL ? feedUrl : entryUrl)
 // removing ampersands from url
 resultUrl = replaceAmpersands(resultUrl);
 
-// images from nitter need some special care
-if (["Image", "Gif", "Video"].indexOf(entryTitle) !== -1) {
-  const requestBody = `status=${resultUrl}`;
-  MakerWebhooks.makeWebRequest.setBody(requestBody);
-} else if (
+// conditions for skipping the post
+if (
   // if post is response to someone else or repost are not allowed, skip it
   isResponseToSomeoneElse(entryTitle, entryAuthor)
   || (
