@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋🐦‍⬛📙📘🐦📺 webhook filter v0.9.4 - 17.2.2024
+// IFTTT 🦋🐦‍⬛📙📘🐦📺 webhook filter v0.9.4mod - 3.3.2024
 ///////////////////////////////////////////////////////////////////////////////
 
 // BS content hack
@@ -481,19 +481,23 @@ function composeResultStatus(
   let resultStatus = `${resultContent}\n`;
 
   // removing ampersands from image url
-  resultImageUrl = replaceAmpersands(resultImageUrl);
+  let resultImageUrl = replaceAmpersands(entryImageUrl);
 
   // modification of status in case when showing the image is enabled
   if (isImageInPost(entryImageUrl) && SETTINGS.SHOW_IMAGEURL) {
     resultStatus = `${resultStatus}\n${SETTINGS.STATUS_IMAGEURL_SENTENCE} ${resultImageUrl}`;
   }
-
+  // conditions for showing the repost URL
   const repostUrl = findRepostUrl(resultContent)
   if (repostUrl) {
     resultUrl = repostUrl
   } else if (
     SETTINGS.SHOW_ORIGIN_POSTURL_PERM
-    || !(isUrlIncluded(resultContent) || isImageInPost(entryImageUrl))
+    || !(isUrlIncluded(resultContent) || isImageInPost(entryImageUrl))    
+    // condition for showing the repost URL
+    || (
+    isRepost(entryTitle)
+    && !isRepostOwn(entryTitle, entryAuthor)
   ) {
     resultStatus = `${resultStatus}\n${SETTINGS.STATUS_URL_SENTENCE} ${resultUrl}`;
   }
