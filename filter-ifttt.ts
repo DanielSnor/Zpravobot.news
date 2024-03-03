@@ -411,6 +411,12 @@ function findRepostUrl(str: string): string | null {
   return matches ? matches[1] : null
 }
 
+function findRepostUser(str: string): string {
+  const regex = new RegExp('RT (@[a-z0-9_]+)', 'gi')
+  const matches = regex.exec(str)
+  return matches ? matches[1] : ''
+}
+
 // resultContent composition
 function composeResultContent(
   entryTitle: string,
@@ -426,37 +432,27 @@ function composeResultContent(
   // content blocks based on POST_FROM
   if (SETTINGS.POST_FROM === "BS"){
     // for BS posts get resultFeedAuthor from feedTitle
-  resultFeedAuthor = feedTitle.substring(feedTitle.indexOf("(") + 1, feedTitle.indexOf(")"));
-  // for BS posts resultContent entryTitle + entryContent
-  resultContent = `${entryTitle}:\n${entryContent}`;
-  resultContent = replaceRepostedBS(
-    resultContent,
-    resultFeedAuthor,
-    entryAuthor
-  );
-  resultContent = replaceQuotedBS(
-    resultContent,
-    resultFeedAuthor,
-    entryAuthor
-  );
-  resultContent = contentHackBS(resultContent);
+    resultFeedAuthor = feedTitle.substring(feedTitle.indexOf("(") + 1, feedTitle.indexOf(")"));
+    // for BS posts resultContent entryTitle + entryContent
+    resultContent = `${entryTitle}:\n${entryContent}`;
+    resultContent = replaceRepostedBS(resultContent, resultFeedAuthor, entryAuthor);
+    resultContent = replaceQuotedBS(resultContent, resultFeedAuthor, entryAuthor);
+    resultContent = contentHackBS(resultContent);
   } else if (SETTINGS.POST_FROM === "TW"){
     // for TW posts get resultFeedAuthor
-    resultFeedAuthor = SETTINGS.SHOULD_PREFER_REAL_NAME
-      ? feedAuthorRealName
-      : feedAuthorUserName;
+    if (isRepost(entryTitle)) {
+      entryAuthor = findRepostUser(entryTitle);
+      resultFeedAuthor = feedAuthorUserName;
+    } else {
+      resultFeedAuthor = SETTINGS.SHOULD_PREFER_REAL_NAME
+        ? feedAuthorRealName
+        : feedAuthorUserName;
+    }
     // for TW posts just entryTitle
     resultContent = entryTitle;
-    resultContent = replaceReposted(
-      resultContent,
-      resultFeedAuthor,
-      entryAuthor
-    );
+    resultContent = replaceReposted(resultContent, resultFeedAuthor, entryAuthor);
     resultContent = replaceResponseTo(resultContent);
-    resultContent = replaceUserNames(
-      resultContent,
-      feedAuthorUserName,
-    );
+    resultContent = replaceUserNames(resultContent, feedAuthorUserName);
   } else {
     // for posts from RSS getContent
     resultContent = getContent(entryContent, entryTitle);
@@ -487,17 +483,16 @@ function composeResultStatus(
   if (isImageInPost(entryImageUrl) && SETTINGS.SHOW_IMAGEURL) {
     resultStatus = `${resultStatus}\n${SETTINGS.STATUS_IMAGEURL_SENTENCE} ${resultImageUrl}`;
   }
+
   // conditions for showing the repost URL
   const repostUrl = findRepostUrl(resultContent)
   if (repostUrl) {
     resultUrl = repostUrl
   } else if (
     SETTINGS.SHOW_ORIGIN_POSTURL_PERM
-    || !(isUrlIncluded(resultContent) || isImageInPost(entryImageUrl))    
+    || !(isUrlIncluded(resultContent) || isImageInPost(entryImageUrl))
     // condition for showing the repost URL
-    || (
-    isRepost(entryTitle)
-    && !isRepostOwn(entryTitle, entryAuthor)
+    || (isRepost(entryTitle) && !isRepostOwn(entryTitle, entryAuthor))
   ) {
     resultStatus = `${resultStatus}\n${SETTINGS.STATUS_URL_SENTENCE} ${resultUrl}`;
   }
