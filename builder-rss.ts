@@ -18,15 +18,15 @@ const Feed = {
 
 const connector: Connector = {
     entry: {
-        title: String(Feed.newFeedItem.EntryTitle),
-        content: String(Feed.newFeedItem.EntryContent),
-        url: String(Feed.newFeedItem.EntryUrl),
-        imageUrl: String(Feed.newFeedItem.EntryImageUrl),
-        author: String(Feed.newFeedItem.EntryAuthor),
+        title: Feed.newFeedItem.EntryTitle,
+        content: Feed.newFeedItem.EntryContent,
+        url: Feed.newFeedItem.EntryUrl,
+        imageUrl: Feed.newFeedItem.EntryImageUrl,
+        author: Feed.newFeedItem.EntryAuthor,
     },
     feed: {
-        title: String(Feed.newFeedItem.FeedTitle),
-        url: String(Feed.newFeedItem.FeedUrl),
+        title: Feed.newFeedItem.FeedTitle,
+        url: Feed.newFeedItem.FeedUrl,
     }
 }
 

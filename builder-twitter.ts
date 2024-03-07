@@ -16,14 +16,14 @@ const Twitter = {
 const connector: Connector = {
     entry: {
         title: null,
-        content: String(Twitter.newTweetFromSearch.Text),
-        url: String(Twitter.newTweetFromSearch.LinkToTweet),
-        imageUrl: String(Twitter.newTweetFromSearch.UserImageUrl),
-        author: String(Twitter.newTweetFromSearch.UserName),
+        content: Twitter.newTweetFromSearch.Text,
+        url: Twitter.newTweetFromSearch.LinkToTweet,
+        imageUrl: Twitter.newTweetFromSearch.UserImageUrl,
+        author: Twitter.newTweetFromSearch.UserName,
     },
     feed: {
-        title: String(Twitter.newTweetFromSearch.UserName),
-        url: String(`https://twitter.com/${Twitter.newTweetFromSearch.UserName}`),
+        title: Twitter.newTweetFromSearch.UserName,
+        url: `https://twitter.com/${Twitter.newTweetFromSearch.UserName}`,
     }
 }
 

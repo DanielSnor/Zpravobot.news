@@ -9,15 +9,15 @@ const Data = {
 
 const connector: Connector = {
     entry: {
-        title: String(Data),
-        content: String(Data),
-        url: String(Data),
-        imageUrl: String(Data),
-        author: String(Data),
+        title: Youtube.newPublicVideoFromSubscriptions.Description ? Youtube.newPublicVideoFromSubscriptions.Title : null,
+        content: Youtube.newPublicVideoFromSubscriptions.Description ?? Youtube.newPublicVideoFromSubscriptions.Title,
+        url: Youtube.newPublicVideoFromSubscriptions.Url,
+        imageUrl: WITHOUT_IMAGE,
+        author: Youtube.newPublicVideoFromSubscriptions.AuthorName,
     },
     feed: {
-        title: String(Data),
-        url: String(Data),
+        title: Youtube.newPublicVideoFromSubscriptions.Title,
+        url: null,
     }
 }
 

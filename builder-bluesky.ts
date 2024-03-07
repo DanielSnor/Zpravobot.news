@@ -9,15 +9,15 @@ const Data = {
 
 const connector: Connector = {
     entry: {
-        title: String(Data),
-        content: String(Data),
-        url: String(Data),
-        imageUrl: String(Data),
-        author: String(Data),
+        title: Data,
+        content: Data,
+        url: Data,
+        imageUrl: Data,
+        author: Data,
     },
     feed: {
-        title: String(Data),
-        url: String(Data),
+        title: Data,
+        url: Data,
     }
 }
 
