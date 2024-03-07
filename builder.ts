@@ -13,7 +13,7 @@ type Entry = {
 // Data about feed from IFTTT
 type Feed = {
     title: string,
-    url: string,
+    url: string | null,
 }
 
 // Data from IFTTT
@@ -38,14 +38,16 @@ type DefaultSettings = {
 
 export type Settings = Partial<DefaultSettings>
 
+// IFTTT send always this URL, if image is not contain or use for no entry image
+export const WITHOUT_IMAGE = 'https://ifttt.com/images/no_image_card.png'
+
 export class Checker {
     imageIncluded(str: string): boolean {
-        // IFTTT send always this URL, if image is not contain
-        return str !== 'https://ifttt.com/images/no_image_card.png'
+        return str !== WITHOUT_IMAGE
     }
 
     urlIncluded(str: string): boolean {
-        return new RegExp('((https|http)://)', 'i').test(str)
+        return new RegExp('https?://', 'i').test(str)
     }
 
     commercialIncluded(str: string): boolean {
@@ -143,7 +145,7 @@ export class Builder {
 
     /** For custom builders, run as the last step in the constructor */
     setup(): void {
-        this._statusUrl = (this.opt.ShowFeedUrlInsteadPostUrl ? this.feed.url : this.entry.url)
+        this._statusUrl = (this.opt.ShowFeedUrlInsteadPostUrl ? (this.feed.url ?? this.entry.url) : this.entry.url)
             .replace(this.opt.StaturUrlReplaceSource ?? '', this.opt.StatusUrlReplaceTarget ?? '')
 
         this.feedAuthorUserName = this.feed.title.substring(this.feed.title.indexOf('@') - 1)
@@ -155,23 +157,15 @@ export class Builder {
     }
 
     _composeStatus(): string {
-
-        let entryAutor = this.entry.author
-        let feedAuthor = ''
-
-        // getting user name and real name of feed author
-        const feedAuthorUserName = this.feed.title.substring(this.feed.title.indexOf('@') - 1)
-        const feedAuthorRealName = this.feed.title.substring(0, this.feed.title.indexOf('/') - 1)
-
         const content = this._getModifedContent()
-        let status = `${content}\n`
+        let status = `${content.trim()}\n`
 
         // modification of status in case when showing the image is enabled
         if (this.opt.ShowImageUrl && this.is.imageIncluded(this.entry.imageUrl)) {
             const imageUrl = this._replaceAmpersands(this.entry.imageUrl)
             const sentence = this.opt.StatusImageUrlSentence ? `${this.opt.StatusImageUrlSentence} ` : ''
 
-            status = `${status}\n${sentence}${imageUrl}`
+            status = `${status}${sentence}${imageUrl}`
         }
 
         // adding status URL to end
@@ -186,7 +180,7 @@ export class Builder {
             || (this.is.repost(this.entry.content) && !this.is.repostOwn(this.entry.content, this.entry.author))
         ) {
             const sentence = this.opt.StatusUrlSentence ? `${this.opt.StatusUrlSentence} ` : ''
-            status = `${status}\n${sentence}${this._statusUrl}`
+            status = `${status}${sentence}${this._statusUrl}`
         }
 
         return status
@@ -212,13 +206,19 @@ export class Builder {
     }
 
     _getContent(): string {
-        if (this.entry.content.length === 0) throw Error('Empty content')
+        let content: string | null = null
 
-        const title = ((this.entry.title?.length ?? 0) !== 0)
-            ? `${this.entry.title}:\n`
-            : ''
+        if (this.entry.content?.length) {
+            content = this.entry.content
+        }
 
-        return `${title}${this.entry.content}`
+        if (this.entry.title?.length) {
+            content = `${this.entry.title ?? ''}${content ? ':\n' : ''}${content ?? ''}`
+        }
+
+        if (!content) throw Error('Empty content')
+
+        return content
     }
 
     /** Replace ZZZZZ and KKKKK with the beginning and the end of content designated to remove */
@@ -271,10 +271,13 @@ export class Builder {
     }
 
     _replaceBasicFormatting(str: string): string {
-        return this._replaceAll(str, {
-            '<br>': '\n',
-            '</p>': '\n',
-        })
+        return this
+            ._replaceAll(str, {
+                '<br>': '\n',
+                '</p>': '\n',
+            })
+            .replace(/\n{2,}/g, '\n')
+            .replace(/ {2,}/g, ' ')
     }
 
     _replaceCzechCharacters(str: string): string {
