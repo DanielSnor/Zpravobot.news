@@ -31,8 +31,6 @@ type DefaultSettings = {
     ShowImageUrl: boolean,
     ShowStatusUrlPerm: boolean,
     StatusUrlSentence: string | null,
-    StaturUrlReplaceSource: string | null,
-    StatusUrlReplaceTarget: string | null,
     StatusImageUrlSentence: string | null,
 }
 
@@ -96,8 +94,6 @@ export class Builder {
             ShowStatusUrlPerm: true,
             StatusImageUrlSentence: null,
             StatusUrlSentence: null,
-            StaturUrlReplaceSource: null,
-            StatusUrlReplaceTarget: null,
             ...settings
         } as DefaultSettings
 
@@ -143,10 +139,9 @@ export class Builder {
         return `status=${status}`
     }
 
-    /** For custom builders, run as the last step in the constructor */
+    /** For custom builders. Starts as the last step in the constructor. */
     setup(): void {
-        this._statusUrl = (this.opt.ShowFeedUrlInsteadPostUrl ? (this.feed.url ?? this.entry.url) : this.entry.url)
-            .replace(this.opt.StaturUrlReplaceSource ?? '', this.opt.StatusUrlReplaceTarget ?? '')
+        this._statusUrl = this.opt.ShowFeedUrlInsteadPostUrl ? (this.feed.url ?? this.entry.url) : this.entry.url
 
         this.feedAuthorUserName = this.feed.title.substring(this.feed.title.indexOf('@') - 1)
         this.feedAuthorRealName = this.feed.title.substring(0, this.feed.title.indexOf('/') - 1)

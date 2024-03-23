@@ -31,8 +31,6 @@ const connector: Connector = {
 const settings: Settings = {
     ShowImageUrl: false,
     ShowStatusUrlPerm: false,
-    StaturUrlReplaceSource: 'https://twitter.com/',
-    StatusUrlReplaceTarget: 'https://twitter.com/',
     StatusUrlSentence: '🔗',
 }
 
