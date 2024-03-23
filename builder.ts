@@ -204,7 +204,7 @@ export class Builder {
             this._contentHack,
             this._trimContent,
         ].reduce(
-            (content: string, callback: (str: string) => string) => callback.call(this, content),
+            (content: string, callback: ContentMiddleware) => callback.call(this, content),
             this._getContent()
         )
     }
@@ -234,7 +234,8 @@ export class Builder {
         if (str.substring(str.length - 2) === ' …') {
             str = str.substring(0, str.length - 1) + '[…]'
         } else if (str.substring(str.length - 1) === '…') {
-            str = str.substring(0, str.length - 1) + ' […]'
+            const lastSpace = str.lastIndexOf(' ')
+            str = str.substring(0, lastSpace) + ' […]'
         }
 
         if (str.length <= this.opt.MaxPostLength) return str
