@@ -140,6 +140,7 @@ class CustomChecker extends Checker {
 class CustomBuilder extends Builder {
     UserInstance: string = 'twitter.com'
     RepostSentence: string = '📤🐦‍⬛'
+    QuoteSentence: string = '📝💬🐦‍⬛'
 
 
     setup(): void {
@@ -163,7 +164,9 @@ class CustomBuilder extends Builder {
             this._changeStatusUrl,
             this._replaceResponseTo,
             this._replaceReposted.bind(this, feedAuthor, entryAutor),
+            this._replaceQuoted.bind(this, entryAutor),
             this._replaceUserNames.bind(this, this.feedAuthorUserName),
+            this._trimContent, // extra trim, because some accounts send shortened content with horizontal ellipsis
         )
     }
 
@@ -205,6 +208,13 @@ class CustomBuilder extends Builder {
             new RegExp('^RT [^>]+: '),
             `${accountName}${sentence}${postAutor}:\n\n`
         )
+    }
+
+    _replaceQuoted(name: string, content: string): string {
+        if (!this.is.quote(content)) return content
+
+        const sentence = this.QuoteSentence ? ` ${this.QuoteSentence}` : ''
+        return `${name}${sentence}:\n\n${content}`
     }
 
     _replaceUserNames(skipName: string, content: string): string {
