@@ -40,12 +40,16 @@ export type Settings = Partial<DefaultSettings>
 export const WITHOUT_IMAGE = 'https://ifttt.com/images/no_image_card.png'
 
 export class Checker {
+    valid(regex: RegExp, str: string): boolean {
+        return regex.test(str)
+    }
+
     imageIncluded(str: string): boolean {
         return str !== WITHOUT_IMAGE
     }
 
     urlIncluded(str: string): boolean {
-        return new RegExp('https?://', 'i').test(str)
+        return this.valid(new RegExp('https?://', 'i'), str)
     }
 
     commercialIncluded(str: string): boolean {
@@ -64,6 +68,11 @@ export class Checker {
     }
 
     responseToSomeoneElse(str: string, authorName: string): boolean {
+        // Default false, implementation in a custom builder
+        return false
+    }
+
+    quote(str: string): boolean {
         // Default false, implementation in a custom builder
         return false
     }
