@@ -1,0 +1,10 @@
+{
+  "name": "zpravobot",
+  "dependencies": {
+    "typescript": "2.9.2"
+  },
+  "scripts": {
+    "test": "clear && tsc main.ts && node main.js",
+    "version": "tsc -v"
+  }
+}
