@@ -1,5 +1,5 @@
 /// Only for DEV - Everyting in this section will be delete and replaced by builder.ts content
-import { type Connector, type Settings, Checker, Builder } from './builder'
+import { Connector, Settings, Checker, Builder } from './builder'
 
 // Constant Data represent injected data from IFTTT
 // Rename the constant and change the strukture according to the current data
@@ -39,8 +39,8 @@ class CustomBuilder extends Builder {
         // call parent setup as first
         super.setup()
 
-        let entryAutor = this.entry.author
-        let feedAuthor = this.feed.title.substring(this.feed.title.indexOf('(') + 1, this.feed.title.indexOf(')'))
+        let entryAutor = this.entry().author
+        let feedAuthor = this.feed().title.substring(this.feed().title.indexOf('(') + 1, this.feed().title.indexOf(')'))
 
         // adding custom content middlewares
         this.addContentMiddlewares(

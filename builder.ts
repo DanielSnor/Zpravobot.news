@@ -109,33 +109,33 @@ export class Builder {
         this.setup()
     }
 
-    get entry(): Entry {
+    entry(): Entry {
         return this._connector.entry
     }
 
-    get feed(): Feed {
+    feed(): Feed {
         return this._connector.feed
     }
 
-    get is(): Checker {
+    is(): Checker {
         return this._checker
     }
 
-    get opt(): DefaultSettings {
+    opt(): DefaultSettings {
         return this._settings
     }
 
     skip(): boolean {
         // if post is response to someone, skip it
-        if (this.is.responseToSomeoneElse(this.entry.content, this.entry.author))
+        if (this.is().responseToSomeoneElse(this.entry().content, this.entry().author))
             return true
 
         // if repost is not allowed and is not own post, skip it
-        if (!this.opt.RepostAllowed && this.is.repost(this.entry.content) && !this.is.repostOwn(this.entry.content, this.entry.author))
+        if (!this.opt().RepostAllowed && this.is().repost(this.entry().content) && !this.is().repostOwn(this.entry().content, this.entry().author))
             return true
 
         // if post contains commercial
-        if (this.is.commercialIncluded(this.entry.title ?? '') || this.is.commercialIncluded(this.entry.content))
+        if (this.is().commercialIncluded(this.entry().title || '') || this.is().commercialIncluded(this.entry().content))
             return true
 
         return false
@@ -150,10 +150,10 @@ export class Builder {
 
     /** For custom builders. Starts as the last step in the constructor. */
     setup(): void {
-        this._statusUrl = this.opt.ShowFeedUrlInsteadPostUrl ? (this.feed.url ?? this.entry.url) : this.entry.url
+        this._statusUrl = this.opt().ShowFeedUrlInsteadPostUrl ? (this.feed().url || this.entry().url) : this.entry().url
 
-        this.feedAuthorUserName = this.feed.title.substring(this.feed.title.indexOf('@') - 1)
-        this.feedAuthorRealName = this.feed.title.substring(0, this.feed.title.indexOf('/') - 1)
+        this.feedAuthorUserName = this.feed().title.substring(this.feed().title.indexOf('@') - 1)
+        this.feedAuthorRealName = this.feed().title.substring(0, this.feed().title.indexOf('/') - 1)
     }
 
     addContentMiddlewares(...middlewares: ContentMiddleware[]): void {
@@ -165,9 +165,9 @@ export class Builder {
         let status = `${content.trim()}\n`
 
         // modification of status in case when showing the image is enabled
-        if (this.opt.ShowImageUrl && this.is.imageIncluded(this.entry.imageUrl)) {
-            const imageUrl = this._replaceAmpersands(this.entry.imageUrl)
-            const sentence = this.opt.StatusImageUrlSentence ? `${this.opt.StatusImageUrlSentence} ` : ''
+        if (this.opt().ShowImageUrl && this.is().imageIncluded(this.entry().imageUrl)) {
+            const imageUrl = this._replaceAmpersands(this.entry().imageUrl)
+            const sentence = this.opt().StatusImageUrlSentence ? `${this.opt().StatusImageUrlSentence} ` : ''
 
             status = `${status}${sentence}${imageUrl}`
         }
@@ -175,15 +175,15 @@ export class Builder {
         // adding status URL to end
         if (
             // is set as permanent
-            this.opt.ShowStatusUrlPerm
+            this.opt().ShowStatusUrlPerm
 
             // no other URLs
-            || (!this.is.urlIncluded(content) && !this.is.imageIncluded(this.entry.imageUrl))
+            || (!this.is().urlIncluded(content) && !this.is().imageIncluded(this.entry().imageUrl))
 
             // is repost URL
-            || (this.is.repost(this.entry.content) && !this.is.repostOwn(this.entry.content, this.entry.author))
+            || (this.is().repost(this.entry().content) && !this.is().repostOwn(this.entry().content, this.entry().author))
         ) {
-            const sentence = this.opt.StatusUrlSentence ? `${this.opt.StatusUrlSentence} ` : ''
+            const sentence = this.opt().StatusUrlSentence ? `${this.opt().StatusUrlSentence} ` : ''
             status = `${status}${sentence}${this._statusUrl}`
         }
 
@@ -212,12 +212,12 @@ export class Builder {
     _getContent(): string {
         let content: string | null = null
 
-        if (this.entry.content?.length) {
-            content = this.entry.content
+        if (this.entry().content && this.entry().content.length) {
+            content = this.entry().content
         }
 
-        if (this.entry.title?.length) {
-            content = `${this.entry.title ?? ''}${content ? ':\n' : ''}${content ?? ''}`
+        if (this.entry().title && this.entry().title.length) {
+            content = `${this.entry().title || ''}${content ? ':\n' : ''}${content || ''}`
         }
 
         if (!content) throw Error('Empty content')
@@ -238,9 +238,9 @@ export class Builder {
             str = str.substring(0, lastSpace) + ' […]'
         }
 
-        if (str.length <= this.opt.MaxPostLength) return str
+        if (str.length <= this.opt().MaxPostLength) return str
 
-        const trimmedText = str.substring(0, this.opt.MaxPostLength - 1).trim()
+        const trimmedText = str.substring(0, this.opt().MaxPostLength - 1).trim()
 
         return str.substring(0, trimmedText.lastIndexOf(' ')) + ' […]'
     }
@@ -263,13 +263,13 @@ export class Builder {
     _replaceAmpersands(str: string): string {
         return str
             .split(' ')
-            .map((word: string) => this.is.urlIncluded(word)
+            .map((word: string) => this.is().urlIncluded(word)
                 ? encodeURI(word).replace(/\&amp;/g, '%26').replace(/\&/g, '%26')
                 : this._replaceAll(word, {
-                    '&amp;': this.opt.AmpersantReplacement,
-                    '&#38;': this.opt.AmpersantReplacement,
-                    '&#038;': this.opt.AmpersantReplacement,
-                    '&': this.opt.AmpersantReplacement,
+                    '&amp;': this.opt().AmpersantReplacement,
+                    '&#38;': this.opt().AmpersantReplacement,
+                    '&#038;': this.opt().AmpersantReplacement,
+                    '&': this.opt().AmpersantReplacement,
                 })
             )
             .join(' ')

@@ -1,5 +1,5 @@
 /// Only for DEV - Everyting in this section will be delete and replaced by builder.ts content
-import { type Connector, type Settings, Checker, Builder, WITHOUT_IMAGE } from './builder'
+import { Connector, Settings, Checker, Builder, WITHOUT_IMAGE } from './builder'
 
 // Constant Data represent injected data from IFTTT
 // Rename the constant and change the strukture according to the current data

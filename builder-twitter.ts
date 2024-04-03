@@ -1,5 +1,5 @@
 /// Only for DEV - Everyting in this section will be delete and replaced by builder.ts content
-import { type Connector, type Settings, Checker, Builder } from './builder'
+import { Connector, Settings, Checker, Builder } from './builder'
 
 // Constant Data represent injected data from IFTTT
 // Rename the constant and change the strukture according to the current data
@@ -147,16 +147,16 @@ class CustomBuilder extends Builder {
         // call parent setup as first
         super.setup()
 
-        let entryAutor = this.entry.author
+        let entryAutor = this.entry().author
         let feedAuthor = ''
 
-        if (this.is.repost(this.entry.content)) {
-            entryAutor = this._findRepostUser(this.entry.content) ?? entryAutor
-            feedAuthor = this.feedAuthorUserName ?? ''
+        if (this.is().repost(this.entry().content)) {
+            entryAutor = this._findRepostUser(this.entry().content) || entryAutor
+            feedAuthor = this.feedAuthorUserName || ''
         } else {
-            feedAuthor = this.opt.ShouldPreferRealName
-                ? this.feedAuthorRealName ?? ''
-                : this.feedAuthorUserName ?? ''
+            feedAuthor = this.opt().ShouldPreferRealName
+                ? this.feedAuthorRealName || ''
+                : this.feedAuthorUserName || ''
         }
 
         // adding custom content middlewares
@@ -190,7 +190,7 @@ class CustomBuilder extends Builder {
 
     _changeStatusUrl(content: string): string {
         // changing URL for the repost
-        this._statusUrl = this._findRepostUrl(content) ?? this._statusUrl
+        this._statusUrl = this._findRepostUrl(content) || this._statusUrl
 
         return content
     }
@@ -211,7 +211,7 @@ class CustomBuilder extends Builder {
     }
 
     _replaceQuoted(name: string, content: string): string {
-        if (!this.is.quote(content)) return content
+        if (!this.is().quote(content)) return content
 
         const sentence = this.QuoteSentence ? ` ${this.QuoteSentence}` : ''
         return `${name}${sentence}:\n\n${content}`
