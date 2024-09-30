@@ -183,7 +183,7 @@ export class Builder {
             // is repost URL
             || (this.is().repost(this.entry().content) && !this.is().repostOwn(this.entry().content, this.entry().author))
         ) {
-            const sentence = this.opt().StatusUrlSentence ? `${this.opt().StatusUrlSentence} ` : ''
+            const sentence = this.opt().StatusUrlSentence ? `${this.opt().StatusUrlSentence} ` : '\n'
             status = `${status}${sentence}${this._statusUrl}`
         }
 
