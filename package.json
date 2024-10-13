@@ -1,15 +1,8 @@
 {
   "name": "zpravobot",
   "dependencies": {
-    "axios": "^1.7.7",
     "dotenv": "^16.4.5",
-    "form-data": "^4.0.1",
     "mysql2": "^3.11.3",
-    "rss-parser": "^3.13.0",
-    "typescript": "2.9.2"
-  },
-  "scripts": {
-    "test": "clear && tsc main.ts && node main.js",
-    "vers": "tsc -v"
+    "rss-parser": "^3.13.0"
   }
 }
