@@ -1,11 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋🐦‍⬛📙📘🐦📺 webhook filter v0.9.4mod - 3.3.2024
+// IFTTT 🦋🐦‍⬛📙📘🐦📺 webhook filter v0.9.5 - 2.1.2025
 ///////////////////////////////////////////////////////////////////////////////
-
-// BS content hack
-function contentHackBS(str: string): string {
-  return str.replace(/(Post by[^>]+:)/gi, "");
-}
 
 // get content from entryContent even if it is an empty from entryTitle
 function getContent(entryContent: any, entryTitle: any): string {
@@ -236,19 +231,6 @@ function replaceHtml(str: string): string {
   return str.replace(/<[^<>]+>/ig, "");
 }
 
-// quote text replacement for BS
-function replaceQuotedBS(
-  str: string,
-  resultFeedAuthor: string,
-  entryAuthor: string
-): string {
-  const regex = new RegExp("(\\[quote\\])");
-  return str.replace(
-    regex,
-    `${resultFeedAuthor} ${SETTINGS.QUOTE_SENTENCE} ${entryAuthor}:\n\n`
-  );
-}
-
 // repost text replacement
 function replaceReposted(
   str: string,
@@ -256,19 +238,6 @@ function replaceReposted(
   entryAuthor: string
 ): string {
   const regex = new RegExp("^(RT ([^>]+): )");
-  return str.replace(
-    regex,
-    `${resultFeedAuthor} ${SETTINGS.REPOST_SENTENCE} ${entryAuthor}:\n\n`
-  );
-}
-
-// repost text replacement for BS
-function replaceRepostedBS(
-  str: string,
-  resultFeedAuthor: string,
-  entryAuthor: string
-): string {
-  const regex = new RegExp("^(Repost ([^>]+): )");
   return str.replace(
     regex,
     `${resultFeedAuthor} ${SETTINGS.REPOST_SENTENCE} ${entryAuthor}:\n\n`
@@ -434,10 +403,7 @@ function composeResultContent(
     // for BS posts get resultFeedAuthor from feedTitle
     resultFeedAuthor = feedTitle.substring(feedTitle.indexOf("(") + 1, feedTitle.indexOf(")"));
     // for BS posts resultContent entryTitle + entryContent
-    resultContent = `${entryTitle}:\n${entryContent}`;
-    resultContent = replaceRepostedBS(resultContent, resultFeedAuthor, entryAuthor);
-    resultContent = replaceQuotedBS(resultContent, resultFeedAuthor, entryAuthor);
-    resultContent = contentHackBS(resultContent);
+    resultContent = `${entryContent}`;
   } else if (SETTINGS.POST_FROM === "TW"){
     // for TW posts get resultFeedAuthor
     if (isRepost(entryTitle)) {

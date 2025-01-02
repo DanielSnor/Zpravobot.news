@@ -1,4 +1,5 @@
 {
   "editor.default_syntax" : "typescript",
-  "workspace.color" : 1
+  "workspace.color" : 1,
+  "workspace.name" : "🤖"
 }
