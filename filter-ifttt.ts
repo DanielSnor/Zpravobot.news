@@ -13,6 +13,13 @@ function getContent(entryContent: any, entryTitle: any): string {
   throw Error("Missing content")
 }
 
+// is quote in BS post? check
+function isBsQuoteInPost(str: string): boolean {
+  if (SETTINGS.QUOTE_SENTENCE === "") return false;
+  const regex = new RegExp(SETTINGS.QUOTE_SENTENCE, "gi");
+  return regex.test(str)
+}
+
 // is commercial in post? check
 function isCommercialInPost(str: string): boolean {
   if (SETTINGS.COMMERCIAL_SENTENCE === "") return false;
@@ -36,15 +43,6 @@ function isRepostOwn(str: string, authorName: string): boolean {
   const regex = new RegExp(`^(RT ${authorName}: )`);
   return regex.test(str);
 };
-
-// is it response to someone else? check
-function isResponseToSomeoneElse(
-  str: string,
-  authorName: string
-): boolean {
-  const regex = new RegExp(`^R to (?!${authorName}: ).*?: `, "gi");
-  return regex.test(str);
-}
 
 // is URL link included? check - gives the possibility to modify status
 function isUrlIncluded(str: string): boolean {
@@ -475,8 +473,8 @@ resultUrl = replaceAmpersands(resultUrl);
 
 // conditions for skipping the post
 if (
-  // if post is response to someone else or repost are not allowed, skip it
-  isResponseToSomeoneElse(entryTitle, entryAuthor)
+  // if post is quote to other BS post, skip it
+  isBsQuoteInPost(entryContent)
   || (
     isRepost(entryTitle)
     && !isRepostOwn(entryTitle, entryAuthor)
