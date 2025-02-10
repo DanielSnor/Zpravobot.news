@@ -444,7 +444,9 @@ function trimContent(str: string): string {
 }
 
 function trimUrl(str: string): string {
-  if (str.indexOf("?")) return str.substring(0, str.lastIndexOf("?"))
+	return str.indexOf("?") > -1
+	  ? str.substring(0, str.lastIndexOf("?"))
+	  : str;
 }
 
 function findRepostUrl(str: string): string | null {
