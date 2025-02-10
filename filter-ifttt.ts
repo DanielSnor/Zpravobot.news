@@ -374,9 +374,8 @@
   
   // URL shortening - if content continues behind ?, it will be shorten before ?
   function trimUrl(str: string): string {
-    if (str.indexOf("?")) return str.substring(0, str.lastIndexOf("?") - 1)
+    if (str.indexOf("?")) return str.substring(0, str.lastIndexOf("?"))
   }
-
   function findRepostUrl(str: string): string | null {
     const regex = new RegExp('href="(?<url>https:\/\/twitter\.com[^"]+)"', 'gi')
     const matches = regex.exec(str)
