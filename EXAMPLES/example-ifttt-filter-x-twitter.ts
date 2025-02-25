@@ -21,11 +21,11 @@ interface AppSettings {
   STATUS_URL_SENTENCE: string; // URL prefix/suffix formatting
 }
 
-// Application settings configuration
+// application settings configuration
 const SETTINGS: AppSettings = {
   AMPERSAND_REPLACEMENT: `a`, // replacement for & char
   COMMERCIAL_SENTENCE: "", // "" | "Komerční sdělení:"
-  MANDATORY_KEYWORDS: [], // Keyword array ["news", "updates", "important"]
+  MANDATORY_KEYWORDS: [], // keyword array ["news", "updates", "important"]
   POST_FROM: "TW", // "BS" | "RSS" | "TW" | "YT"
   POST_LENGTH: 444, // 0 - 500 chars
   POST_SOURCE: `https://twitter.com/`, // "" | `https://twitter.com/` | `https://x.com/`
@@ -75,7 +75,7 @@ interface ObjectConstructor {
   } | ArrayLike < T > ): [string, T][];
 }
 
-// Character mapping for text normalization
+// character mapping for text normalization
 const characterMap: {
   [key: string]: string } = {
   // basic text formatting replacement
