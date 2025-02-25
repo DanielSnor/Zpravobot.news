@@ -24,7 +24,7 @@ interface AppSettings {
 const SETTINGS: AppSettings = {
   AMPERSAND_REPLACEMENT: `a`, // replacement for & char
   COMMERCIAL_SENTENCE: "", // "" | "Komerční sdělení:"
-  MANDATORY_KEYWORDS: [], // Keyword array ["news", "updates", "important"]
+  MANDATORY_KEYWORDS: [], // keyword array ["news", "updates", "important"]
   POST_FROM: "RSS", // "BS" | "NT" | "RSS" | "TW" | "YT"
   POST_LENGTH: 444, // 0 - 500 chars
   POST_SOURCE: "", // "" | `https://twitter.com/` | `https://x.com/`
