@@ -1,5 +1,5 @@
 # Zpravobot.news
-Zpravobot.news 📰🤖 (means Newsbot.news in Czech) is run by Daniel Šnor as a public utility 🖥️⌨️, which🪞popular and majority 🇨🇿 X/🐦 accounts bringing to 🐘 otherwise missing 📰, ⚽️🏒🏎️, information about 📱⌚️💻📡, 🎞️🎶🎭, and sometimes 🤣🤪.
+[Zprávobot.news](https://zpravobot.news) 📰🤖 (means Newsbot.news in Czech) is run by Daniel Šnor as a public utility 🖥️⌨️, which🪞popular and majority 🇨🇿 X/🐦 accounts bringing to 🐘 otherwise missing 📰, ⚽️🏒🏎️, information about 📱⌚️💻📡, 🎞️🎶🎭, and sometimes 🤣🤪.
 
 ## The mission
 This project is focused on developing the IFTTT applet filter script, which is used on the IFTTT server for bots (applets) and fulfils content for standard Mastodon server users.
@@ -43,11 +43,22 @@ For X/Twitter and YouTube, the applet uses specific settings.
 - use the "New tweet from search" trigger
 - as a "Search for" phrase use "from:twitterUsername -is:reply OR from:twitterUsername to:twitterUsername" (this will filter replies to other Twitter users)
 - if you want to filter also retweets and quotes, use "from:twitterUsername -is:reply -is:retweet -is:quote OR from:twitterUsername to:twitterUsername"
-- you can also search for some specific hashtag - use "#ptamseja -is:reply -is:retweet"
+- you can also search for some specific hashtag - use "#specifichashtag -is:reply -is:retweet"
 
 #### YouTube
 - use the "New public video from subscriptions" trigger
 - in "Which subscription?" select the appropriate YT subscription
 
 ### That's all!
+If you like [Zprávobot.news](https://zpravobot.news) server or this repo and want me support in my activities related to Zpravobot.news, you can do that via following ways:
+
+* 🏦 IBAN: CZ8830300000001001612070
+* 🖥️ [https://forendors.cz/zpravobot](https://forendors.cz/zpravobot)
+* ☕️ [https://ko-fi.com/zpravobot](https://ko-fi.com/zpravobot)
+* 💳 [https://revolut.me/zpravobot](https://revolut.me/zpravobot)
+
+![QR code for bank transfer](https://zpravobot.news/system/media_attachments/files/113/069/699/996/938/723/original/824504de17667be7.jpeg 'QR Kód')
+
+Thank you for your support.
+
 (Prague, Feb 25, 2025)
