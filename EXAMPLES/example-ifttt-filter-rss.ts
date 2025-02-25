@@ -74,7 +74,7 @@ interface ObjectConstructor {
   } | ArrayLike < T > ): [string, T][];
 }
 
-// Character mapping for text normalization
+// character mapping for text normalization
 const characterMap: {
   [key: string]: string
 } = {
