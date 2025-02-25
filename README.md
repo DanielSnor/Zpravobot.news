@@ -50,7 +50,7 @@ For X/Twitter and YouTube, the applet uses specific settings.
 - in "Which subscription?" select the appropriate YT subscription
 
 ### That's all!
-If you like [Zprávobot.news](https://zpravobot.news) server or this repo and want me support in my activities related to Zpravobot.news, you can do that via following ways:
+Suppose you like [Zprávobot.news](https://zpravobot.news) or this repo and want to support me in my activities related to Zpravobot.news, you can do that via the following ways:
 
 * 🏦 IBAN: CZ8830300000001001612070
 * 🖥️ [https://forendors.cz/zpravobot](https://forendors.cz/zpravobot)
