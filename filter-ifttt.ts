@@ -1,9 +1,143 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📘𝕏📺 webhook filter v1.0 RC1 - 15.2.2025
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v1.0 - 25.2.2025
 ///////////////////////////////////////////////////////////////////////////////
 
-// get content from entryContent even if it is an empty from entryTitle
+// type definitions for string manipulation
+interface String {
+  startsWith(searchString: string, position ? : number): boolean;
+  endsWith(searchString: string, endPosition ? : number): boolean;
+}
+
+interface ObjectConstructor {
+  entries < T > (o: {
+    [s: string]: T
+  } | ArrayLike < T > ): [string, T][];
+}
+
+// Character mapping for text normalization
+const characterMap: {
+  [key: string]: string
+} = {
+  // basic text formatting replacement
+  '(<br>|<br />|</p>)': '\n',
+  // czech chars replacement
+  '(&#193;|&Aacute;|A&#769;)': 'Á',
+  '(&#225;|&aacute;|a&#769;)': 'á',
+  '(&#196;|&Auml;|A&#776;)': 'Ä',
+  '(&#228;|&auml;|a&#776;)': 'ä',
+  '(&#268;|&Ccaron;|C&#780;)': 'Č',
+  '(&#269;|&ccaron;c&#780;)': 'č',
+  '(&#270;|&Dcaron;|D&#780;)': 'Ď',
+  '(&#271;|&dcaron;|d&#780;)': 'ď',
+  '(&#201;|&Eacute;|E&#769;)': 'É',
+  '(&#233;|&eacute;|e&#769;)': 'é',
+  '(&#203;|&Euml;|E&#776;)': 'Ë',
+  '(&#235;|&euml;|e&#776;)': 'ë',
+  '(&#282;|&Ecaron;|E&#780;)': 'Ě',
+  '(&#283;|&ecaron;|e&#780;)': 'ě',
+  '(&#205;|&Iacute;|I&#769;)': 'Í',
+  '(&#237;|&iacute;|i&#769;)': 'í',
+  '(&#207;|&Luml;|I&#776;)': 'Ï',
+  '(&#239;|&iuml;|i&#776;)': 'ï',
+  '(&#327;|&Ncaron;|N&#780;)': 'Ň',
+  '(&#328;|&ncaron;|n&#780;)': 'ň',
+  '(&#211;|&Oacute;|O&#769;)': 'Ó',
+  '(&#243;|&oacute;|o&#769;)': 'ó',
+  '(&#214;|&Ouml;|O&#776;)': 'Ö',
+  '(&#246;|&ouml;|o&#776;)': 'ö',
+  '(&#336;|&Odblac;|O&#778;)': 'Ő',
+  '(&#337;|&odblac;|o&#778;)': 'ő',
+  '(&#344;|&Rcaron;|R&#780;)': 'Ř',
+  '(&#345;|&rcaron;|r&#780;)': 'ř',
+  '(&#352;|&Scaron;|S&#780;)': 'Š',
+  '(&#353;|&scaron;|s&#780;)': 'š',
+  '(&#356;|&Tcaron;|T&#780;)': 'Ť',
+  '(&#357;|&tcaron;|t&#780;)': 'ť',
+  '(&#218;|&Uacute;|U&#769;)': 'Ú',
+  '(&#250;|&uacute;|u&#769;)': 'ú',
+  '(&#220;|&Uuml;|U&#776;)': 'Ü',
+  '(&#252;|&uuml;|u&#776;)': 'ü',
+  '(&#366;|&Uring;|U&#778;)': 'Ů',
+  '(&#367;|&uring;|u&#778;)': 'ů',
+  '(&#368;|&Udblac;|U&#369;)': 'Ű',
+  '(&#369;|&udblac;|u&#369;)': 'ű',
+  '(&#221;|&Yacute;|Y&#769;)': 'Ý',
+  '(&#253;|&yacute;|y&#769;)': 'ý',
+  '(&#381;|&Zcaron;|Z&#780;)': 'Ž',
+  '(&#382;|&zcaron;|z&#780;)': 'ž',
+  // special chars replacement
+  '(&#09;|&#009;|&#10;|&#010;|&#13;|&#013;|&#32;|&#032;|&#160;|&nbsp;|&#8192;|&#8193;|&#8194;|&#8195;|&#8196;|&#8197;|&#8198;|&#8199;|&#8200;|&#8201;|&#8202;|&#8203;|&#8204;|&#8205;|&#8206;|&#8207;|&#xA0;|&NonBreakingSpace;)': ' ',
+  '(&#33;|&#033;|&excl;|&#x21;)': '!',
+  '(&#34;|&#034;|&quot;|&#x22;)': '"',
+  '(&#36;|&#036;|&dollar;|&#x24;|&#65284;|&#xFF04;)': '$',
+  '(&#37;|&#037;|&percnt;|&#x25;)': '%',
+  '(&#39;|&#039;|&apos;|&#x27;)': '‘',
+  '(&#40;|&#040;|&lpar;|&#x28;)': '(',
+  '(&#41;|&#041;|&rpar;|&#x29;)': ')',
+  '(&#43;|&#043;|&plus;|&#x2B;|&#x2b;)': '+',
+  '(&#46;|&#046;|&period;)': '.',
+  '(&#60;|&#060;|&lt;|&#x3c;)': '<',
+  '(&#61;|&#061;|&equals;|&#x3d;)': '=',
+  '(&#62;|&#062;|&gt;|&#x3e;)': '>',
+  '(&#63;|&#063;|&quest;|&#x3f;)': '?',
+  '(&#91;|&#091;|&lbrack;|&#x5b;)': '[',
+  '(&#93;|&#093;|&rbrack;|&#x5d;)': ']',
+  '(&#95;|&#095;|&lowbar;|&#x5f;)': '_',
+  '(&#123;|&lbrace;|&#x7b;)': '{',
+  '(&#124;|&vert;|&#x7c;|&VerticalLine;)': '|',
+  '(&#125;|&rbrace;|&#x7d;)': '}',
+  '(&#137;|&permil;|&#x89;)': '‰',
+  '(&#139;|&#x8B;|&#x8b;)': '‹',
+  '(&#155;|&#x9B;|&#x9b;)': '›',
+  '(&#162;|&cent;|&#xa2;|&#65504;|&#xFFE0;)': '¢',
+  '(&#163;|&pound;|&#xa3;|&#65505;|&#xFFE1;)': '£',
+  '(&#165;|&yen;|&#xa5;|&#65509;|&#xFFE5;)': '¥',
+  '(&#169;|&copy;|&#xA9;|&#xa9;)': '©',
+  '(&#173;|&#xAD;|&shy;)': '',
+  '(&#174;|&reg;|&#xAE;|&#xae;)': '®',
+  '(&#176;|&deg;|&#xb0;)': '°',
+  '(&#177;|&plusmn;|&#xb1;)': '±',
+  '(&#183;|&centerdot;|&#xB7;)': '·',
+  '(&#188;|&frac14;|&#xBC;)': '¼',
+  '(&#189;|&half;|&#xBD;)': '½',
+  '(&#190;|&frac34;|&#xBE;)': '¾',
+  '(&#215;|&times;|&#xd7;)': '×',
+  '(&#247;|&divide;|&#xf7;)': '÷',
+  '(&#8208;|&hyphen;|&#x2010;|&#8209;|&#x2011;|&#8210;|&#x2012;|&#8211;|&ndash;|&#x2013;|&#8212;|&mdash;|&#x2014;|&#8213;|&horbar;|&#x2015;)': '-',
+  '(&#8216;|&lsquo;|&OpenCurlyQuote;|&#x2018;)': '‘',
+  '(&#8217;|&rsquo;|&CloseCurlyQuote;|&#x2019;)': '’',
+  '(&#8218;|&sbquo;|&#x201A;|&#x201a;)': '‚',
+  '(&#8219;|&#x201B;|&#x201b;)': '‛',
+  '(&#8220;|&ldquo;|&OpenCurlyDoubleQuote;|&#x201C;|&#x201c;)': '“',
+  '(&#8221;|&rdquo;|&CloseCurlyDoubleQuote;|&#x201D;|&#x201d;)': '”',
+  '(&#8222;|&bdquo;|&#x201E;|&#x201e;)': '„',
+  '(&#8223;|&#x201F;|&#x201f;)': '‟',
+  '(&#8230;|&hellip;|&mldr;|&#x2026;)': '…',
+  '(&#8241;|&pertenk;|&#x2031;)': '‱',
+  '(&#8242;|&prime;|&#x2032;)': '′',
+  '(&#8243;|&Prime;&#x2033;)': '″',
+  '(&#8364;|&euro;|&#x20AC;)': '€',
+  '(&#8451;|&#x2103;)': '℃',
+  '(&#8482;|&trade;|&#x2122;)': '™',
+  '(&#8722;|&minus;|&#x2212;)': '-',
+  '(&#8776;|&thickapprox;|&#x2248;)': '≈',
+  '(&#8800;|&ne;|&#x2260;)': '≠',
+  '(&#9001;|&#x2329;)': '⟨',
+  '(&#9002;|&#x232A;|&#x232a;)': '⟩',
+};
+
+// precompiled regular expression patterns for content processing
+const COMMERCIAL_REGEX = new RegExp(SETTINGS.COMMERCIAL_SENTENCE, "gi"); // commercial content detection
+const HTML_TAG_REGEX = /<(?!br|\/p|br\/)[^>]+>/gi; // HTML tag removal (preserving line breaks)
+const RESPONSE_PREFIX_REGEX = /^R to (.*?): /; // response prefix detection
+const REPOST_URL_REGEX = new RegExp('href="(?<url>https:\/\/twitter\.com[^"]+)"', 'gi'); // repost URL extraction
+const REPOST_USER_REGEX = new RegExp('RT (@[a-z0-9_]+)', 'gi'); // repost username extraction
+const QUOTE_REGEX = new RegExp(SETTINGS.QUOTE_SENTENCE, "gi"); // quote detection
+const URL_REGEX = /https?:\/\//i; // URL validation
+
+// content retrieval with fallback - get content from entryContent even if it is an empty from entryTitle
 function getContent(entryContent: any, entryTitle: any): string {
+  // returns content from entryContent, or entryTitle if content is empty
   if (typeof entryContent === "string" && entryContent.length > 0) {
     return entryContent;
   }
@@ -15,393 +149,178 @@ function getContent(entryContent: any, entryTitle: any): string {
 
 // is quote in BS post? check
 function isBsQuoteInPost(str: string): boolean {
-  if (SETTINGS.QUOTE_SENTENCE === "") return false;
-  const regex = new RegExp(SETTINGS.QUOTE_SENTENCE, "gi");
-  return regex.test(str)
+  // checks if the string contains a quote post
+  return SETTINGS.QUOTE_SENTENCE !== "" && QUOTE_REGEX.test(str);
 }
 
-// is commercial in post? check
+// commercial content detection
 function isCommercialInPost(str: string): boolean {
-  if (SETTINGS.COMMERCIAL_SENTENCE === "") return false;
-  const regex = new RegExp(SETTINGS.COMMERCIAL_SENTENCE, "gi");
-  return regex.test(str)
+  // checks if the string contains a commercial sentence
+  return SETTINGS.COMMERCIAL_SENTENCE !== "" && COMMERCIAL_REGEX.test(str);
 }
 
-// is image in post? check
+// image presence validation
 function isImageInPost(str: string): boolean {
+  // checks if the string is an image
   return str !== "https://ifttt.com/images/no_image_card.png";
 }
 
-// is it repost? check
+// repost detection
 function isRepost(str: string): boolean {
-  const regex = new RegExp("^(RT ([^>]+): )");
-  return regex.test(str);
-};
+  // checks if the string starts with "RT @"
+  return /^RT @[^:]+:/.test(str);
+}
 
-// is it own repost? check
+// self-repost detection
 function isRepostOwn(str: string, authorName: string): boolean {
+  // checks if the string is a repost of the same user
   const regex = new RegExp(`^(RT ${authorName}: )`);
   return regex.test(str);
 };
 
-// is URL link included? check - gives the possibility to modify status
+// URL presence check - gives the possibility to modify status
 function isUrlIncluded(str: string): boolean {
-  const regex = new RegExp("((https|http)://)", "gi");
-  return regex.test(str);
+  // checks if the string contains a URL
+  return URL_REGEX.test(str);
 }
 
-// Replaces the substring specified by the key with a string of value
-function replaceAll(str: string, replacements: Record<string, string>, caseSensitive = false): string {
-  for (const find in replacements) {
-    const regex = new RegExp(find, caseSensitive ? 'g' : 'ig')
-    const replaceValue = replacements[find];
-    str = str.replace(regex, replaceValue);
+// keywords validation in content
+function mustContainKeywords(str: string, keywords: string[]): boolean {
+  // checks if the string contains at least one of the specified keywords
+  if (!keywords || keywords.length === 0) {
+    return true; // if no keywords are defined, publish everything
   }
-  return str
+  var lowerCaseStr = str.toLowerCase();
+  for (var i = 0; i < keywords.length; i++) {
+    if (lowerCaseStr.indexOf(keywords[i].toLowerCase()) !== -1) {
+      return true; // if at least one keyword is present, return true
+    }
+  }
+
+  return false; // if no keywords were found, return false
 }
 
-// & char replacement
+// string replacement - utility replaces the substring specified by the key with a string of value
+function replaceAll(str: string, replacements: Record < string, string > , caseSensitive = false): string {
+  // replaces all occurrences of substrings in str with the values from the replacements object
+  const regex = new RegExp(Object.keys(replacements).join('|'), caseSensitive ? 'g' : 'ig');
+  return str.replace(regex, match => replacements[match]);
+}
+
+// ampersand replacement with URL preservation
 function replaceAmpersands(str: string): string {
-  const words = str.split(" ");
-
-  return words
-    .map((word: string) => {
-      return isUrlIncluded(word)
-        ? encodeURI(trimUrl(word))
-        : replaceAll(word, {
-          '&amp;': SETTINGS.AMPERSAND_REPLACEMENT,
-          '&#38;': SETTINGS.AMPERSAND_REPLACEMENT,
-          '&#038;': SETTINGS.AMPERSAND_REPLACEMENT,
-          '&': SETTINGS.AMPERSAND_REPLACEMENT,
-        });
-    })
-    .join(" ");
+  // replaces ampersands in the string, but not in YouTube URLs
+  return str.replace(/(\S+)/g, word => {
+    if (isUrlIncluded(word)) {
+      if (/youtu/.test(word)) {
+        return word;
+      }
+      return encodeURI(trimUrl(word));
+    }
+    return word.replace(/&(amp;|#38;|#038;)?/g, SETTINGS.AMPERSAND_REPLACEMENT);
+  });
 }
 
-// basic text formatting replacement
-function replaceBasicFormatting(str: string): string {
-  return replaceAll(str, {
-    '<br>': '\n',
-    '</p>': '\n',
-  })
+// HTML and special character processing
+function replaceAllSpecialCharactersAndHtml(str: string): string {
+  // remove all HTML tags except <br> and </p>
+  str = str.replace(HTML_TAG_REGEX, '');
+
+  // replace <br> and </p> with \n
+  str = str.replace(/<(br|br\/|\/p)[^>]*>/gi, "\n");
+
+  // special chars replacement
+  for (const [pattern, replacement] of Object.entries(characterMap)) {
+    const regex = new RegExp(pattern, "g");
+    str = str.replace(regex, replacement);
+  }
+
+  return str;
 }
 
-// czech chars replacement
-function replaceCzechCharacters(str: string): string {
-  return replaceAll(str, {
-    '&#193;': 'Á',
-    '&Aacute;': 'Á',
-    'A&#769;': 'Á',
-    '&#196;': 'Ä',
-    '&Auml;': 'Ä',
-    'A&#776;': 'Ä',
-    '&#201;': 'É',
-    '&Eacute;': 'É',
-    'E&#769;': 'É',
-    '&#203;': 'Ë',
-    '&Euml;': 'Ë',
-    'E&#776;': 'Ë',
-    '&#205;': 'Í',
-    '&Lacute;': 'Í',
-    'I&#769;': 'Í',
-    '&#207;': 'Ï',
-    '&Luml;': 'Ï',
-    'I&#776;': 'Ï',
-    '&#211;': 'Ó',
-    '&Oacute;': 'Ó',
-    'O&#769;': 'Ó',
-    '&#214;': 'Ö',
-    '&Ouml;': 'Ö',
-    'O&#776;': 'Ö',
-    '&#218;': 'Ú',
-    '&Uacute;': 'Ú',
-    'U&#769;': 'Ú',
-    '&#220;': 'Ü',
-    '&Uuml;': 'Ü',
-    'U&#776;': 'Ü',
-    '&#221;': 'Ý',
-    '&Yacute;': 'Ý',
-    'Y&#769;': 'Ý',
-    '&#225;': 'á',
-    '&aacute;': 'á',
-    'a&#769;': 'á',
-    '&#228;': 'ä',
-    '&auml;': 'ä',
-    'a&#776;': 'ä',
-    '&#233;': 'é',
-    '&eacute;': 'é',
-    'e&#769;': 'é',
-    '&#235;': 'ë',
-    '&euml;': 'ë',
-    'e&#776;': 'ë',
-    '&#237;': 'í',
-    '&iacute;': 'í',
-    'i&#769;': 'í',
-    '&#239;': 'ï',
-    '&iuml;': 'ï',
-    'i&#776;': 'ï',
-    '&#243;': 'ó',
-    '&oacute;': 'ó',
-    'o&#769;': 'ó',
-    '&#246;': 'ö',
-    '&ouml;': 'ö',
-    'o&#776;': 'ö',
-    '&#250;': 'ú',
-    '&uacute;': 'ú',
-    'u&#769;': 'ú',
-    '&#252;': 'ü',
-    '&uuml;': 'ü',
-    'u&#776;': 'ü',
-    '&#253;': 'ý',
-    '&yacute;': 'ý',
-    'y&#769;': 'ý',
-    '&#268;': 'Č',
-    '&Ccaron;': 'Č',
-    'C&#780;': 'Č',
-    '&#269;': 'č',
-    '&ccaron;': 'č',
-    'c&#780;': 'č',
-    '&#270;': 'Ď',
-    '&Dcaron;': 'Ď',
-    'D&#780;': 'Ď',
-    '&#271;': 'ď',
-    '&dcaron;': 'ď',
-    'd&#780;': 'ď',
-    '&#282;': 'Ě',
-    '&Ecaron;': 'Ě',
-    'E&#780;': 'Ě',
-    '&#283;': 'ě',
-    '&ecaron;': 'ě',
-    'e&#780;': 'ě',
-    '&#327;': 'Ň',
-    '&Ncaron;': 'Ň',
-    'N&#780;': 'Ň',
-    '&#328;': 'ň',
-    '&ncaron;': 'ň',
-    'n&#780;': 'ň',
-    '&#336;': 'Ő',
-    '&Odblac;': 'Ő',
-    'O&#778;': 'Ő',
-    '&#337;': 'ő',
-    '&odblac;': 'ő',
-    'o&#778;': 'ő',
-    '&#344;': 'Ř',
-    '&Rcaron;': 'Ř',
-    'R&#780;': 'Ř',
-    '&#345;': 'ř',
-    '&rcaron;': 'ř',
-    'r&#780;': 'ř',
-    '&#352;': 'Š',
-    '&Scaron;': 'Š',
-    'S&#780;': 'Š',
-    '&#353;': 'š',
-    '&scaron;': 'š',
-    's&#780;': 'š',
-    '&#356;': 'Ť',
-    '&Tcaron;': 'Ť',
-    'T&#780;': 'Ť',
-    '&#357;': 'ť',
-    '&tcaron;': 'ť',
-    't&#780;': 'ť',
-    '&#366;': 'Ů',
-    '&Uring;': 'Ů',
-    'U&#778;': 'Ů',
-    '&#367;': 'ů',
-    '&uring;': 'ů',
-    'u&#778;': 'ů',
-    '&#368;': 'Ű',
-    '&Udblac;': 'Ű',
-    'U&#369;': 'Ű',
-    '&#369;': 'ű',
-    '&udblac;': 'ű',
-    'u&#369;': 'ű',
-    '&#381;': 'Ž',
-    '&Zcaron;': 'Ž',
-    'Z&#780;': 'Ž',
-    '&#382;': 'ž',
-    '&zcaron;': 'ž',
-    'z&#780;': 'ž',
-  }, true)
-}
-
-// html removal
-function replaceHtml(str: string): string {
-  return str.replace(/<[^<>]+>/ig, "");
-}
-
-// repost text replacement
+// repost text formatting
 function replaceReposted(
   str: string,
   resultFeedAuthor: string,
   entryAuthor: string
 ): string {
+  // replaces "RT @..." with the repost sentence and author.
   const regex = new RegExp("^(RT ([^>]+): )");
   return str.replace(
     regex,
-    `${resultFeedAuthor} ${SETTINGS.REPOST_SENTENCE} ${entryAuthor}:\n\n`
+    `${resultFeedAuthor}${SETTINGS.REPOST_SENTENCE}${entryAuthor}:\n`
   );
 }
 
-// removal of R mark for threads
+// thread response marker removal
 function replaceResponseTo(str: string) {
+  // removes "R to (.*?): " from the beginning of the string
   const regex = new RegExp("^R to (.*?): ");
   return str.replace(regex, "");
 }
 
-// special chars replacement
-function replaceSpecialCharacters(str: string): string {
-  return replaceAll(str, {
-    '&#09;': ' ',
-    '&#009;': ' ',
-    '&#10;': ' ',
-    '&#010;': ' ',
-    '&#13;': ' ',
-    '&#013;': ' ',
-    '&#32;': ' ',
-    '&#032;': ' ',
-    '&#33;': '!',
-    '&#033;': '!',
-    '&excl;': '!',
-    '&#34;': '"',
-    '&#034;': '"',
-    '&quot;': '"',
-    '&#37;': '%',
-    '&#037;': '%',
-    '&percnt;': '%',
-    '&#39;': '‘',
-    '&#039;': '‘',
-    '&apos;': '‘',
-    '&#40;': '(',
-    '&#040;': '(',
-    '&lpar;': '(',
-    '&#41;': ')',
-    '&#041;': ')',
-    '&rpar;': ')',
-    '&#46;': '.',
-    '&#046;': '.',
-    '&period;': '.',
-    '&#60;': '<',
-    '&#060;': '<',
-    '&lt;': '<',
-    '&#61;': '=',
-    '&#061;': '=',
-    '&equals;': '=',
-    '&#62;': '>',
-    '&#062;': '>',
-    '&gt;': '>',
-    '&#160;': ' ',
-    '&nbsp;': ' ',
-    '&#173;': '',
-    '&#xAD;': '',
-    '&shy;': '',
-    '&#8192;': ' ',
-    '&#8193;': ' ',
-    '&#8194;': ' ',
-    '&#8195;': ' ',
-    '&#8196;': ' ',
-    '&#8197;': ' ',
-    '&#8198;': ' ',
-    '&#8199;': ' ',
-    '&#8200;': ' ',
-    '&#8201;': ' ',
-    '&#8202;': ' ',
-    '&#8203;': ' ',
-    '&#8204;': ' ',
-    '&#8205;': ' ',
-    '&#8206;': ' ',
-    '&#8207;': ' ',
-    '&#8208;': '-',
-    '&#x2010;': '-',
-    '&hyphen;': '-',
-    '&#8209;': '-',
-    '&#x2011;': '-',
-    '&#8211;': '–',
-    '&ndash;': '–',
-    '&#8212;': '—',
-    '&mdash;': '—',
-    '&#8216;': '‘',
-    '&lsquo;': '‘',
-    '&#8217;': '’',
-    '&rsquo;': '’',
-    '&#8218;': '‚',
-    '&sbquo;': '‚',
-    '&#8219;': '‛',
-    '&#8220;': '“',
-    '&ldquo;': '“',
-    '&#8221;': '”',
-    '&rdquo;': '”',
-    '&#8222;': '„',
-    '&bdquo;': '„',
-    '&#8223;': '‟',
-    '&#8230;': '…',
-    '&hellip;': '…',
-    '&#8242;': '′',
-    '&prime;': '′',
-    '&#8243;': '″',
-    '&Prime;': '″',
-    '&#43;': '+',
-    '&plus;': '+',
-    '&#8722;': '-',
-    '&minus;': '-',  
-    '&#215;': '×',
-    '&times;': '×',  
-    '&#247;': '÷',
-    '&divide;': '÷',  
-    '&#8800;': '≠',
-    '&ne;': '≠',  
-  });
-}
-
-// user names extension for POST_TARGET
+// usernames formatting
 function replaceUserNames(
   str: string,
   skipName: string
 ): string {
-  // Adds POST_TARGET to all @usernames except the skipName
+  // adds POST_TARGET to all @usernames except the skipName
   const regex = new RegExp(
-    `(?<![a-zA-Z0-9])(?!${skipName})(@([a-zA-Z0-9_]+))`,
+    `(?<![a-zA-Z0-9])(?!${skipName})(@.([a-zA-Z0-9_]+))`,
     "gi"
   );
   return str.replace(regex, `$1${SETTINGS.USER_INSTANCE}`);
 }
 
-// content shortening - if content is longer than POST_LENGHT, it will be shorten to POST_LENGHT, then to last space + […]
+// content length management - if content is longer than POST_LENGHT, it will be shorten to POST_LENGHT, then to last space + […]
 function trimContent(str: string): string {
-  if (str.substring(str.length - 2) === " …") {
-    str = str.substring(0, str.length - 1) + "[…]";
-  } else if (str.substring(str.length - 1) === "…") {
-    str = str.substring(0, str.length - 1) + " […]";
+  // shortens the content to POST_LENGTH and adds "[…]"
+  // mod elipses at the end
+  if (str.endsWith(" …")) {
+    str = str.slice(0, -2) + "[…]";
+  } else if (str.endsWith("…")) {
+    str = str.slice(0, -1) + " […]";
   }
+
   if (str.length <= SETTINGS.POST_LENGTH) return str;
-  const trimmedText = str.substring(0, SETTINGS.POST_LENGTH - 1).trim();
-  return str.substring(0, trimmedText.lastIndexOf(" ")) + " […]"
+
+  let trimmedText = str.slice(0, SETTINGS.POST_LENGTH).trim();
+  const lastSpaceIndex = trimmedText.lastIndexOf(" ");
+
+  return lastSpaceIndex > 0 ?
+    trimmedText.slice(0, lastSpaceIndex) + " […]" :
+    trimmedText + " […]";
 }
 
 // URL shortening - if content continue behind ?, it will be shorten before ?
 function trimUrl(str: string): string {
-return str.indexOf("?") > -1
-  ? str.substring(0, str.lastIndexOf("?"))
-  : str;
+  // shortens the URL by removing everything after the "?" character
+  return str.indexOf("?") > -1 ?
+    str.substring(0, str.lastIndexOf("?")) :
+    str;
 }
 
+// repost URL extraction
 function findRepostUrl(str: string): string | null {
-  const regex = new RegExp('href="(?<url>https:\/\/twitter\.com[^"]+)"', 'gi')
-  const matches = regex.exec(str)
-  return matches ? matches[1] : null
+  // finds the repost URL in a string using a regular expression
+  const matches = REPOST_URL_REGEX.exec(str);
+  return matches ? matches[1] : null;
 }
 
+// repost username extraction
 function findRepostUser(str: string): string {
-  const regex = new RegExp('RT (@[a-z0-9_]+)', 'gi')
-  const matches = regex.exec(str)
-  return matches ? matches[1] : ''
+  // finds the repost username in a string using a regular expression
+  const matches = REPOST_USER_REGEX.exec(str);
+  return matches ? matches[1] : '';
 }
 
-// resultContent composition
+// final content composition
 function composeResultContent(
   entryTitle: string,
   entryAuthor: string,
   feedTitle: string
 ): string {
+  // composes the final result content based on the source (POST_FROM)
   let resultContent = "";
   // getting user name and real name of feed author
   const feedAuthorUserName = feedTitle.substring(feedTitle.indexOf("@") - 1);
@@ -409,35 +328,35 @@ function composeResultContent(
   let resultFeedAuthor = "";
 
   // content blocks based on POST_FROM
-  if (SETTINGS.POST_FROM === "BS"){
-    // for BS posts get resultFeedAuthor from feedTitle
-    resultFeedAuthor = feedTitle.substring(feedTitle.indexOf("(") + 1, feedTitle.indexOf(")"));
-    // for BS posts resultContent entryTitle + entryContent
-    resultContent = `${entryContent}`;
-  } else if (SETTINGS.POST_FROM === "TW"){
-    // for TW posts get resultFeedAuthor
-    if (isRepost(entryTitle)) {
-      entryAuthor = findRepostUser(entryTitle);
-      resultFeedAuthor = feedAuthorUserName;
-    } else {
-      resultFeedAuthor = SETTINGS.SHOULD_PREFER_REAL_NAME
-        ? feedAuthorRealName
-        : feedAuthorUserName;
-    }
-    // for TW posts just entryTitle
-    resultContent = entryTitle;
-    resultContent = replaceReposted(resultContent, resultFeedAuthor, entryAuthor);
-    resultContent = replaceResponseTo(resultContent);
-    resultContent = replaceUserNames(resultContent, feedAuthorUserName);
-  } else {
-    // for posts from RSS getContent
-    resultContent = getContent(entryContent, entryTitle);
+  switch (SETTINGS.POST_FROM) {
+    case "BS":
+      // for BS posts get resultFeedAuthor from feedTitle
+      resultFeedAuthor = feedTitle.substring(0, feedTitle.indexOf(" "));
+      // for BS posts resultContent entryTitle + entryContent
+      resultContent = `${entryContent}`;
+      break;
+    case "TW":
+      // for TW posts get resultFeedAuthor
+      if (isRepost(entryTitle)) {
+        entryAuthor = findRepostUser(entryTitle);
+        resultFeedAuthor = feedAuthorUserName;
+      } else {
+        resultFeedAuthor = SETTINGS.SHOULD_PREFER_REAL_NAME ?
+          feedAuthorRealName :
+          feedAuthorUserName;
+      }
+      // for TW posts just entryTitle
+      resultContent = entryTitle;
+      resultContent = replaceReposted(resultContent, resultFeedAuthor, entryAuthor);
+      resultContent = replaceResponseTo(resultContent);
+      resultContent = replaceUserNames(resultContent, feedAuthorUserName);
+      break;
+    default:
+      // for posts from RSS getContent
+      resultContent = getContent(entryContent, entryTitle);
   }
 
-  resultContent = replaceBasicFormatting(resultContent);
-  resultContent = replaceHtml(resultContent);
-  resultContent = replaceCzechCharacters(resultContent);
-  resultContent = replaceSpecialCharacters(resultContent);
+  resultContent = replaceAllSpecialCharactersAndHtml(resultContent);
   resultContent = replaceAmpersands(resultContent);
   resultContent = contentHack(resultContent);
   resultContent = trimContent(resultContent);
@@ -448,69 +367,57 @@ function composeResultContent(
 // composition of the status - content, picture, url + needed checks & entries from settings
 function composeResultStatus(
   resultContent: string,
-  entryImageUrl: string
+  entryImageUrl: string,
+  entryTitle: string,
+  entryAuthor: string
 ): string {
-  let resultStatus = `${resultContent}`;
-
+  // composes the final result status with content, image and URL
   // removing ampersands from image url
-  let resultImageUrl = replaceAmpersands(entryImageUrl);
-  
-  // modification of status in case when showing the image is enabled
-  if (isImageInPost(entryImageUrl) && SETTINGS.SHOW_IMAGEURL) {
-    resultStatus = `${resultStatus}${SETTINGS.STATUS_IMAGEURL_SENTENCE}${resultImageUrl}`;
-  }
+  const resultImageUrl = replaceAmpersands(entryImageUrl);
+
+  const imageStatus = (isImageInPost(entryImageUrl) && SETTINGS.SHOW_IMAGEURL) ?
+    `${SETTINGS.STATUS_IMAGEURL_SENTENCE}${resultImageUrl}` :
+    '';
 
   // conditions for showing the repost URL
-  const repostUrl = findRepostUrl(resultContent)
-  if (repostUrl) {
-    resultUrl = repostUrl
-  } else if (
-    SETTINGS.SHOW_ORIGIN_POSTURL_PERM
-    || !(isUrlIncluded(resultContent) || isImageInPost(entryImageUrl))
-    // condition for showing the repost URL
-    || (isRepost(entryTitle) && !isRepostOwn(entryTitle, entryAuthor))
-  ) {
-    resultStatus = `${resultStatus}${SETTINGS.STATUS_URL_SENTENCE}${resultUrl}`;
-  }
+  const repostUrl = findRepostUrl(resultContent);
+  const shouldShowUrl = repostUrl || SETTINGS.SHOW_ORIGIN_POSTURL_PERM ||
+    !(isUrlIncluded(resultContent) || isImageInPost(entryImageUrl)) ||
+    (isRepost(entryTitle) && !isRepostOwn(entryTitle, entryAuthor));
 
-  return resultStatus;
+  // replacing of source and target
+  const urlToShow = repostUrl || (SETTINGS.SHOW_FEEDURL_INSTD_POSTURL ? feedUrl : entryUrl)
+    .replace(new RegExp(SETTINGS.POST_SOURCE, "gi"), SETTINGS.POST_TARGET);
+
+  // removing ampersands from url
+  const urlStatus = shouldShowUrl ?
+    `${SETTINGS.STATUS_URL_SENTENCE}${replaceAmpersands(urlToShow)}` :
+    '';
+
+  return `${resultContent}${imageStatus}${urlStatus}`;
 }
 
-// replacing of source and target
-let resultUrl = (SETTINGS.SHOW_FEEDURL_INSTD_POSTURL ? feedUrl : entryUrl)
-  .replace(new RegExp(SETTINGS.POST_SOURCE, "gi"), SETTINGS.POST_TARGET);
-
-// removing ampersands from url
-resultUrl = replaceAmpersands(resultUrl);
-
-// conditions for skipping the post
-if (
+// post filtering logic
+function shouldSkipPost(): boolean {
   // if post is quote to other BS post, skip it
-  isBsQuoteInPost(entryContent)
-  || (
-    isRepost(entryTitle)
-    && !isRepostOwn(entryTitle, entryAuthor)
-    && !SETTINGS.REPOST_ALLOWED
-  )
+  if (isBsQuoteInPost(entryContent)) return true;
+  if (isRepost(entryTitle) && !isRepostOwn(entryTitle, entryAuthor) && !SETTINGS.REPOST_ALLOWED) return true;
   // if post contains commercial based on SETTINGS.COMMERCIAL_SENTENCE
-  || isCommercialInPost(entryTitle)
-  || isCommercialInPost(entryContent)
-) {
+  if (isCommercialInPost(entryTitle) || isCommercialInPost(entryContent)) return true;
+  // if keywords based on SETTINGS.MANDATORY_KEYWORDS aren't included in post, skip it
+  if (!mustContainKeywords(entryTitle, SETTINGS.MANDATORY_KEYWORDS) && !mustContainKeywords(entryContent, SETTINGS.MANDATORY_KEYWORDS)) return true;
+  return false;
+}
+
+// main execution logic
+if (shouldSkipPost()) {
+  // skips the post
   MakerWebhooks.makeWebRequest.skip();
 } else {
-  // otherwise start with composing the result content
-  const resultContent = composeResultContent(
-    entryTitle,
-    entryAuthor,
-    feedTitle
-  );
-
+  // otherwise, compose and publish the post
+  const resultContent = composeResultContent(entryTitle, entryAuthor, feedTitle);
   // composing of the result status
-  const resultStatus = composeResultStatus(
-    resultContent,
-    entryImageUrl
-  );
-
+  const resultStatus = composeResultStatus(resultContent, entryImageUrl, entryTitle, entryAuthor);
   // return of the status to IFTTT
   const requestBody = `status=${resultStatus}`;
   MakerWebhooks.makeWebRequest.setBody(requestBody);
