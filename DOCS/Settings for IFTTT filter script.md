@@ -18,7 +18,6 @@ Those three parts will be included in the output:
 > 
 > 🔗 https://server.com/post/link-to-post
 
-
 ---
 
 ## Basic Information
@@ -30,29 +29,30 @@ The Settings for the final script are available in the ./SETTINGS/ folder and lo
 // application settings configuration
 const SETTINGS: AppSettings = {
   AMPERSAND_REPLACEMENT: `and`, // replacement for & char
-  COMMERCIAL_SENTENCE: "", // "" | "Komerční sdělení:"
+  BANNED_COMMERCIAL_PHRASES: [], // phrases array ["reklama", "sleva", "výprodej"] 
+  CONTENT_HACK_PATTERNS: [ // content hack - content manipulation function
+    // { pattern: "(?<!https?:\/\/)(denikn\.cz\/)", replacement: "https:\/\/denikn\.cz\/", flags: "g" }, // hack for URLs without protocol
+    // { pattern: "(ZZZZZ[^>]+KKKKK)", replacement: "", flags: "gi" }, // replaces parts of the string between ZZZZZ and KKKKK including them with an empty string.
+    // { pattern: "co_nahradit", replacement: "čím_nahradit", flags: "gi" }, // replaces pattern "co_nahradit" by replacement "čím_nahradit" with flags 
+  ],
+  EXCLUDED_URLS: ["youtube.com", "example.com"], // URLs excluded from trimUrl
   MANDATORY_KEYWORDS: [], // keyword array ["news", "updates", "important"]
-  POST_FROM: "TW", // "BS" | "RSS" | "TW" | "YT"
+  POST_FROM: "RSS", // "BS" | "RSS" | "TW" | "YT"
   POST_LENGTH: 444, // 0 - 500 chars
-  POST_SOURCE: `https://twitter.com/`, // "" | `https://twitter.com/` | `https://x.com/`
-  POST_TARGET: `https://x.com/`, // "" | `https://twitter.com/` | `https://x.com/`
-  USER_INSTANCE: "@twitter.com", // "" | ".bsky.social" | "@twitter.com" | "@x.com"
-  QUOTE_SENTENCE: "𝕏📝💬 ", // "" | "komentoval příspěvek od" | "contains quote post or other embedded content" | "𝕏📝💬"
+  POST_SOURCE: "", // "" | `https://twitter.com/` | `https://x.com/`
+  POST_TARGET: "", // "" | `https://twitter.com/` | `https://x.com/`
+  USER_INSTANCE: "", // "" | ".bsky.social" | "@twitter.com" | "@x.com"
+  QUOTE_SENTENCE: "", // "" | "komentoval příspěvek od" | "contains quote post or other embedded content" | "𝕏📝💬"
   REPOST_ALLOWED: true, // true | false
-  REPOST_SENTENCE: "𝕏📤 ", // "" | "sdílí" | "𝕏📤"
+  REPOST_SENTENCE: "", // "" | "sdílí" | "𝕏📤"
   SHOULD_PREFER_REAL_NAME: true, // true | false
   SHOW_FEEDURL_INSTD_POSTURL: false, // true | false
   SHOW_IMAGEURL: false, // true | false
-  SHOW_ORIGIN_POSTURL_PERM: false, // true | false
+  SHOW_ORIGIN_POSTURL_PERM: true, // true | false
+  SHOW_TITLE_AS_CONTENT: false, // true | false
   STATUS_IMAGEURL_SENTENCE: "", // "" | "🖼️"
   STATUS_URL_SENTENCE: "\n", // "" | "\n\n🦋 " | "\n\n𝕏 " | "\n🔗 " | "\n🗣️🎙️👇👇👇\n" | "\nYT 📺👇👇👇\n"
 };
-
-// content hack - content manipulation function - removes content between ZZZZZ and KKKKK markers
-function contentHack(str: string): string {
-  // replaces parts of the string between ZZZZZ and KKKKK including them with an empty string.
-  return str.replace(/(ZZZZZ[^>]+KKKKK)/gi, "");
-}
 ```
 
 ---
@@ -68,14 +68,40 @@ AMPERSAND_REPLACEMENT: `and`
 ```
 Your replacement has to stay between those apostrophe chars; without that, the whole script will fail.
 
-### COMMERCIAL_SENTENCE - string
-In case some of the original posts are commercial, you can use this option to eliminate them. Insert Commercial notification (i.e. "Advertisement:"), and if that post begins with text Advertisement:, the proceeding will be skipped.
+### BANNED_COMMERCIAL_PHRASES - string array
+This option allows you to specify phrases that indicate commercial content or the other content you want to ban. If a post contains any of these phrases, it will be skipped.
 
 Example:
 ```
-COMMERCIAL_SENTENCE: "Advertisement:"
+BANNED_COMMERCIAL_PHRASES: []
 ```
-Your replacement has to stay between quotation marks.
+or
+```
+BANNED_COMMERCIAL_PHRASES: ["reklama", "sleva", "výprodej"]
+```
+Your phrases has to stay between brackets chars. Every phrase needs to be between quotation marks; more keywords needs to be divided by comma.
+
+### CONTENT_HACK_PATTERNS - array of objects
+This setting allows you to manipulate content by replacing or removing specific patterns. Each object in the array should contain `pattern`, `replacement`, and optionally `flags`.
+
+Example:
+```
+CONTENT_HACK_PATTERNS: [
+    // { pattern: "(?<!https?:\/\/)(denikn\.cz\/)", replacement: "https:\/\/denikn\.cz\/", flags: "g" },
+  { pattern: "(ZZZZZ[^>]+KKKKK)", replacement: "", flags: "gi" },
+  { pattern: "co_nahradit", replacement: "čím_nahradit", flags: "gi" }
+]
+```
+Patterns should be regular expressions.
+
+### EXCLUDED_URLS - string array
+This option specifies URLs that should not be shortened or modified by the `trimUrl` function. If a URL is in this list, it will be left unchanged.
+
+Example:
+```
+EXCLUDED_URLS: ["youtube.com", "example.com"]
+```
+Your URLs should be between quotation marks and separated by commas.
 
 ### MANDATORY_KEYWORDS - string array
 This option allows you to specify keywords that must be present in the post for it to be published. If no keywords are specified, left the brackets empty and all posts will be published.
@@ -216,6 +242,15 @@ SHOW_ORIGIN_POSTURL_PERM: true
 ```
 Only true or false values are valid.
 
+### SHOW_TITLE_AS_CONTENT - boolean
+If this option is set to true, the script will use the entry title as the content instead of the entry content. This is useful if the title contains the main information.
+
+Example:
+```
+SHOW_TITLE_AS_CONTENT: false
+```
+Only true or false values are valid.
+
 ### STATUS_IMAGEURL_SENTENCE - string
 STATUS_URL_SENTENCE is used as an introduction for the image URL. Typically, I have here "🖼️".
 
@@ -228,7 +263,6 @@ Output:
 🖼️ https://server.com/image/link-to-image
 ```
 Your replacement has to stay between quotation marks. You can also use emojis or formatting.
-
 
 ### STATUS_URL_SENTENCE - string
 STATUS_URL_SENTENCE is used as an introduction for the post URL. Typically, I have here "\n" just for a new line with the URL, but I am also using "\n🗣️🎙️👇👇👇\n" for some podcasts and "\nYT 📺👇👇👇\n" for YouTube.
@@ -245,21 +279,7 @@ Your replacement has to stay between quotation marks. You can also use emojis or
 
 ---
 
-## Content Hack
-In case the source has some specific outputs (i.e. text “Published by Someone, Somewhere”), you can use the content hack to filter those unwanted outputs. When you replace chars ZZZZZ with the beginning and KKKKK with the end of the unwanted text block, it will disappear from the final output. You can also create a chain of those replacements in case you want to block more variants, as you can see in the following example:
-
-Example:
-```
-// content hack - content manipulation function - removes content between ZZZZZ and KKKKK markers
-function contentHack(str: string): string {
-  // replaces parts of the string between ZZZZZ and KKKKK including them with an empty string.
-  return str.replace(/(From the beginning[^>]+to the end.)/gi, "");
-}
-```
-
----
-
 ## That’s all, folks
 That’s all, folks. I hope the explanation clarifies the configuration possibilities for modifying the output and everything is crystal clear now. Otherwise, you can still contact me via social networks or the About.me page.
 
-(2025-02-25)
+(2025-03-05)
