@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// connector for IFTTT 🦋📙📗📘 webhook - rev 25.2.2025
+// connector for IFTTT 🦋📙📗📘 webhook - rev 5.3.2025
 ///////////////////////////////////////////////////////////////////////////////
 const entryContent = String(Feed.newFeedItem.EntryContent); // post content
 const entryTitle = String(Feed.newFeedItem.EntryTitle); // post title
