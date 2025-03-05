@@ -1,9 +1,11 @@
 ///////////////////////////////////////////////////////////////////////////////
-// settings for IFTTT 📺 webhook filter - 25.2.2025
+// settings for IFTTT 📺 webhook filter - rev 5.3.2025
 ///////////////////////////////////////////////////////////////////////////////
 interface AppSettings {
   AMPERSAND_REPLACEMENT: string; // character to replace ampersands with
-  COMMERCIAL_SENTENCE: string; // prefix for commercial content, e.g. "Commercial:"
+  BANNED_COMMERCIAL_PHRASES: string[]; // phrases for banned or commercial content
+  CONTENT_HACK_PATTERNS: { pattern: string;replacement: string;flags ? : string; } [];
+  EXCLUDED_URLS: string[]; // URLs excluded from trimUrl
   MANDATORY_KEYWORDS: string[]; // keywords that must be present in post
   POST_FROM: "BS" | "RSS" | "TW" | "YT"; // source platform identifier
   POST_LENGTH: number; // maximum post length (0-500 chars)
@@ -17,15 +19,23 @@ interface AppSettings {
   SHOW_FEEDURL_INSTD_POSTURL: boolean; // show feed URL instead of post URL
   SHOW_IMAGEURL: boolean; // include image URLs in post
   SHOW_ORIGIN_POSTURL_PERM: boolean; // always show original post URL?
+  SHOW_TITLE_AS_CONTENT: boolean; // use entryTitle as a content
   STATUS_IMAGEURL_SENTENCE: string; // image URL prefix
   STATUS_URL_SENTENCE: string; // URL prefix/suffix formatting
 }
 
+// application settings configuration
 const SETTINGS: AppSettings = {
   AMPERSAND_REPLACEMENT: `a`, // replacement for & char
-  COMMERCIAL_SENTENCE: "", // "" | "Komerční sdělení:"
+  BANNED_COMMERCIAL_PHRASES: [], // phrases array ["reklama", "sleva", "výprodej"] 
+  CONTENT_HACK_PATTERNS: [ // content hack - content manipulation function
+    // { pattern: "(?<!https?:\/\/)(denikn\.cz\/)", replacement: "https:\/\/denikn\.cz\/", flags: "g" }, // hack for URLs without protocol
+    // { pattern: "(ZZZZZ[^>]+KKKKK)", replacement: "", flags: "gi" }, // replaces parts of the string between ZZZZZ and KKKKK including them with an empty string.
+    // { pattern: "co_nahradit", replacement: "čím_nahradit", flags: "gi" }, // replaces pattern "co_nahradit" by replacement "čím_nahradit" with flags 
+  ],
+  EXCLUDED_URLS: ["youtu.be", "youtube.com", "example.com"], // URLs excluded from trimUrl
   MANDATORY_KEYWORDS: [], // keyword array ["news", "updates", "important"]
-  POST_FROM: "YT", // "BS" | "NT" | "RSS" | "TW" | "YT"
+  POST_FROM: "YT", // "BS" | "RSS" | "TW" | "YT"
   POST_LENGTH: 444, // 0 - 500 chars
   POST_SOURCE: "", // "" | `https://twitter.com/` | `https://x.com/`
   POST_TARGET: "", // "" | `https://twitter.com/` | `https://x.com/`
@@ -37,18 +47,13 @@ const SETTINGS: AppSettings = {
   SHOW_FEEDURL_INSTD_POSTURL: false, // true | false
   SHOW_IMAGEURL: false, // true | false
   SHOW_ORIGIN_POSTURL_PERM: true, // true | false
+  SHOW_TITLE_AS_CONTENT: false, // true | false
   STATUS_IMAGEURL_SENTENCE: "", // "" | "🖼️"
   STATUS_URL_SENTENCE: "\nYT 📺👇👇👇\n", // "" | "\n\n🦋 " | "\n\n𝕏 " | "\n🔗 " | "\n🗣️🎙️👇👇👇\n" | "\nYT 📺👇👇👇\n"
 };
 
-// content hack - replace ZZZZZ and KKKKK with the beginning and the end of content designated to remove
-function contentHack(str: string): string {
-  // replaces parts of the string between ZZZZZ and KKKKK with an empty string.
-  return str.replace(/(ZZZZZ[^>]+KKKKK)/gi, "");
-}
-
 ///////////////////////////////////////////////////////////////////////////////
-// connector for IFTTT 📺 webhook - rev 25.2.2025
+// connector for IFTTT 📺 webhook - rev 5.3.2025
 ///////////////////////////////////////////////////////////////////////////////
 const entryContent = String(Youtube.newPublicVideoFromSubscriptions.Description); // post content
 const entryTitle = String(Youtube.newPublicVideoFromSubscriptions.Title); // post title
@@ -59,7 +64,7 @@ const feedTitle = String(Youtube.newPublicVideoFromSubscriptions.Title); // titl
 const feedUrl = String();
 
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter v1.0 - 25.2.2025
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v1.1 - 5.3.2025
 ///////////////////////////////////////////////////////////////////////////////
 
 // type definitions for string manipulation
@@ -187,7 +192,6 @@ const characterMap: {
 };
 
 // precompiled regular expression patterns for content processing
-const COMMERCIAL_REGEX = new RegExp(SETTINGS.COMMERCIAL_SENTENCE, "gi"); // commercial content detection
 const HTML_TAG_REGEX = /<(?!br|\/p|br\/)[^>]+>/gi; // HTML tag removal (preserving line breaks)
 const RESPONSE_PREFIX_REGEX = /^R to (.*?): /; // response prefix detection
 const REPOST_URL_REGEX = new RegExp('href="(?<url>https:\/\/twitter\.com[^"]+)"', 'gi'); // repost URL extraction
@@ -195,16 +199,39 @@ const REPOST_USER_REGEX = new RegExp('RT (@[a-z0-9_]+)', 'gi'); // repost userna
 const QUOTE_REGEX = new RegExp(SETTINGS.QUOTE_SENTENCE, "gi"); // quote detection
 const URL_REGEX = /https?:\/\//i; // URL validation
 
-// content retrieval with fallback - get content from entryContent even if it is an empty from entryTitle
+// content retrieval with fallback - get content from entryContent even if it is an empty (or is it in SETTINGS.SHOW_TITLE_AS_CONTENT) from entryTitle
 function getContent(entryContent: any, entryTitle: any): string {
-  // returns content from entryContent, or entryTitle if content is empty
-  if (typeof entryContent === "string" && entryContent.length > 0) {
-    return entryContent;
+  if (SETTINGS.SHOW_TITLE_AS_CONTENT) {
+    // If SHOW_TITLE_AS_CONTENT is true, use only entryTitle
+    if (typeof entryTitle === "string" && entryTitle.length > 0) {
+      return entryTitle;
+    } else {
+      throw Error("Missing title content");
+    }
+  } else {
+    // returns content from entryContent, or entryTitle if content is empty
+    if (typeof entryContent === "string" && entryContent.length > 0) {
+      return entryContent;
+    }
+    if (typeof entryTitle === "string" && entryTitle.length > 0) {
+      return entryTitle;
+    }
+    throw Error("Missing content");
   }
-  if (typeof entryTitle === "string" && entryTitle.length > 0) {
-    return entryTitle;
+}
+
+// content hack - content manipulation function - replaces or removes content based on patterns defined in settings
+function contentHack(str: string): string {
+  for (const pattern of SETTINGS.CONTENT_HACK_PATTERNS) {
+    const regex = new RegExp(pattern.pattern, pattern.flags || "g");
+    str = str.replace(regex, pattern.replacement);
   }
-  throw Error("Missing content")
+  return str;
+}
+
+// helper function for escaping special characters in regex
+function escapeRegExp(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 // is quote in BS post? check
@@ -215,8 +242,18 @@ function isBsQuoteInPost(str: string): boolean {
 
 // commercial content detection
 function isCommercialInPost(str: string): boolean {
-  // checks if the string contains a commercial sentence
-  return SETTINGS.COMMERCIAL_SENTENCE !== "" && COMMERCIAL_REGEX.test(str);
+  // checks if the string contains at least one prohibited advertising phrase
+  if (!SETTINGS.BANNED_COMMERCIAL_PHRASES || SETTINGS.BANNED_COMMERCIAL_PHRASES.length === 0) {
+    return false; // if no banned phrases are defined, it is not considered as advertising
+  }
+  const lowerCaseStr = str.toLowerCase();
+  for (const phrase of SETTINGS.BANNED_COMMERCIAL_PHRASES) {
+    const regex = new RegExp(escapeRegExp(phrase), "i");
+    if (regex.test(lowerCaseStr)) {
+      return true; // if at least one banned phrase is found, it is considered advertising
+    }
+  }
+  return false; // if no forbidden phrases are found, it is not considered as advertising
 }
 
 // image presence validation
@@ -269,14 +306,15 @@ function replaceAll(str: string, replacements: Record < string, string > , caseS
 
 // ampersand replacement with URL preservation
 function replaceAmpersands(str: string): string {
-  // replaces ampersands in the string, but not in YouTube URLs
+  // replaces ampersands in excluded URLs
   return str.replace(/(\S+)/g, word => {
     if (isUrlIncluded(word)) {
-      if (/youtu/.test(word)) {
+      if (SETTINGS.EXCLUDED_URLS.some(excludedUrl => word.toLowerCase().indexOf(excludedUrl.toLowerCase()) !== -1)) {
         return word;
       }
       return encodeURI(trimUrl(word));
     }
+    // replaces ampersands in the string
     return word.replace(/&(amp;|#38;|#038;)?/g, SETTINGS.AMPERSAND_REPLACEMENT);
   });
 }
@@ -308,7 +346,7 @@ function replaceReposted(
   const regex = new RegExp("^(RT ([^>]+): )");
   return str.replace(
     regex,
-    `${resultFeedAuthor}${SETTINGS.REPOST_SENTENCE}${entryAuthor}:\n`
+    `${resultFeedAuthor}${SETTINGS.REPOST_SENTENCE}${entryAuthor}:\n` // `${resultFeedAuthor}${SETTINGS.REPOST_SENTENCE}${entryAuthor}:\n`
   );
 }
 
@@ -416,6 +454,7 @@ function composeResultContent(
       resultContent = getContent(entryContent, entryTitle);
   }
 
+  // for all types of posts
   resultContent = replaceAllSpecialCharactersAndHtml(resultContent);
   resultContent = replaceAmpersands(resultContent);
   resultContent = contentHack(resultContent);
@@ -435,6 +474,7 @@ function composeResultStatus(
   // removing ampersands from image url
   const resultImageUrl = replaceAmpersands(entryImageUrl);
 
+  // building of imageStatus based on existence of image URL and SHOW_IMAGEUR settings
   const imageStatus = (isImageInPost(entryImageUrl) && SETTINGS.SHOW_IMAGEURL) ?
     `${SETTINGS.STATUS_IMAGEURL_SENTENCE}${resultImageUrl}` :
     '';
@@ -454,6 +494,7 @@ function composeResultStatus(
     `${SETTINGS.STATUS_URL_SENTENCE}${replaceAmpersands(urlToShow)}` :
     '';
 
+  // composition of the final output from composeResultStatus
   return `${resultContent}${imageStatus}${urlStatus}`;
 }
 
