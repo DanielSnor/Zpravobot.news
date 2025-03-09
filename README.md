@@ -1,6 +1,14 @@
 # Zpravobot.news
 [Zprávobot.news](https://zpravobot.news) 📰🤖 (means Newsbot.news in Czech) is run by Daniel Šnor as a public utility 🖥️⌨️, which🪞popular and majority 🇨🇿 X/🐦 accounts bringing to 🐘 otherwise missing 📰, ⚽️🏒🏎️, information about 📱⌚️💻📡, 🎞️🎶🎭, and sometimes 🤣🤪.
 
+The Czech **Mastodon** is not very big and is often ignored by newspaper publishers and individual information sources. The server **Zprávobot.news** was created to allow users of this social network to get the latest news and information.
+
+The technical solution was inspired by the **Press.coop** server initially mirrored the **X/Twitter** accounts on the **Mastodon** social network. Like them, I used a running **Mastodon** server as a front end, but instead of programming my back end to handle tweets, **RSS** feeds and **BlueSky** posts, I decided to use the existing **IFTTT** (If This Then That) service.
+
+After the initial implementation, I discovered the possibility of adding a filter script to the **IFTTT** applets (if you have a PRO+ subscription) that further processes the input data and decided to use this option for unified output processing for **Zpravobot.news**. 
+
+And this was the beginning of this open-source project released under the unlicence you have in front of you.
+
 ## The mission
 This project is focused on developing the IFTTT applet filter script, which is used on the IFTTT server for bots (applets) and fulfils content for standard Mastodon server users.
 
