@@ -7,7 +7,7 @@ The technical solution was inspired by the **Press.coop** server initially mirro
 
 After the initial implementation, I discovered the possibility of adding a filter script to the **IFTTT** applets (if you have a PRO+ subscription) that further processes the input data and decided to use this option for unified output processing for **Zpravobot.news**. 
 
-And this was the beginning of this open-source project released under the Unlicense license you have in front of you.
+And this was the beginning of this open-source project released under the [Unlicense license](https://unlicense.org) you have in front of you.
 
 ## The mission
 This project is focused on developing the IFTTT applet filter script, which is used on the IFTTT server for bots (applets) and fulfils content for standard Mastodon server users.
