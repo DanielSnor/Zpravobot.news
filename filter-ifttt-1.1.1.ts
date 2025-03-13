@@ -1,5 +1,17 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter v1.1 - 5.3.2025
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v1.1.1 - Pi Day 2025 rev
+///////////////////////////////////////////////////////////////////////////////
+//
+// Description:
+// Processes and filters posts from various platforms for IFTTT webhook publishing.
+//
+// Key Features:
+// - Content filtering (banned phrases, keywords, repost rules)
+// - Multi-platform support with specific processing logic
+// - Special character and HTML tag normalization
+// - Customizable character mapping for language support
+// - Content and URL shortening
+//
 ///////////////////////////////////////////////////////////////////////////////
 
 // type definitions for string manipulation
@@ -127,35 +139,26 @@ const characterMap: {
 };
 
 // precompiled regular expression patterns for content processing
-const HTML_TAG_REGEX = /<(?!br|\/p|br\/)[^>]+>/gi; // HTML tag removal (preserving line breaks)
+const HTML_TAG_REGEX = /<(?!br|\/p|br\/)[^>]+>/gi; // matches all HTML tags except <br> and </p>, which are preserved as line breaks.
 const RESPONSE_PREFIX_REGEX = /^R to (.*?): /; // response prefix detection
 const REPOST_URL_REGEX = new RegExp('href="(?<url>https:\/\/twitter\.com[^"]+)"', 'gi'); // repost URL extraction
-const REPOST_USER_REGEX = new RegExp('RT (@[a-z0-9_]+)', 'gi'); // repost username extraction
+const REPOST_USER_REGEX = new RegExp('RT (@[a-z0-9_]+)', 'gi'); // extracts repost URLs from Twitter posts using named capture groups.
 const QUOTE_REGEX = new RegExp(SETTINGS.QUOTE_SENTENCE, "gi"); // quote detection
 const URL_REGEX = /https?:\/\//i; // URL validation
 
 // content retrieval with fallback - get content from entryContent even if it is an empty (or is it in SETTINGS.SHOW_TITLE_AS_CONTENT) from entryTitle
 function getContent(entryContent: any, entryTitle: any): string {
+  // retrieves content from the post. if SETTINGS.SHOW_TITLE_AS_CONTENT is true,
+  // it prioritizes the title over the content.
   if (SETTINGS.SHOW_TITLE_AS_CONTENT) {
-    // If SHOW_TITLE_AS_CONTENT is true, use only entryTitle
-    if (typeof entryTitle === "string" && entryTitle.length > 0) {
-      return entryTitle;
-    } else {
-      throw Error("Missing title content");
-    }
+    return entryTitle || "";
   } else {
-    // returns content from entryContent, or entryTitle if content is empty
-    if (typeof entryContent === "string" && entryContent.length > 0) {
-      return entryContent;
-    }
-    if (typeof entryTitle === "string" && entryTitle.length > 0) {
-      return entryTitle;
-    }
-    throw Error("Missing content");
+    // returns content from entryContent, or entryTitle if entryContent is empty
+    return entryContent || entryTitle || "";
   }
 }
 
-// content hack - content manipulation function - replaces or removes content based on patterns defined in settings
+// applies regex-based transformations to the input string based on patterns defined in SETTINGS.CONTENT_HACK_PATTERNS.
 function contentHack(str: string): string {
   for (const pattern of SETTINGS.CONTENT_HACK_PATTERNS) {
     const regex = new RegExp(pattern.pattern, pattern.flags || "g");
@@ -175,7 +178,7 @@ function isBsQuoteInPost(str: string): boolean {
   return SETTINGS.QUOTE_SENTENCE !== "" && QUOTE_REGEX.test(str);
 }
 
-// commercial content detection
+// checks if the post contains any banned commercial phrases defined in SETTINGS.BANNED_COMMERCIAL_PHRASES.
 function isCommercialInPost(str: string): boolean {
   // checks if the string contains at least one prohibited advertising phrase
   if (!SETTINGS.BANNED_COMMERCIAL_PHRASES || SETTINGS.BANNED_COMMERCIAL_PHRASES.length === 0) {
@@ -216,6 +219,20 @@ function isUrlIncluded(str: string): boolean {
   return URL_REGEX.test(str);
 }
 
+// function to move the URL to the end
+function moveUrlToEnd(entryContent: string): string {
+  const URL_REGEX = /https?:\/\//i;
+  if (URL_REGEX.test(entryContent)) {
+    const urlMatch = entryContent.match(URL_REGEX);
+    if (urlMatch) {
+      const url = entryContent.match(/https?:\/\/[^\s]+/)[0]; // extract the entire URL
+      const contentWithoutUrl = entryContent.replace(url, '').trim();
+      return contentWithoutUrl + ' ' + url;
+    }
+  }
+  return entryContent;
+}
+
 // keywords validation in content
 function mustContainKeywords(str: string, keywords: string[]): boolean {
   // checks if the string contains at least one of the specified keywords
@@ -228,7 +245,6 @@ function mustContainKeywords(str: string, keywords: string[]): boolean {
       return true; // if at least one keyword is present, return true
     }
   }
-
   return false; // if no keywords were found, return false
 }
 
@@ -241,16 +257,22 @@ function replaceAll(str: string, replacements: Record < string, string > , caseS
 
 // ampersand replacement with URL preservation
 function replaceAmpersands(str: string): string {
-  // replaces ampersands in excluded URLs
+  // replaces ampersands (&) in text with a specified replacement character.
+  // ensures URLs are preserved by encoding them appropriately.
   return str.replace(/(\S+)/g, word => {
     if (isUrlIncluded(word)) {
       if (SETTINGS.EXCLUDED_URLS.some(excludedUrl => word.toLowerCase().indexOf(excludedUrl.toLowerCase()) !== -1)) {
-        return word;
+        // if URL is mentioned in EXCLUDED_URLS, encode it
+        return encodeURIComponent(word);
+      } else {
+        // if URL is not in EXCLUDED_URLS, trim URL and encode it
+        return encodeURI(trimUrl(word));
       }
-      return encodeURI(trimUrl(word));
     }
-    // replaces ampersands in the string
+    // replaces ampersands in non-URL strings
     return word.replace(/&(amp;|#38;|#038;)?/g, SETTINGS.AMPERSAND_REPLACEMENT);
+    // replaces ampersands (&) in non-URL strings with the specified character,
+    // while preserving URLs by encoding them appropriately.
   });
 }
 
@@ -258,16 +280,22 @@ function replaceAmpersands(str: string): string {
 function replaceAllSpecialCharactersAndHtml(str: string): string {
   // remove all HTML tags except <br> and </p>
   str = str.replace(HTML_TAG_REGEX, '');
-
   // replace <br> and </p> with \n
   str = str.replace(/<(br|br\/|\/p)[^>]*>/gi, "\n");
-
+  // preserving line breaks - temporarily replaces \n chars with __NEWLINE__
+  const tempNewline = "__NEWLINE__";
+  str = str.replace(/\n/g, tempNewline);
   // special chars replacement
   for (const [pattern, replacement] of Object.entries(characterMap)) {
     const regex = new RegExp(pattern, "g");
     str = str.replace(regex, replacement);
   }
-
+  // replace multiple spaces with one space
+  str = str.replace(/\s+/g, ' ');
+  // restore line breaks - returns \n chars instead of __NEWLINE__
+  str = str.replace(new RegExp(tempNewline, "g"), "\n");
+  // limit EOL characters to a maximum of two in a row for better text formatting.
+  str = str.replace(/(\r?\n){3,}/g, "\n\n");
   return str;
 }
 
@@ -292,7 +320,8 @@ function replaceResponseTo(str: string) {
   return str.replace(regex, "");
 }
 
-// usernames formatting
+// adds the user instance suffix (e.g., ".bsky.social") to all @usernames,
+// except for the feed author's username (skipName), as their info is stored elsewhere.
 function replaceUserNames(
   str: string,
   skipName: string
@@ -307,19 +336,18 @@ function replaceUserNames(
 
 // content length management - if content is longer than POST_LENGHT, it will be shorten to POST_LENGHT, then to last space + […]
 function trimContent(str: string): string {
-  // shortens the content to POST_LENGTH and adds "[…]"
-  // mod elipses at the end
-  if (str.endsWith(" …")) {
-    str = str.slice(0, -2) + "[…]";
-  } else if (str.endsWith("…")) {
-    str = str.slice(0, -1) + " […]";
-  }
-
+  // trims whitespace from the content and shortens it to SETTINGS.POST_LENGTH if necessary.
+  // adds an ellipsis ("[…]") to indicate truncated text.
+  str = str.trim();
+  // replace existing elipses anywhere in the text
+  str = str.replace(/(\s?\.{3}|\s?…)(?!\S)/g, " […]");
+  // string lenght check
   if (str.length <= SETTINGS.POST_LENGTH) return str;
-
+  // if content is long, short it to POST_LENGHT
   let trimmedText = str.slice(0, SETTINGS.POST_LENGTH).trim();
+  // find the last space
   const lastSpaceIndex = trimmedText.lastIndexOf(" ");
-
+  // add indicator […] for text continuing
   return lastSpaceIndex > 0 ?
     trimmedText.slice(0, lastSpaceIndex) + " […]" :
     trimmedText + " […]";
@@ -327,7 +355,7 @@ function trimContent(str: string): string {
 
 // URL shortening - if content continue behind ?, it will be shorten before ?
 function trimUrl(str: string): string {
-  // shortens the URL by removing everything after the "?" character
+  // trims query parameters from URLs by removing everything after the "?" character.
   return str.indexOf("?") > -1 ?
     str.substring(0, str.lastIndexOf("?")) :
     str;
@@ -359,14 +387,12 @@ function composeResultContent(
   const feedAuthorUserName = feedTitle.substring(feedTitle.indexOf("@") - 1);
   const feedAuthorRealName = feedTitle.substring(0, feedTitle.indexOf("/") - 1);
   let resultFeedAuthor = "";
-
   // content blocks based on POST_FROM
   switch (SETTINGS.POST_FROM) {
     case "BS":
-      // for BS posts get resultFeedAuthor from feedTitle
+      // for Bluesky (BS) posts, extract the feed author's name from feedTitle.
       resultFeedAuthor = feedTitle.substring(0, feedTitle.indexOf(" "));
-      // for BS posts resultContent entryTitle + entryContent
-      resultContent = `${entryContent}`;
+      resultContent = `${entryContent}`; // use entryContent directly for BS posts.
       break;
     case "TW":
       // for TW posts get resultFeedAuthor
@@ -386,15 +412,15 @@ function composeResultContent(
       break;
     default:
       // for posts from RSS getContent
+      // retrieves either entryContent or entryTitle based on availability and configuration.
       resultContent = getContent(entryContent, entryTitle);
   }
-
   // for all types of posts
   resultContent = replaceAllSpecialCharactersAndHtml(resultContent);
   resultContent = replaceAmpersands(resultContent);
   resultContent = contentHack(resultContent);
+  resultContent = moveUrlToEnd(resultContent); //moves URL from the beginning to the end
   resultContent = trimContent(resultContent);
-
   return resultContent;
 }
 
@@ -408,32 +434,31 @@ function composeResultStatus(
   // composes the final result status with content, image and URL
   // removing ampersands from image url
   const resultImageUrl = replaceAmpersands(entryImageUrl);
-
   // building of imageStatus based on existence of image URL and SHOW_IMAGEUR settings
   const imageStatus = (isImageInPost(entryImageUrl) && SETTINGS.SHOW_IMAGEURL) ?
     `${SETTINGS.STATUS_IMAGEURL_SENTENCE}${resultImageUrl}` :
     '';
-
   // conditions for showing the repost URL
   const repostUrl = findRepostUrl(resultContent);
   const shouldShowUrl = repostUrl || SETTINGS.SHOW_ORIGIN_POSTURL_PERM ||
     !(isUrlIncluded(resultContent) || isImageInPost(entryImageUrl)) ||
     (isRepost(entryTitle) && !isRepostOwn(entryTitle, entryAuthor));
-
   // replacing of source and target
   const urlToShow = repostUrl || (SETTINGS.SHOW_FEEDURL_INSTD_POSTURL ? feedUrl : entryUrl)
     .replace(new RegExp(SETTINGS.POST_SOURCE, "gi"), SETTINGS.POST_TARGET);
-
   // removing ampersands from url
   const urlStatus = shouldShowUrl ?
     `${SETTINGS.STATUS_URL_SENTENCE}${replaceAmpersands(urlToShow)}` :
     '';
-
   // composition of the final output from composeResultStatus
   return `${resultContent}${imageStatus}${urlStatus}`;
 }
 
-// post filtering logic
+// determines whether a post should be skipped by checking various conditions:
+// 1. quotes from Bluesky posts (if SETTINGS.QUOTE_SENTENCE is defined).
+// 2. reposts not allowed by SETTINGS.REPOST_ALLOWED.
+// 3. commercial content based on banned phrases in SETTINGS.BANNED_COMMERCIAL_PHRASES.
+// 4. missing mandatory keywords defined in SETTINGS.MANDATORY_KEYWORDS.
 function shouldSkipPost(): boolean {
   // if post is quote to other BS post, skip it
   if (isBsQuoteInPost(entryContent)) return true;
@@ -445,9 +470,10 @@ function shouldSkipPost(): boolean {
   return false;
 }
 
-// main execution logic
+// if the post meets skip conditions, it is ignored by IFTTT (MakerWebhooks.makeWebRequest.skip()).
+// otherwise, it is processed and published using MakerWebhooks.makeWebRequest.setBody().
 if (shouldSkipPost()) {
-  // skips the post
+  // if any skip conditions are met, the post is ignored by IFTTT.
   MakerWebhooks.makeWebRequest.skip();
 } else {
   // otherwise, compose and publish the post
@@ -456,5 +482,6 @@ if (shouldSkipPost()) {
   const resultStatus = composeResultStatus(resultContent, entryImageUrl, entryTitle, entryAuthor);
   // return of the status to IFTTT
   const requestBody = `status=${resultStatus}`;
+  // if no skip conditions are met, the post is processed and published via IFTTT webhook.
   MakerWebhooks.makeWebRequest.setBody(requestBody);
 }
