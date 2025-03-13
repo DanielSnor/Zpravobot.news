@@ -31,8 +31,8 @@ const SETTINGS: AppSettings = {
   AMPERSAND_REPLACEMENT: `and`, // replacement for & char
   BANNED_COMMERCIAL_PHRASES: [], // phrases array ["advertisement", "discount", "sale"] 
   CONTENT_HACK_PATTERNS: [ // content hack - content manipulation function
-    // { pattern: "(?<!https?:\/\/)(example\.com\/)", replacement: "https:\/\/example\.com\/", flags: "g" }, // hack for URLs without protocol
-    // { pattern: "(ZZZZZ[^>]+KKKKK)", replacement: "", flags: "gi" }, // replaces parts of the string between ZZZZZ and KKKKK including them with an empty string.
+    // { pattern: "(?<!https?:\/\/)(example\.com\/)", replacement: "https:\/\/example\.com\/", flags: "gi" }, // hack for URLs without protocol
+    // { pattern: "(ZZZZZ[^>]+KKKKK)", replacement: "", flags: "gim" }, // replaces parts of the string between ZZZZZ and KKKKK including them with an empty string.
     // { pattern: "what", replacement: "by_what", flags: "gi" }, // replaces pattern "what" by replacement "by_what" with flags 
   ],
   EXCLUDED_URLS: [], // array excluding URLs from trimUrl ["youtu.be", "youtube.com", "example.com"]
