@@ -1,4 +1,8 @@
 # Zpravobot.news
+
+
+![Zpravobot.news mascot](https://zpravobot.news/system/site_uploads/files/000/000/002/@2x/49c4aa7df6b81d4a.png 'Zpravobot.news mascot')
+
 [Zprávobot.news](https://zpravobot.news) 📰🤖 (means Newsbot.news in Czech) is run by Daniel Šnor as a public utility 🖥️⌨️, which🪞popular and majority 🇨🇿 X/🐦 accounts bringing to 🐘 otherwise missing 📰, ⚽️🏒🏎️, information about 📱⌚️💻📡, 🎞️🎶🎭, and sometimes 🤣🤪.
 
 The Czech **Mastodon** is not very big and is often ignored by newspaper publishers and individual information sources. The server **Zprávobot.news** was created to allow users of this social network to get the latest news and information.
