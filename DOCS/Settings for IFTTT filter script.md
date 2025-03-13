@@ -4,7 +4,7 @@ This document is focused on explaining all settings possibilities for the IFTTT 
 
 You need to understand the output is composed of several parts:
 
-- content (text which came from the original post)
+- content (text which came from the original post including hashtags)
 - image URL (URL link to the first picture attached to the original post)
 - post URL (URL link to the original post)
 
@@ -14,9 +14,9 @@ Those three parts will be included in the output:
 > 
 > #zpravobot
 >
-> 🖼️ https://server.com/image/link-to-image
+> 🖼️ https://example.com/image/link-to-image
 > 
-> 🔗 https://server.com/post/link-to-post
+> 🔗 https://example.com/post/link-to-post
 
 ---
 
@@ -29,22 +29,22 @@ The Settings for the final script are available in the ./SETTINGS/ folder and lo
 // application settings configuration
 const SETTINGS: AppSettings = {
   AMPERSAND_REPLACEMENT: `and`, // replacement for & char
-  BANNED_COMMERCIAL_PHRASES: [], // phrases array ["reklama", "sleva", "výprodej"] 
+  BANNED_COMMERCIAL_PHRASES: [], // phrases array ["advertisement", "discount", "sale"] 
   CONTENT_HACK_PATTERNS: [ // content hack - content manipulation function
-    // { pattern: "(?<!https?:\/\/)(denikn\.cz\/)", replacement: "https:\/\/denikn\.cz\/", flags: "g" }, // hack for URLs without protocol
+    // { pattern: "(?<!https?:\/\/)(example\.com\/)", replacement: "https:\/\/example\.com\/", flags: "g" }, // hack for URLs without protocol
     // { pattern: "(ZZZZZ[^>]+KKKKK)", replacement: "", flags: "gi" }, // replaces parts of the string between ZZZZZ and KKKKK including them with an empty string.
-    // { pattern: "co_nahradit", replacement: "čím_nahradit", flags: "gi" }, // replaces pattern "co_nahradit" by replacement "čím_nahradit" with flags 
+    // { pattern: "what", replacement: "by_what", flags: "gi" }, // replaces pattern "what" by replacement "by_what" with flags 
   ],
-  EXCLUDED_URLS: ["youtube.com", "example.com"], // URLs excluded from trimUrl
+  EXCLUDED_URLS: [], // array excluding URLs from trimUrl ["youtu.be", "youtube.com", "example.com"]
   MANDATORY_KEYWORDS: [], // keyword array ["news", "updates", "important"]
   POST_FROM: "RSS", // "BS" | "RSS" | "TW" | "YT"
   POST_LENGTH: 444, // 0 - 500 chars
   POST_SOURCE: "", // "" | `https://twitter.com/` | `https://x.com/`
   POST_TARGET: "", // "" | `https://twitter.com/` | `https://x.com/`
   USER_INSTANCE: "", // "" | ".bsky.social" | "@twitter.com" | "@x.com"
-  QUOTE_SENTENCE: "", // "" | "komentoval příspěvek od" | "contains quote post or other embedded content" | "𝕏📝💬"
+  QUOTE_SENTENCE: "", // "" | "comments post from" | "contains quote post or other embedded content" | "𝕏📝💬"
   REPOST_ALLOWED: true, // true | false
-  REPOST_SENTENCE: "", // "" | "sdílí" | "𝕏📤"
+  REPOST_SENTENCE: "", // "" | "shares" | "𝕏📤"
   SHOULD_PREFER_REAL_NAME: true, // true | false
   SHOW_FEEDURL_INSTD_POSTURL: false, // true | false
   SHOW_IMAGEURL: false, // true | false
@@ -77,7 +77,7 @@ BANNED_COMMERCIAL_PHRASES: []
 ```
 or
 ```
-BANNED_COMMERCIAL_PHRASES: ["reklama", "sleva", "výprodej"]
+BANNED_COMMERCIAL_PHRASES: ["advertisement", "discount", "sale"]
 ```
 Your phrases has to stay between brackets chars. Every phrase needs to be between quotation marks; more keywords needs to be divided by comma.
 
@@ -87,9 +87,9 @@ This setting allows you to manipulate content by replacing or removing specific 
 Example:
 ```
 CONTENT_HACK_PATTERNS: [
-    // { pattern: "(?<!https?:\/\/)(denikn\.cz\/)", replacement: "https:\/\/denikn\.cz\/", flags: "g" },
+  // { pattern: "(?<!https?:\/\/)(example\.com\/)", replacement: "https:\/\/example\.com\/", flags: "g" }, // hack for URLs without protocol
   { pattern: "(ZZZZZ[^>]+KKKKK)", replacement: "", flags: "gi" },
-  { pattern: "co_nahradit", replacement: "čím_nahradit", flags: "gi" }
+  { pattern: "what", replacement: "by_what", flags: "gi" }
 ]
 ```
 Patterns should be regular expressions.
@@ -145,7 +145,7 @@ POST_SOURCE and POST_TARGET are used together when your source is on server A, b
 
 Example:
 ```
-POST_SOURCE: `https://nitter.cz/`
+POST_SOURCE: `https://twitter.com/`
 ```
 Your replacement has to stay between apostrophes or as two empty quotation marks.
 
@@ -154,7 +154,7 @@ POST_SOURCE and POST_TARGET are used together when your source is on server A, b
 
 Example:
 ```
-POST_TARGET: `https://twitter.com/`
+POST_TARGET: `https://x.com/`
 ```
 Your replacement has to stay between apostrophes or as two empty quotation marks.
 
@@ -260,7 +260,7 @@ STATUS_IMAGEURL_SENTENCE: "🖼️ "
 ```
 Output:
 ```
-🖼️ https://server.com/image/link-to-image
+🖼️ https://example.com/image/link-to-image
 ```
 Your replacement has to stay between quotation marks. You can also use emojis or formatting.
 
@@ -273,7 +273,7 @@ STATUS_URL_SENTENCE: "🔗 "
 ```
 Output:
 ```
-🔗 https://server.com/post/link-to-post
+🔗 https://example.com/post/link-to-post
 ```
 Your replacement has to stay between quotation marks. You can also use emojis or formatting.
 
@@ -282,4 +282,4 @@ Your replacement has to stay between quotation marks. You can also use emojis or
 ## That’s all, folks
 That’s all, folks. I hope the explanation clarifies the configuration possibilities for modifying the output and everything is crystal clear now. Otherwise, you can still contact me via social networks or the About.me page.
 
-(2025-03-05)
+(Pi Day 2025)
