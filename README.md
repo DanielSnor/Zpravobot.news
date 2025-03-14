@@ -51,21 +51,25 @@ For more information about settings on the Mastodon user side, please look at ht
 ### IFTTT applets
 The applet uses specific settings for **BlueSky**, **RSS**, **X/Twitter** and **YouTube**.
 
-#### BlueSky and RSS
+In **IFTTT**, at **My Applets** screen, click **Create** and... 
+
+#### BlueSky
 - Select **RSS Feed** service and "**New feed item**" trigger.
 - For **BlueSky** use user feed, e.g. "**https://bsky.app/profile/username.bsky.social/rss**".
+
+#### RSS
+- Select **RSS Feed** service and "**New feed item**" trigger.
 - For **RSS**, enter their usual RSS feed address, e.g. "**https://example.com/rss**".
 
 #### X/Twitter
-- Use the "**New tweet from search**" trigger.
+- Select **Twitter** service and use the "**New tweet from search**" trigger.
 - As a "Search for" phrase, use "**from:twitterUsername -is:reply OR from:twitterUsername to:twitterUsername**" (this will filter replies to other **Twitter** users).
 - If you want to filter also retweets and quotes, use "**from:twitterUsername -is:reply -is:retweet -is:quote OR from:twitterUsername to:twitterUsername**".
 - You can also search for some specific hashtag - use "**#specifichashtag -is:reply -is:retweet**".
 
 #### YouTube
-- Use the "**New public video from subscriptions**" trigger.
+- Select YouTube service and use the "**New public video from subscriptions**" trigger.
 - In "**Which subscription?**" select the appropriate **YT** subscription.
-
 
 ## Thank you
 The whole project could not have been made without the support of my beloved wife [Greticzka](https://mastodon.social/@greticzka) and our daughters. Thank you.
