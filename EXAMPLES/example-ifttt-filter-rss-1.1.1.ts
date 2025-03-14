@@ -241,8 +241,8 @@ function getContent(entryContent: any, entryTitle: any): string {
   if (SETTINGS.SHOW_TITLE_AS_CONTENT) {
     return entryTitle || "";
   } else {
-    // returns content from entryContent, or entryTitle if entryContent is empty
-    return entryContent || entryTitle || "";
+    // returns content from entryContent, or entryTitle if entryContent is empty or contains only whitespace
+    return (typeof entryContent === "string" && entryContent.trim().length === 0) || entryContent === "(none)" ? entryTitle : entryContent;
   }
 }
 
