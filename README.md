@@ -49,7 +49,12 @@ Even if the filter is written as universal, you still have to choose the proper 
 For more information about settings on the Mastodon user side, please look at https://hyperborea.org/journal/2017/12/mastodon-iftt/.
 
 ### IFTTT applets
-For **X/Twitter** and **YouTube**, the applet uses specific settings.
+The applet uses specific settings for **BlueSky**, **RSS**, **X/Twitter** and **YouTube**.
+
+#### BlueSky and RSS
+- Select **RSS Feed** service and "**New feed item**" trigger.
+- For **BlueSky** use user feed, e.g. "**https://bsky.app/profile/username.bsky.social/rss**".
+- For **RSS**, enter their usual RSS feed address, e.g. "**https://example.com/rss**".
 
 #### X/Twitter
 - Use the "**New tweet from search**" trigger.
