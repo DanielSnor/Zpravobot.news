@@ -309,7 +309,7 @@ function replaceReposted(
   const regex = new RegExp("^(RT @([^:]+): )");
   return str.replace(
     regex,
-    `${SETTINGS.REPOST_SENTENCE}${entryAuthor}:\n` // `${resultFeedAuthor}${SETTINGS.REPOST_SENTENCE}${entryAuthor}:\n`
+    `${resultFeedAuthor}${SETTINGS.REPOST_SENTENCE}${entryAuthor}:\n` // `${resultFeedAuthor}${SETTINGS.REPOST_SENTENCE}${entryAuthor}:\n`
   );
 }
 
