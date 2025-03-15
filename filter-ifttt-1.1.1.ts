@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter v1.1.1 - Pi Day 2025 rev
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v1.1.1a - 15.3.2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Description:
@@ -306,10 +306,10 @@ function replaceReposted(
   entryAuthor: string
 ): string {
   // replaces "RT @..." with the repost sentence and author.
-  const regex = new RegExp("^(RT ([^>]+): )");
+  const regex = new RegExp("^(RT @([^:]+): )");
   return str.replace(
     regex,
-    `${resultFeedAuthor}${SETTINGS.REPOST_SENTENCE}${entryAuthor}:\n` // `${resultFeedAuthor}${SETTINGS.REPOST_SENTENCE}${entryAuthor}:\n`
+    `${SETTINGS.REPOST_SENTENCE}${entryAuthor}:\n` // `${resultFeedAuthor}${SETTINGS.REPOST_SENTENCE}${entryAuthor}:\n`
   );
 }
 
