@@ -1,4 +1,4 @@
-# Settings for IFTTT filter script
+# CONTENT_HACK_PATTERNS examples for IFTTT filter script
 
 This document provides several examples of the possibility of CONTENT_HACK_PATTERNS settings for the IFTTT filter script. 
 
