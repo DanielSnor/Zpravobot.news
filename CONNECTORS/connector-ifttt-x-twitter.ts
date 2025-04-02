@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// connector for IFTTT 𝕏 webhook - Pi Day 2025 rev
+// connector for IFTTT 𝕏 webhook - April's Fool Day 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 // 
 // This connector processes data from various sources (e.g. RSS, Twitter, Bluesky) 
@@ -17,11 +17,10 @@
 // - feedUrl: Feed URL
 // 
 ///////////////////////////////////////////////////////////////////////////////
-
 const entryContent = String(Twitter.newTweetFromSearch.Text); // tweet content
 const entryTitle = String(Twitter.newTweetFromSearch.Text); // tweet title
 const entryUrl = String(Twitter.newTweetFromSearch.LinkToTweet); // link to the tweet
-const entryImageUrl = String(Twitter.newTweetFromSearch.UserImageUrl); // URL to the user image
+const entryImageUrl = String(Twitter.newTweetFromSearch.FirstLinkUrl); // firstLinkURL in tweet
 const entryAuthor = String(Twitter.newTweetFromSearch.UserName); // author's username
 const feedTitle = String(Twitter.newTweetFromSearch.UserName); // title of the feed (username)
 const feedUrl = String("https://twitter.com/" + Twitter.newTweetFromSearch.UserName); // feed URL
