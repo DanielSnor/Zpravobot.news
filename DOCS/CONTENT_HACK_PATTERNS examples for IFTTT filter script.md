@@ -1,13 +1,13 @@
 # Settings for IFTTT filter script
 
-This document is focused on providing several examples of CONTENT_HACK_PATTERNS settings possibilities for the IFTTT filter script. 
+This document provides several examples of the possibility of CONTENT_HACK_PATTERNS settings for the IFTTT filter script. 
 
-These patterns give you a really powerful tool for operating on/modifying the text of subsequent posts, as you can use regular expressions.
+These patterns give you a potent tool for operating on/modifying the text of subsequent posts, as you can use regular expressions.
 
 ---
 
 ## Basic Information
-Filter scripts in IFTTT are run as "scrips in script over script," so you have to be very careful when using special characters and often manage them with escape characters.  
+Filter scripts in IFTTT are run as "scrips in script over the script," so you have to be very careful when using special characters and often manage them with escape characters.  
 
 The whole Settings for the final script are available in the ./SETTINGS/, but here we will focus only on setting patterns which look like the following lines:
 
@@ -34,24 +34,50 @@ CONTENT_HACK_PATTERNS: [
   { pattern: "what", replacement: "by_what", flags: "gi" }
 ]
 ```
-Your patterns has to stay between brackets chars. Every pattern, replacement and flags needs to be between quotation marks divided by comma; more patterns needs to be divided by comma too. Patterns should be regular expressions.
+Your patterns have to stay between brackets chars. Every pattern, replacement, and flag must be between quotation marks and divided by a comma; more patterns must be divided by a comma, too. Patterns should be regular expressions.
 
 ## Useful examples for use with CONTENT_HACK_PATTERNS
 These options will show you how it could be used for several different purposes of content modification to reach the best result.
 
-### Simple removement or replacement
+### Box - text in box brackets
+
+Example:
+```
+{ pattern: "(\\[[^>]+\\])", replacement: "", flags: "gim" },
+```
+Box brackets are considered as a special char, so you have to escape them with the backslash chars (it will search the whole content, is case insensitive and works multiline)
+
+### One paragraph
+
+Example:
+```
+{ pattern: "\\n\\n[\\s\\S]*$", replacement: "", flags: "gms" }
+```
+will remove all the text behind the first paragraph (works globally, multiline and uses . as a sign for the new line => new paragraph)
+
+### Simple replacement or delete
 
 Example:
 ```
   { pattern: "what", replacement: "by_what", flags: "gi" }
 ```
+for replacing the word "what" with the string "by_what" (it will search the whole content and is case insensitive) 
+
 or
 ```
-  { pattern: "(from[^>]+tilthis)", replacement: "", flags: "gi" },
+  { pattern: "(from[^>]+til_this)", replacement: "", flags: "gim" },
 ```
+for deleting longer text starting with "from" and continuing til the string "til_this" (it will search the whole content, is case insensitive and works multiline)
 
+### URL hack
 
-TBD
+Example:
+```
+{ pattern: "(?<!https?:\/\/)(example\.com\/)", replacement: "https:\/\/example\.com\/", flags: "gi" },
+```
+will search for the string "example.com" without http or https protocol and replace it with "https://example.com" (it will search the whole content and is case insensitive)
+
+### TBC - as soon as I will have more examples available
 
 ---
 
