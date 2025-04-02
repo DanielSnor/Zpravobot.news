@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// connector for IFTTT 🦋📙📗📘 webhook - Pi Day 2025 rev
+// connector for IFTTT 🦋📙📗📘 webhook - April's Fool Day 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 // 
 // This connector processes data from various sources (e.g. RSS, Twitter, Bluesky) 
