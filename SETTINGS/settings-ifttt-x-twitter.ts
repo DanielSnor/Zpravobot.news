@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// settings for IFTTT 𝕏 webhook filter - Pi Day 2025 rev
+// settings for IFTTT 𝕏 webhook filter - April's Fool Day 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Configuration settings for the IFTTT webhook filter.
@@ -42,13 +42,13 @@ const SETTINGS: AppSettings = {
   EXCLUDED_URLS: [], // array excluding URLs from trimUrl ["youtu.be", "youtube.com", "example.com"]
   MANDATORY_KEYWORDS: [], // keyword array ["news", "updates", "important"]
   POST_FROM: "TW", // "BS" | "RSS" | "TW" | "YT"
-  POST_LENGTH: 444, // 0 - 500 chars
-  POST_SOURCE: `https://twitter.com/`, // "" | `https://twitter.com/` | `https://x.com/`
-  POST_TARGET: `https://x.com/`, // "" | `https://twitter.com/` | `https://x.com/`
+  POST_LENGTH: 280, // 0 - 500 chars
+  POST_SOURCE: `https://x.com/`, // "" | `https://twitter.com/` | `https://x.com/`
+  POST_TARGET: `https://twitter.com/`, // "" | `https://twitter.com/` | `https://x.com/`
   USER_INSTANCE: "@twitter.com", // "" | ".bsky.social" | "@twitter.com" | "@x.com"
-  QUOTE_SENTENCE: "𝕏📝💬 ", // "" | "comments post from" | "contains quote post or other embedded content" | "𝕏📝💬"
+  QUOTE_SENTENCE: " 𝕏📝💬 ", // "" | "comments post from" | "contains quote post or other embedded content" | "𝕏📝💬"
   REPOST_ALLOWED: true, // true | false
-  REPOST_SENTENCE: "𝕏📤 ", // "" | "shares" | "𝕏📤"
+  REPOST_SENTENCE: " 𝕏📤 ", // "" | "shares" | "𝕏📤"
   SHOULD_PREFER_REAL_NAME: true, // true | false
   SHOW_FEEDURL_INSTD_POSTURL: false, // true | false
   SHOW_IMAGEURL: false, // true | false
