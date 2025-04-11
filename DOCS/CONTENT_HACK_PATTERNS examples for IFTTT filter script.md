@@ -51,6 +51,12 @@ Box brackets are considered as a special char, so you have to escape them with t
 
 Example:
 ```
+{ pattern: "(^.*?\n).*", replacement: "$1", flags: "gim" }
+```
+will show only the first paragraph until \n char will be found in proceeded text.
+
+Example:
+```
 { pattern: "\\n\\n[\\s\\S]*$", replacement: "", flags: "gms" }
 ```
 will remove all the text behind the first paragraph (works globally, multiline and uses . as a sign for the new line => new paragraph)
