@@ -1,26 +1,23 @@
 ///////////////////////////////////////////////////////////////////////////////
-// connector for IFTTT 𝕏 webhook - April's Fool Day 2025 rev
+// connector for IFTTT 𝕏 webhook - Good Friday 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 // 
 // This connector processes data from various sources (e.g. RSS, Twitter, Bluesky) 
 // and provides it to the IFTTT webhook for publishing.
 // 
 // The data is filtered and edited according to the settings in AppSettings.
-// 
-// Sources:
-// - entryContent: Entry content for post
-// - entryTitle: Entry title for post
-// - entryUrl: Post URL
-// - entryImageUrl: URL of the first image in the post
-// - entryAuthor: Name of the author of the post
-// - feedTitle: Feed Title (username)
-// - feedUrl: Feed URL
-// 
+//
+// This section defines the input variables coming from the IFTTT trigger.
+// IMPORTANT: Adapt the source (e.g., Twitter.newTweetFromSearch or Feed.newFeedItem)
+// based on the specific trigger used in your IFTTT applet.
+// Use 'let' for variables that might be modified by the TREAT_RSS_AS_TW logic.
+//
 ///////////////////////////////////////////////////////////////////////////////
-const entryContent = String(Twitter.newTweetFromSearch.Text); // tweet content
-const entryTitle = String(Twitter.newTweetFromSearch.Text); // tweet title
-const entryUrl = String(Twitter.newTweetFromSearch.LinkToTweet); // link to the tweet
-const entryImageUrl = String(Twitter.newTweetFromSearch.FirstLinkUrl); // firstLinkURL in tweet
-const entryAuthor = String(Twitter.newTweetFromSearch.UserName); // author's username
-const feedTitle = String(Twitter.newTweetFromSearch.UserName); // title of the feed (username)
-const feedUrl = String("https://twitter.com/" + Twitter.newTweetFromSearch.UserName); // feed URL
+
+let entryContent = String(Twitter.newTweetFromSearch.TweetEmbedCode || ""); 		// Main text content from the source. (TweetEmbedCode)
+let entryTitle = String(Twitter.newTweetFromSearch.Text); 							// Title from the source (clean content without HTML for Twitter).
+let entryUrl = String(Twitter.newTweetFromSearch.LinkToTweet); 						// URL of the specific post/item.
+let entryImageUrl = String(Twitter.newTweetFromSearch.FirstLinkUrl); 				// URL of the first image/media link found.
+let entryAuthor = String(Twitter.newTweetFromSearch.UserName); 						// Username of the post author.
+let feedTitle = String(Twitter.newTweetFromSearch.UserName); 						// Title of the feed (can be username, feed name, etc.).
+let feedUrl = String("https://twitter.com/" + Twitter.newTweetFromSearch.UserName); // URL of the source feed/profile.
