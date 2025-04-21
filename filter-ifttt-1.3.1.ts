@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter v1.3.0 - Good Friday 2025 rev
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v1.3.1 - Easter Monday 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Description:
@@ -41,119 +41,128 @@ if (SETTINGS.POST_FROM === "RSS" && SETTINGS.TREAT_RSS_AS_TW === true) {
 }
 // --- END: Logic to potentially treat RSS as TW ---
 
+/**
+ * Optimized map for text normalization. Groups multiple patterns
+ * (HTML entities, codes) for the same target character into one regular expression
+ * with alternatives (|). Used by replaceAllSpecialCharactersAndHtml function.
+ */
+const characterMap: Record < string, string > = {
+  // --- Czech characters (grouped representations) ---
+  '&#193;|&Aacute;|A&#769;': 'Á', // Velké Á
+  '&#225;|&aacute;|a&#769;': 'á', // Malé á
+  '&Auml;|&#196;|A&#776;': 'Ä', // Velké Ä
+  '&auml;|&#228;|a&#776;': 'ä', // Malé ä
+  '&#268;|&Ccaron;|C&#780;': 'Č', // Velké Č
+  '&#269;|&ccaron;|c&#780;': 'č', // Malé č
+  '&#270;|&Dcaron;|D&#780;': 'Ď', // Velké Ď
+  '&#271;|&dcaron;|d&#780;': 'ď', // Malé ď
+  '&#201;|&Eacute;|E&#769;': 'É', // Velké É
+  '&#233;|&eacute;|e&#769;': 'é', // Malé é
+  '&Euml;|&#203;|E&#776;': 'Ë', // Velké Ë
+  '&euml;|&#235;|e&#776;': 'ë', // Malé ë
+  '&#282;|&Ecaron;|E&#780;': 'Ě', // Velké Ě
+  '&#283;|&ecaron;|e&#780;': 'ě', // Malé ě
+  '&#205;|&Iacute;|I&#769;': 'Í', // Velké Í
+  '&#237;|&iacute;|i&#769;': 'í', // Malé í
+  '&Iuml;|&#207;|I&#776;': 'Ï', // Velké Ï
+  '&iuml;|&#239;|i&#776;': 'ï', // Malé ï
+  '&#327;|&Ncaron;|N&#780;': 'Ň', // Velké Ň
+  '&#328;|&ncaron;|n&#780;': 'ň', // Malé ň
+  '&#211;|&Oacute;|O&#769;': 'Ó', // Velké Ó
+  '&#243;|&oacute;|o&#769;': 'ó', // Malé ó
+  '&Ouml;|&#214;|O&#776;': 'Ö', // Velké Ö
+  '&ouml;|&#246;|o&#776;': 'ö', // Malé ö
+  '&Odblac;|&#336;|O&#778;': 'Ő', // Velké Ő
+  '&odblac;|&#337;|o&#778;': 'ő', // Malé ő
+  '&#344;|&Rcaron;|R&#780;': 'Ř', // Velké Ř
+  '&#345;|&rcaron;|r&#780;': 'ř', // Malé ř
+  '&#352;|&Scaron;|S&#780;': 'Š', // Velké Š
+  '&#353;|&scaron;|s&#780;': 'š', // Malé š
+  '&#356;|&Tcaron;|T&#780;': 'Ť', // Velké Ť
+  '&#357;|&tcaron;|t&#780;': 'ť', // Malé ť
+  '&#218;|&Uacute;|U&#769;': 'Ú', // Velké Ú
+  '&#250;|&uacute;|u&#769;': 'ú', // Malé ú
+  '&Uuml;|&#220;|U&#776;': 'Ü', // Velké Ü
+  '&uuml;|&#252;|u&#776;': 'ü', // Malé ü
+  '&#366;|&Uring;|U&#778;': 'Ů', // Velké Ů
+  '&#367;|&uring;|u&#778;': 'ů', // Malé ů
+  '&Udblac;|&#368;|U&#369;': 'Ű', // Velké Ű
+  '&udblac;|&#369;|u&#369;': 'ű', // Malé ű
+  '&#221;|&Yacute;|Y&#769;': 'Ý', // Velké Ý
+  '&#253;|&yacute;|y&#769;': 'ý', // Malé ý
+  '&#381;|&Zcaron;|Z&#780;': 'Ž', // Velké Ž
+  '&#382;|&zcaron;|z&#780;': 'ž', // Malé ž
 
-// character mapping for text normalization
-// Keys are regex patterns, values are their replacements. Used by replaceAllSpecialCharactersAndHtml.
-const characterMap: {
-  [key: string]: string
-} = {
-  // basic text formatting replacement (HTML line breaks to newline chars)
-  '(<br>|<br />|</p>)': '\n',
-  // czech chars replacement (HTML entities/codes to actual characters)
-  '(&#193;|&Aacute;|A&#769;)': 'Á',
-  '(&#225;|&aacute;|a&#769;)': 'á',
-  '(&#196;|&Auml;|A&#776;)': 'Ä',
-  '(&#228;|&auml;|a&#776;)': 'ä',
-  '(&#268;|&Ccaron;|C&#780;)': 'Č',
-  '(&#269;|&ccaron;c&#780;)': 'č',
-  '(&#270;|&Dcaron;|D&#780;)': 'Ď',
-  '(&#271;|&dcaron;|d&#780;)': 'ď',
-  '(&#201;|&Eacute;|E&#769;)': 'É',
-  '(&#233;|&eacute;|e&#769;)': 'é',
-  '(&#203;|&Euml;|E&#776;)': 'Ë',
-  '(&#235;|&euml;|e&#776;)': 'ë',
-  '(&#282;|&Ecaron;|E&#780;)': 'Ě',
-  '(&#283;|&ecaron;|e&#780;)': 'ě',
-  '(&#205;|&Iacute;|I&#769;)': 'Í',
-  '(&#237;|&iacute;|i&#769;)': 'í',
-  '(&#207;|&Luml;|I&#776;)': 'Ï',
-  '(&#239;|&iuml;|i&#776;)': 'ï',
-  '(&#327;|&Ncaron;|N&#780;)': 'Ň',
-  '(&#328;|&ncaron;|n&#780;)': 'ň',
-  '(&#211;|&Oacute;|O&#769;)': 'Ó',
-  '(&#243;|&oacute;|o&#769;)': 'ó',
-  '(&#214;|&Ouml;|O&#776;)': 'Ö',
-  '(&#246;|&ouml;|o&#776;)': 'ö',
-  '(&#336;|&Odblac;|O&#778;)': 'Ő',
-  '(&#337;|&odblac;|o&#778;)': 'ő',
-  '(&#344;|&Rcaron;|R&#780;)': 'Ř',
-  '(&#345;|&rcaron;|r&#780;)': 'ř',
-  '(&#352;|&Scaron;|S&#780;)': 'Š',
-  '(&#353;|&scaron;|s&#780;)': 'š',
-  '(&#356;|&Tcaron;|T&#780;)': 'Ť',
-  '(&#357;|&tcaron;|t&#780;)': 'ť',
-  '(&#218;|&Uacute;|U&#769;)': 'Ú',
-  '(&#250;|&uacute;|u&#769;)': 'ú',
-  '(&#220;|&Uuml;|U&#776;)': 'Ü',
-  '(&#252;|&uuml;|u&#776;)': 'ü',
-  '(&#366;|&Uring;|U&#778;)': 'Ů',
-  '(&#367;|&uring;|u&#778;)': 'ů',
-  '(&#368;|&Udblac;|U&#369;)': 'Ű',
-  '(&#369;|&udblac;|u&#369;)': 'ű',
-  '(&#221;|&Yacute;|Y&#769;)': 'Ý',
-  '(&#253;|&yacute;|y&#769;)': 'ý',
-  '(&#381;|&Zcaron;|Z&#780;)': 'Ž',
-  '(&#382;|&zcaron;|z&#780;)': 'ž',
-  // special chars replacement (HTML entities/codes to actual characters or normalized forms)
-  '(&#09;|&#009;|&#10;|&#010;|&#13;|&#013;|&#32;|&#032;|&#160;|&nbsp;|&#8192;|&#8193;|&#8194;|&#8195;|&#8196;|&#8197;|&#8198;|&#8199;|&#8200;|&#8201;|&#8202;|&#8203;|&#8204;|&#8205;|&#8206;|&#8207;|&#xA0;|&NonBreakingSpace;)': ' ', // various spaces to standard space
-  '(&#33;|&#033;|&excl;|&#x21;)': '!',
-  '(&#34;|&#034;|&quot;|&#x22;)': '"',
-  '(&#36;|&#036;|&dollar;|&#x24;|&#65284;|&#xFF04;)': '$',
-  '(&#37;|&#037;|&percnt;|&#x25;)': '%',
-  '(&#39;|&#039;|&apos;|&#x27;)': '‘',
-  '(&#40;|&#040;|&lpar;|&#x28;)': '(',
-  '(&#41;|&#041;|&rpar;|&#x29;)': ')',
-  '(&#43;|&#043;|&plus;|&#x2B;|&#x2b;)': '+',
-  '(&#46;|&#046;|&period;)': '.',
-  '(&#60;|&#060;|&lt;|&#x3c;)': '<',
-  '(&#61;|&#061;|&equals;|&#x3d;)': '=',
-  '(&#62;|&#062;|&gt;|&#x3e;)': '>',
-  '(&#63;|&#063;|&quest;|&#x3f;)': '?',
-  '(&#91;|&#091;|&lbrack;|&#x5b;)': '[',
-  '(&#93;|&#093;|&rbrack;|&#x5d;)': ']',
-  '(&#95;|&#095;|&lowbar;|&#x5f;)': '_',
-  '(&#123;|&lbrace;|&#x7b;)': '{',
-  '(&#124;|&vert;|&#x7c;|&VerticalLine;)': '|',
-  '(&#125;|&rbrace;|&#x7d;)': '}',
-  '(&#137;|&permil;|&#x89;)': '‰',
-  '(&#139;|&#x8B;|&#x8b;)': '‹',
-  '(&#155;|&#x9B;|&#x9b;)': '›',
-  '(&#162;|&cent;|&#xa2;|&#65504;|&#xFFE0;)': '¢',
-  '(&#163;|&pound;|&#xa3;|&#65505;|&#xFFE1;)': '£',
-  '(&#165;|&yen;|&#xa5;|&#65509;|&#xFFE5;)': '¥',
-  '(&#169;|&copy;|&#xA9;|&#xa9;)': '©',
-  '(&#173;|&#xAD;|&shy;)': '',
-  '(&#174;|&reg;|&#xAE;|&#xae;)': '®',
-  '(&#176;|&deg;|&#xb0;)': '°',
-  '(&#177;|&plusmn;|&#xb1;)': '±',
-  '(&#183;|&centerdot;|&#xB7;)': '·',
-  '(&#188;|&frac14;|&#xBC;)': '¼',
-  '(&#189;|&half;|&#xBD;)': '½',
-  '(&#190;|&frac34;|&#xBE;)': '¾',
-  '(&#215;|&times;|&#xd7;)': '×',
-  '(&#247;|&divide;|&#xf7;)': '÷',
-  '(&#8208;|&hyphen;|&#x2010;|&#8209;|&#x2011;|&#8210;|&#x2012;|&#8211;|&ndash;|&#x2013;|&#8212;|&mdash;|&#x2014;|&#8213;|&horbar;|&#x2015;)': '-',
-  '(&#8216;|&lsquo;|&OpenCurlyQuote;|&#x2018;)': '‘',
-  '(&#8217;|&rsquo;|&CloseCurlyQuote;|&#x2019;)': '’',
-  '(&#8218;|&sbquo;|&#x201A;|&#x201a;)': '‚',
-  '(&#8219;|&#x201B;|&#x201b;)': '‛',
-  '(&#8220;|&ldquo;|&OpenCurlyDoubleQuote;|&#x201C;|&#x201c;)': '“',
-  '(&#8221;|&rdquo;|&CloseCurlyDoubleQuote;|&#x201D;|&#x201d;)': '”',
-  '(&#8222;|&bdquo;|&#x201E;|&#x201e;)': '„',
-  '(&#8223;|&#x201F;|&#x201f;)': '‟',
-  '(&#8230;|&hellip;|&mldr;|&#x2026;)': '…',
-  '(&#8241;|&pertenk;|&#x2031;)': '‱',
-  '(&#8242;|&prime;|&#x2032;)': '′',
-  '(&#8243;|&Prime;&#x2033;)': '″',
-  '(&#8364;|&euro;|&#x20AC;)': '€',
-  '(&#8451;|&#x2103;)': '℃',
-  '(&#8482;|&trade;|&#x2122;)': '™',
-  '(&#8722;|&minus;|&#x2212;)': '-',
-  '(&#8776;|&thickapprox;|&#x2248;)': '≈',
-  '(&#8800;|&ne;|&#x2260;)': '≠',
-  '(&#9001;|&#x2329;)': '⟨',
-  '(&#9002;|&#x232A;|&#x232a;)': '⟩',
+  // --- Grouped spaces ---
+  // Note: \s+ is solved later by replaceMULTIPLE_SPACE_SREGEX function
+  '&#09;|&#009|&#10;|&#010|&#13;|&#013|&#32;|&#032|&#160;|&nbsp;|&#8192;|&#8193;|&#8194;|&#8195;|&#8196;|&#8197;|&#8198;|&#8199;|&#8200;|&#8201;|&#8202;|&#8203;|&#8204;|&#8205;|&#8206;|&#8207;|&#xA0;': ' ',
+
+  // --- Grouped hyphens/dashes ---
+  '&#173;|&shy;|&#8208;|&#x2010;|&#8209;|&#x2011;|&#8210;|&#x2012;|&#8211;|&ndash;|&#x2013;|&#8212;|&mdash;|&#x2014;|&#8213;|&#x2015;|&#8722;|&minus;|&#x2212;': '-',
+
+  // --- Grouped single quotes ---
+  '&#39;|&apos;|&#x27;|&#8216;|&lsquo;|&#x2018;|&#8217;|&rsquo;|&#x2019;|&#8218;|&sbquo;|&#x201A;|&#x201a;|&#8219;|&#x201B;|&#x201b;': "'",
+
+  // --- Grouped double quotes ---
+  '&#34;|&quot;|&#x22;|&#8220;|&ldquo;|&#x201C;|&#x201c;|&#8221;|&rdquo;|&#x201D;|&#x201d;|&#8222;|&bdquo;|&#x201E;|&#x201e;|&#8223;|&#x201F;|&#x201f;': '"',
+
+  // --- Other special characters (grouped if they have multiple representations) ---
+  '&#33;|&excl;|&#x21;': '!',
+  '&#36;|&dollar;|&#x24;|&#65284;|&#xFF04;': '$',
+  '&#37;|&percnt;|&#x25;': '%',
+  // '&amp;' is usually handled separately (e.g. replaceAmpersands function)
+  '&#40;|&lpar;|&#x28;': '(',
+  '&#41;|&rpar;|&#x29;': ')',
+  '&#43;|&plus;|&#x2B;|&#x2b;': '+',
+  '&#46;|&period;|&#046;|&#x2e;': '.', // Dot (046 added for sure)
+  '&#60;|&lt;|&#x3c;': '<',
+  '&#61;|&equals;|&#x3d;': '=',
+  '&#62;|&gt;|&#x3e;': '>',
+  '&#63;|&quest;|&#x3f;': '?',
+  '&#91;|&lbrack;|&#x5b;': '[',
+  '&#93;|&rbrack;|&#x5d;': ']',
+  '&#95;|&lowbar;|&#x5f;': '_',
+  '&#123;|&lbrace;|&#x7b;': '{',
+  '&#124;|&vert;|&#x7c;|VerticalLine': '|', // VerticalLine added for security
+  '&#125;|&rbrace;|&#x7d;': '}',
+  //'&#133;|&hellip;|&#x2026;': '…', // Replaced by three dots? In 1.3.0 it maps to '...'
+  '&#8230;|&hellip;|&mldr;|&#x2026;': '...', // Three dots
+  '&#162;|&cent;|&#xa2;|&#65504;|&#xFFE0;': '¢',
+  '&#163;|&pound;|&#xa3;|&#65505;|&#xFFE1;': '£',
+  '&#165;|&yen;|&#xa5;|&#65509;|&#xFFE5;': '¥',
+  '&#169;|&copy;|&#xA9;|&#xa9;': '©',
+  '&#174;|&reg;|&#xAE;|&#xae;': '®',
+  '&#176;|&deg;|&#xb0;': '°',
+  '&#177;|&plusmn;|&#xb1;': '±',
+  '&#183;|&centerdot;|&middot;|&#xB7;': '·',
+  '&#188;|&frac14;|&#xBC;': '¼',
+  '&#189;|&half;|&#xBD;': '½',
+  '&#190;|&frac34;|&#xBE;': '¾',
+  '&#215;|&times;|&#xd7;': '×',
+  '&#247;|&divide;|&#xf7;': '÷',
+  '&#8364;|&euro;|&#x20AC;': '€',
+  '&#8482;|&trade;|&#x2122;': '™',
+
+  // --- Characters with one representation in the original map (can be kept or integrated above) ---
+  // These were less frequent or had only one code/entity
+  '&#137;|&permil;|&#x89;': '‰', // Promile
+  '&#139;|&#x8B;': '‹', // Single left-pointing angle quotation mark
+  '&#155;|&#x9B;': '›', // Single right-pointing angle quotation mark
+  '&#8242;|&prime;|&#x2032;': '′', // Prime
+  '&#8243;|&Prime;|&#x2033;': '″', // Double Prime
+
+  // ... and other less common ones, if they are in the original map
+  '&#8451;|&#x2103;': '℃', // Stupeň Celsia
+  '&#8776;|&thickapprox;|&#x2248;': '≈', // Almost equal to
+  '&#8800;|&ne;|&#x2260;': '≠', // Not equal to
+  '&#9001;|&#x2329;': '〈', // Left-pointing angle bracket
+  '&#9002;|&#x232A;|&#x232a;': '〉', // Right-pointing angle bracket
+  '&#8241;|&#x2031;': '‱', // Per ten thousand sign
 };
+// Note to <br>, <p>: These tags are in replaceAllSpecialCharactersAndHtml version 1.3.0
+// are already processed *before* the characterMap loop using regular expressions
+// HTML_TAG_REGEX and HTML_LINEBREAKS_REGEX. Therefore, it is not necessary to include them
+// in this optimized map, their original entries were redundant.
 
 // precompiled regular expression patterns for content processing
 const BS_QUOTE_REGEX = new RegExp("\\[contains quote post or other embedded content\\]", "gi"); // Pattern indicating a Bluesky quote post.
@@ -658,6 +667,7 @@ function trimContent(str: string): { content: string;needsEllipsis: boolean } {
     !/[.!?:)"…]$/.test(str) && // Check for common punctuation endings including ellipsis
     !/[\u{1F600}-\u{1F64F}]$|[\u{1F300}-\u{1F5FF}]$|[\u{1F680}-\u{1F6FF}]$|[\u{2600}-\u{26FF}]$/u.test(str) && // Emoji detection
     !/https?:\/\/[^\s]+$/.test(str) && // Check if it doesn't end with a URL
+    !/@([a-zA-Z0-9_]+)$/.test(str) && // Check if it doesn't end with a username mention (@username)
     !/\s>>$/.test(str) // Check if it doesn't end with " >>"
   ) {
     str += '…';
