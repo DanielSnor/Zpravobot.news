@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// settings for IFTTT 🦋 webhook filter - Good Friday 2025 rev
+// settings for IFTTT 📺 webhook filter - 23.4.2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Configuration settings for the IFTTT webhook filter.
@@ -47,17 +47,17 @@ const SETTINGS: AppSettings = {
   MENTION_FORMATTING: {
     // Define platform-specific mention formats. Keys should match POST_FROM values or "DEFAULT".
     "DEFAULT": { type: "none", value: "" }, // Default behavior if platform-specific rule is missing.
-    "BS": { type: "suffix", value: ".bsky.social" }, // Example for Bluesky
+    // "BS": { type: "suffix", value: ".bsky.social" }, // Example for Bluesky
     // "RSS": { type: "suffix", value: "@twitter.com" }, // Example for RSS (no change)
     // "TW": { type: "suffix", value: "@twitter.com" }, // Example for X/Twitter
     // "IG": { type: "prefix", value: "https://instagram.com/" }, // Example for Instagram
-    // "YT": { type: "none", value: "" }, // Example for YouTube
+    "YT": { type: "none", value: "" }, // Example for YouTube
   },
-  POST_FROM: "BS", // "BS" | "RSS" | "TW" | "YT"
+  POST_FROM: "YT", // "BS" | "RSS" | "TW" | "YT"
   POST_LENGTH: 444, // 0 - 500 chars
   POST_SOURCE: "", // "" | `https://twitter.com/` | `https://x.com/`
   POST_TARGET: "", // "" | `https://twitter.com/` | `https://x.com/`
-  QUOTE_SENTENCE: " 🦋📝💬", // e.g., "" | "comments post from" | "🦋📝💬" | "𝕏📝💬"
+  QUOTE_SENTENCE: "", // "" | "comments post from" | "🦋📝💬" | "𝕏📝💬"
   REPOST_ALLOWED: true, // true | false
   REPOST_SENTENCE: "", // "" | "shares" | "𝕏📤"
   SHOULD_PREFER_REAL_NAME: true, // true | false
@@ -66,12 +66,12 @@ const SETTINGS: AppSettings = {
   SHOW_ORIGIN_POSTURL_PERM: true, // true | false
   SHOW_TITLE_AS_CONTENT: false, // true | false
   STATUS_IMAGEURL_SENTENCE: "", // "" | "🖼️"
-  STATUS_URL_SENTENCE: "\n", // "" | "\n\n🦋 " | "\n\n𝕏 " | "\n🔗 " | "\n🗣️🎙️👇👇👇\n" | "\nYT 📺👇👇👇\n"
+  STATUS_URL_SENTENCE: "\nYT 📺👇👇👇\n", // "" | "\n\n🦋 " | "\n\n𝕏 " | "\n🔗 " | "\n🗣️🎙️👇👇👇\n" | "\nYT 📺👇👇👇\n"
   TREAT_RSS_AS_TW: false, // Default: false. Set to true ONLY in applets where an RSS feed (usually from RSS.app) should be processed using Twitter rules.
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// connector for IFTTT 🦋📙📗📘 webhook - Good Friday 2025 rev
+// connector for IFTTT 📺 webhook - 23.4.2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 // 
 // This connector processes data from various sources (e.g. RSS, Twitter, Bluesky) 
@@ -86,16 +86,16 @@ const SETTINGS: AppSettings = {
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-let entryContent = String(Feed.newFeedItem.EntryContent); 	// Main text content (often includes HTML).
-let entryTitle = String(Feed.newFeedItem.EntryTitle);     	// Title of the feed item.
-let entryUrl = String(Feed.newFeedItem.EntryUrl);         	// URL of the specific item.
-let entryImageUrl = String(Feed.newFeedItem.EntryImageUrl); // Image URL associated with the item (might be unreliable).
-let entryAuthor = String(Feed.newFeedItem.EntryAuthor);   	// Author name/username if provided by the feed.
-let feedTitle = String(Feed.newFeedItem.FeedTitle);       	// Title of the RSS feed itself.
-let feedUrl = String(Feed.newFeedItem.FeedUrl);           	// URL of the RSS feed.
+let entryContent = String(Youtube.newPublicVideoFromSubscriptions.Description); // post content
+let entryTitle = String(Youtube.newPublicVideoFromSubscriptions.Title); 		// post title
+let entryUrl = String(Youtube.newPublicVideoFromSubscriptions.Url); 			// link to the post
+let entryImageUrl = String();
+let entryAuthor = String(Youtube.newPublicVideoFromSubscriptions.AuthorName); 	// author's username
+let feedTitle = String(Youtube.newPublicVideoFromSubscriptions.Title); 			// title of the feed (username)
+let feedUrl = String();
 
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter v1.3.0 - Good Friday 2025 rev
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v1.4.0 - 23.4.2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Description:
@@ -137,118 +137,123 @@ if (SETTINGS.POST_FROM === "RSS" && SETTINGS.TREAT_RSS_AS_TW === true) {
 }
 // --- END: Logic to potentially treat RSS as TW ---
 
+/**
+ * Optimized map for text normalization. Groups multiple patterns
+ * (HTML entities, codes) for the same target character into one regular expression
+ * with alternatives (|). Used by replaceAllSpecialCharactersAndHtml function.
+ */
+const characterMap: Record < string, string > = {
+  // --- Czech characters (grouped representations) ---
+  '&#193;|&Aacute;|A&#769;': 'Á', // Velké Á
+  '&#225;|&aacute;|a&#769;': 'á', // Malé á
+  '&Auml;|&#196;|A&#776;': 'Ä', // Velké Ä
+  '&auml;|&#228;|a&#776;': 'ä', // Malé ä
+  '&#268;|&Ccaron;|C&#780;': 'Č', // Velké Č
+  '&#269;|&ccaron;|c&#780;': 'č', // Malé č
+  '&#270;|&Dcaron;|D&#780;': 'Ď', // Velké Ď
+  '&#271;|&dcaron;|d&#780;': 'ď', // Malé ď
+  '&#201;|&Eacute;|E&#769;': 'É', // Velké É
+  '&#233;|&eacute;|e&#769;': 'é', // Malé é
+  '&Euml;|&#203;|E&#776;': 'Ë', // Velké Ë
+  '&euml;|&#235;|e&#776;': 'ë', // Malé ë
+  '&#282;|&Ecaron;|E&#780;': 'Ě', // Velké Ě
+  '&#283;|&ecaron;|e&#780;': 'ě', // Malé ě
+  '&#205;|&Iacute;|I&#769;': 'Í', // Velké Í
+  '&#237;|&iacute;|i&#769;': 'í', // Malé í
+  '&Iuml;|&#207;|I&#776;': 'Ï', // Velké Ï
+  '&iuml;|&#239;|i&#776;': 'ï', // Malé ï
+  '&#327;|&Ncaron;|N&#780;': 'Ň', // Velké Ň
+  '&#328;|&ncaron;|n&#780;': 'ň', // Malé ň
+  '&#211;|&Oacute;|O&#769;': 'Ó', // Velké Ó
+  '&#243;|&oacute;|o&#769;': 'ó', // Malé ó
+  '&Ouml;|&#214;|O&#776;': 'Ö', // Velké Ö
+  '&ouml;|&#246;|o&#776;': 'ö', // Malé ö
+  '&Odblac;|&#336;|O&#778;': 'Ő', // Velké Ő
+  '&odblac;|&#337;|o&#778;': 'ő', // Malé ő
+  '&#344;|&Rcaron;|R&#780;': 'Ř', // Velké Ř
+  '&#345;|&rcaron;|r&#780;': 'ř', // Malé ř
+  '&#352;|&Scaron;|S&#780;': 'Š', // Velké Š
+  '&#353;|&scaron;|s&#780;': 'š', // Malé š
+  '&#356;|&Tcaron;|T&#780;': 'Ť', // Velké Ť
+  '&#357;|&tcaron;|t&#780;': 'ť', // Malé ť
+  '&#218;|&Uacute;|U&#769;': 'Ú', // Velké Ú
+  '&#250;|&uacute;|u&#769;': 'ú', // Malé ú
+  '&Uuml;|&#220;|U&#776;': 'Ü', // Velké Ü
+  '&uuml;|&#252;|u&#776;': 'ü', // Malé ü
+  '&#366;|&Uring;|U&#778;': 'Ů', // Velké Ů
+  '&#367;|&uring;|u&#778;': 'ů', // Malé ů
+  '&Udblac;|&#368;|U&#369;': 'Ű', // Velké Ű
+  '&udblac;|&#369;|u&#369;': 'ű', // Malé ű
+  '&#221;|&Yacute;|Y&#769;': 'Ý', // Velké Ý
+  '&#253;|&yacute;|y&#769;': 'ý', // Malé ý
+  '&#381;|&Zcaron;|Z&#780;': 'Ž', // Velké Ž
+  '&#382;|&zcaron;|z&#780;': 'ž', // Malé ž
 
-// character mapping for text normalization
-// Keys are regex patterns, values are their replacements. Used by replaceAllSpecialCharactersAndHtml.
-const characterMap: {
-  [key: string]: string
-} = {
-  // basic text formatting replacement (HTML line breaks to newline chars)
-  '(<br>|<br />|</p>)': '\n',
-  // czech chars replacement (HTML entities/codes to actual characters)
-  '(&#193;|&Aacute;|A&#769;)': 'Á',
-  '(&#225;|&aacute;|a&#769;)': 'á',
-  '(&#196;|&Auml;|A&#776;)': 'Ä',
-  '(&#228;|&auml;|a&#776;)': 'ä',
-  '(&#268;|&Ccaron;|C&#780;)': 'Č',
-  '(&#269;|&ccaron;c&#780;)': 'č',
-  '(&#270;|&Dcaron;|D&#780;)': 'Ď',
-  '(&#271;|&dcaron;|d&#780;)': 'ď',
-  '(&#201;|&Eacute;|E&#769;)': 'É',
-  '(&#233;|&eacute;|e&#769;)': 'é',
-  '(&#203;|&Euml;|E&#776;)': 'Ë',
-  '(&#235;|&euml;|e&#776;)': 'ë',
-  '(&#282;|&Ecaron;|E&#780;)': 'Ě',
-  '(&#283;|&ecaron;|e&#780;)': 'ě',
-  '(&#205;|&Iacute;|I&#769;)': 'Í',
-  '(&#237;|&iacute;|i&#769;)': 'í',
-  '(&#207;|&Luml;|I&#776;)': 'Ï',
-  '(&#239;|&iuml;|i&#776;)': 'ï',
-  '(&#327;|&Ncaron;|N&#780;)': 'Ň',
-  '(&#328;|&ncaron;|n&#780;)': 'ň',
-  '(&#211;|&Oacute;|O&#769;)': 'Ó',
-  '(&#243;|&oacute;|o&#769;)': 'ó',
-  '(&#214;|&Ouml;|O&#776;)': 'Ö',
-  '(&#246;|&ouml;|o&#776;)': 'ö',
-  '(&#336;|&Odblac;|O&#778;)': 'Ő',
-  '(&#337;|&odblac;|o&#778;)': 'ő',
-  '(&#344;|&Rcaron;|R&#780;)': 'Ř',
-  '(&#345;|&rcaron;|r&#780;)': 'ř',
-  '(&#352;|&Scaron;|S&#780;)': 'Š',
-  '(&#353;|&scaron;|s&#780;)': 'š',
-  '(&#356;|&Tcaron;|T&#780;)': 'Ť',
-  '(&#357;|&tcaron;|t&#780;)': 'ť',
-  '(&#218;|&Uacute;|U&#769;)': 'Ú',
-  '(&#250;|&uacute;|u&#769;)': 'ú',
-  '(&#220;|&Uuml;|U&#776;)': 'Ü',
-  '(&#252;|&uuml;|u&#776;)': 'ü',
-  '(&#366;|&Uring;|U&#778;)': 'Ů',
-  '(&#367;|&uring;|u&#778;)': 'ů',
-  '(&#368;|&Udblac;|U&#369;)': 'Ű',
-  '(&#369;|&udblac;|u&#369;)': 'ű',
-  '(&#221;|&Yacute;|Y&#769;)': 'Ý',
-  '(&#253;|&yacute;|y&#769;)': 'ý',
-  '(&#381;|&Zcaron;|Z&#780;)': 'Ž',
-  '(&#382;|&zcaron;|z&#780;)': 'ž',
-  // special chars replacement (HTML entities/codes to actual characters or normalized forms)
-  '(&#09;|&#009;|&#10;|&#010;|&#13;|&#013;|&#32;|&#032;|&#160;|&nbsp;|&#8192;|&#8193;|&#8194;|&#8195;|&#8196;|&#8197;|&#8198;|&#8199;|&#8200;|&#8201;|&#8202;|&#8203;|&#8204;|&#8205;|&#8206;|&#8207;|&#xA0;|&NonBreakingSpace;)': ' ', // various spaces to standard space
-  '(&#33;|&#033;|&excl;|&#x21;)': '!',
-  '(&#34;|&#034;|&quot;|&#x22;)': '"',
-  '(&#36;|&#036;|&dollar;|&#x24;|&#65284;|&#xFF04;)': '$',
-  '(&#37;|&#037;|&percnt;|&#x25;)': '%',
-  '(&#39;|&#039;|&apos;|&#x27;)': '‘',
-  '(&#40;|&#040;|&lpar;|&#x28;)': '(',
-  '(&#41;|&#041;|&rpar;|&#x29;)': ')',
-  '(&#43;|&#043;|&plus;|&#x2B;|&#x2b;)': '+',
-  '(&#46;|&#046;|&period;)': '.',
-  '(&#60;|&#060;|&lt;|&#x3c;)': '<',
-  '(&#61;|&#061;|&equals;|&#x3d;)': '=',
-  '(&#62;|&#062;|&gt;|&#x3e;)': '>',
-  '(&#63;|&#063;|&quest;|&#x3f;)': '?',
-  '(&#91;|&#091;|&lbrack;|&#x5b;)': '[',
-  '(&#93;|&#093;|&rbrack;|&#x5d;)': ']',
-  '(&#95;|&#095;|&lowbar;|&#x5f;)': '_',
-  '(&#123;|&lbrace;|&#x7b;)': '{',
-  '(&#124;|&vert;|&#x7c;|&VerticalLine;)': '|',
-  '(&#125;|&rbrace;|&#x7d;)': '}',
-  '(&#137;|&permil;|&#x89;)': '‰',
-  '(&#139;|&#x8B;|&#x8b;)': '‹',
-  '(&#155;|&#x9B;|&#x9b;)': '›',
-  '(&#162;|&cent;|&#xa2;|&#65504;|&#xFFE0;)': '¢',
-  '(&#163;|&pound;|&#xa3;|&#65505;|&#xFFE1;)': '£',
-  '(&#165;|&yen;|&#xa5;|&#65509;|&#xFFE5;)': '¥',
-  '(&#169;|&copy;|&#xA9;|&#xa9;)': '©',
-  '(&#173;|&#xAD;|&shy;)': '',
-  '(&#174;|&reg;|&#xAE;|&#xae;)': '®',
-  '(&#176;|&deg;|&#xb0;)': '°',
-  '(&#177;|&plusmn;|&#xb1;)': '±',
-  '(&#183;|&centerdot;|&#xB7;)': '·',
-  '(&#188;|&frac14;|&#xBC;)': '¼',
-  '(&#189;|&half;|&#xBD;)': '½',
-  '(&#190;|&frac34;|&#xBE;)': '¾',
-  '(&#215;|&times;|&#xd7;)': '×',
-  '(&#247;|&divide;|&#xf7;)': '÷',
-  '(&#8208;|&hyphen;|&#x2010;|&#8209;|&#x2011;|&#8210;|&#x2012;|&#8211;|&ndash;|&#x2013;|&#8212;|&mdash;|&#x2014;|&#8213;|&horbar;|&#x2015;)': '-',
-  '(&#8216;|&lsquo;|&OpenCurlyQuote;|&#x2018;)': '‘',
-  '(&#8217;|&rsquo;|&CloseCurlyQuote;|&#x2019;)': '’',
-  '(&#8218;|&sbquo;|&#x201A;|&#x201a;)': '‚',
-  '(&#8219;|&#x201B;|&#x201b;)': '‛',
-  '(&#8220;|&ldquo;|&OpenCurlyDoubleQuote;|&#x201C;|&#x201c;)': '“',
-  '(&#8221;|&rdquo;|&CloseCurlyDoubleQuote;|&#x201D;|&#x201d;)': '”',
-  '(&#8222;|&bdquo;|&#x201E;|&#x201e;)': '„',
-  '(&#8223;|&#x201F;|&#x201f;)': '‟',
-  '(&#8230;|&hellip;|&mldr;|&#x2026;)': '…',
-  '(&#8241;|&pertenk;|&#x2031;)': '‱',
-  '(&#8242;|&prime;|&#x2032;)': '′',
-  '(&#8243;|&Prime;&#x2033;)': '″',
-  '(&#8364;|&euro;|&#x20AC;)': '€',
-  '(&#8451;|&#x2103;)': '℃',
-  '(&#8482;|&trade;|&#x2122;)': '™',
-  '(&#8722;|&minus;|&#x2212;)': '-',
-  '(&#8776;|&thickapprox;|&#x2248;)': '≈',
-  '(&#8800;|&ne;|&#x2260;)': '≠',
-  '(&#9001;|&#x2329;)': '⟨',
-  '(&#9002;|&#x232A;|&#x232a;)': '⟩',
+  // --- Grouped spaces ---
+  // Note: \s+ is solved later by replace MULTIPLE_SPACE_SREGEX function
+  '&#09;|&#009|&#10;|&#010|&#13;|&#013|&#32;|&#032|&#160;|&nbsp;|&#8192;|&#8193;|&#8194;|&#8195;|&#8196;|&#8197;|&#8198;|&#8199;|&#8200;|&#8201;|&#8202;|&#8203;|&#8204;|&#8205;|&#8206;|&#8207;|&#xA0;': ' ',
+
+  // --- Grouped hyphens/dashes ---
+  '&#173;|&shy;|&#8208;|&#x2010;|&#8209;|&#x2011;|&#8210;|&#x2012;|&#8211;|&ndash;|&#x2013;|&#8212;|&mdash;|&#x2014;|&#8213;|&#x2015;|&#8722;|&minus;|&#x2212;': '-',
+
+  // --- Grouped single quotes ---
+  '&#39;|&apos;|&#x27;|&#8216;|&lsquo;|&#x2018;|&#8217;|&rsquo;|&#x2019;|&#8218;|&sbquo;|&#x201A;|&#x201a;|&#8219;|&#x201B;|&#x201b;': "'",
+
+  // --- Grouped double quotes ---
+  '&#34;|&quot;|&#x22;|&#8220;|&ldquo;|&#x201C;|&#x201c;|&#8221;|&rdquo;|&#x201D;|&#x201d;|&#8222;|&bdquo;|&#x201E;|&#x201e;|&#8223;|&#x201F;|&#x201f;': '"',
+
+  // --- Other special characters (grouped if they have multiple representations) ---
+  '&#33;|&excl;|&#x21;': '!',
+  '&#36;|&dollar;|&#x24;|&#65284;|&#xFF04;': '$',
+  '&#37;|&percnt;|&#x25;': '%',
+  // '&amp;' is usually handled separately (e.g. replaceAmpersands function)
+  '&#40;|&lpar;|&#x28;': '(',
+  '&#41;|&rpar;|&#x29;': ')',
+  '&#43;|&plus;|&#x2B;|&#x2b;': '+',
+  '&#46;|&period;|&#046;|&#x2e;': '.', // Dot (046 added for sure)
+  '&#60;|&lt;|&#x3c;': '<',
+  '&#61;|&equals;|&#x3d;': '=',
+  '&#62;|&gt;|&#x3e;': '>',
+  '&#63;|&quest;|&#x3f;': '?',
+  '&#91;|&lbrack;|&#x5b;': '[',
+  '&#93;|&rbrack;|&#x5d;': ']',
+  '&#95;|&lowbar;|&#x5f;': '_',
+  '&#123;|&lbrace;|&#x7b;': '{',
+  '&#124;|&vert;|&#x7c;|VerticalLine': '|', // VerticalLine added for security
+  '&#125;|&rbrace;|&#x7d;': '}',
+  //'&#133;|&hellip;|&#x2026;': '…', // Replaced by three dots? In 1.3.0 it maps to '...'
+  '&#8230;|&hellip;|&mldr;|&#x2026;': '...', // Three dots
+  '&#162;|&cent;|&#xa2;|&#65504;|&#xFFE0;': '¢',
+  '&#163;|&pound;|&#xa3;|&#65505;|&#xFFE1;': '£',
+  '&#165;|&yen;|&#xa5;|&#65509;|&#xFFE5;': '¥',
+  '&#169;|&copy;|&#xA9;|&#xa9;': '©',
+  '&#174;|&reg;|&#xAE;|&#xae;': '®',
+  '&#176;|&deg;|&#xb0;': '°',
+  '&#177;|&plusmn;|&#xb1;': '±',
+  '&#183;|&centerdot;|&middot;|&#xB7;': '·',
+  '&#188;|&frac14;|&#xBC;': '¼',
+  '&#189;|&half;|&#xBD;': '½',
+  '&#190;|&frac34;|&#xBE;': '¾',
+  '&#215;|&times;|&#xd7;': '×',
+  '&#247;|&divide;|&#xf7;': '÷',
+  '&#8364;|&euro;|&#x20AC;': '€',
+  '&#8482;|&trade;|&#x2122;': '™',
+
+  // --- Characters with one representation in the original map (can be kept or integrated above) ---
+  // These were less frequent or had only one code/entity
+  '&#137;|&permil;|&#x89;': '‰', // Promile
+  '&#139;|&#x8B;': '‹', // Single left-pointing angle quotation mark
+  '&#155;|&#x9B;': '›', // Single right-pointing angle quotation mark
+  '&#8242;|&prime;|&#x2032;': '′', // Prime
+  '&#8243;|&Prime;|&#x2033;': '″', // Double Prime
+
+  // ... and other less common ones, if they are in the original map
+  '&#8451;|&#x2103;': '℃', // Stupeň Celsia
+  '&#8776;|&thickapprox;|&#x2248;': '≈', // Almost equal to
+  '&#8800;|&ne;|&#x2260;': '≠', // Not equal to
+  '&#9001;|&#x2329;': '〈', // Left-pointing angle bracket
+  '&#9002;|&#x232A;|&#x232a;': '〉', // Right-pointing angle bracket
+  '&#8241;|&#x2031;': '‱', // Per ten thousand sign
 };
 
 // precompiled regular expression patterns for content processing
@@ -334,22 +339,54 @@ function isBsQuoteInPost(str: string): boolean {
 /**
  * Checks if the post is a quote based on platform-specific indicators.
  * For BS: Checks for BS_QUOTE_REGEX in content.
- * For TW: Checks if FirstLinkUrl points to another tweet.
+ * For TW: Checks if FirstLinkUrl points to a *different* tweet than entryUrl.
+ *         Excludes cases where FirstLinkUrl is just a media link (/photo/1, /video/1)
+ *         for the *same* tweet referenced by entryUrl.
  * @param entryContent - The content to check for BS quotes.
- * @param entryFirstLinkUrl - The first link URL to check for TW quotes.
- * @param postFrom - The platform identifier.
- * @returns True if the post is a quote, false otherwise.
+ * @param entryFirstLinkUrl - The first link URL (potentially the quoted tweet or media link).
+ * @param postFrom - The platform identifier ('BS', 'TW', etc.).
+ * @param entryUrl - The URL of the current post itself (LinkToTweet for TW).
+ * @returns True if the post is identified as a quote, false otherwise.
  */
-function isQuoteInPost(entryContent: string, entryFirstLinkUrl: string, postFrom: string): boolean {
-  // BS: Check for quote marker in content
+function isQuoteInPost(
+  entryContent: string,
+  entryFirstLinkUrl: string,
+  postFrom: string,
+  entryUrl: string // Added: URL of the current post (LinkToTweet)
+): boolean {
+  // BS Check (unchanged)
   if (postFrom === 'BS' && typeof entryContent === 'string') {
     return BS_QUOTE_REGEX.test(entryContent);
   }
-  // TW: Check if FirstLinkUrl points to a tweet
-  if (postFrom === 'TW' && typeof entryFirstLinkUrl === 'string') {
-    return /^https?:\/\/(twitter\.com|x\.com)\/[^\/]+\/status\/\d+/i.test(entryFirstLinkUrl);
+
+  // TW Check
+  if (postFrom === 'TW' && typeof entryFirstLinkUrl === 'string' && typeof entryUrl === 'string') {
+    // 1. Check if FirstLinkUrl even looks like a tweet status link
+    const isPotentialStatusLink = /^https?:\/\/(twitter\.com|x\.com)\/[^\/]+\/status\/\d+/i.test(entryFirstLinkUrl);
+    if (!isPotentialStatusLink) {
+      return false; // If it's not a status link, it cannot be a quote tweet link.
+    }
+
+    // 2. Normalize and compare base URLs to exclude self-referencing media links.
+    // Helper function to get base URL (remove /photo/1, /video/1) and normalize domain
+    const getBaseTweetUrl = (url: string): string => {
+      if (!url) return "";
+      // Remove trailing /photo/1 or /video/1
+      let baseUrl = url.replace(/\/(photo|video)\/1\/?$/, '');
+      // Normalize domain to twitter.com for comparison
+      baseUrl = baseUrl.replace(/^https?:\/\/x\.com\//, 'https://twitter.com/');
+      return baseUrl;
+    };
+
+    const baseFirstLinkUrl = getBaseTweetUrl(entryFirstLinkUrl);
+    const normalizedEntryUrl = getBaseTweetUrl(entryUrl); // Also normalize the main post URL
+
+    // It's a quote ONLY if FirstLinkUrl points to a status AND
+    // its base URL is DIFFERENT from the current post's base URL.
+    return baseFirstLinkUrl !== normalizedEntryUrl;
   }
-  return false;
+
+  return false; // Default: Not a quote
 }
 
 /**
@@ -416,8 +453,10 @@ function isRepost(str: string): boolean {
  */
 function isRepostOwn(str: string, authorName: string): boolean {
   if (!str || !authorName) return false; // Cannot be a self-repost if inputs are missing
+
   // Escape the author name for safe inclusion in the regex.
   const escapedAuthorName = escapeRegExp(authorName.startsWith('@') ? authorName.substring(1) : authorName); // Escape only the name part without '@'
+
   // Regex checks for "RT @escapedAuthorName:" at the beginning.
   const regex = new RegExp(`^RT @${escapedAuthorName}: `, "i"); // Added 'i' flag for case-insensitivity
   return regex.test(str);
@@ -442,6 +481,7 @@ function moveUrlToEnd(entryContent: string): string {
   if (!entryContent || !URL_REGEX.test(entryContent)) {
     return entryContent || ""; // Return original or empty if no content or no URL
   }
+
   // More robust URL extraction matching non-whitespace characters after protocol.
   const urlMatch = entryContent.match(/https?:\/\/[^\s]+/);
   if (urlMatch && urlMatch[0]) {
@@ -451,6 +491,7 @@ function moveUrlToEnd(entryContent: string): string {
     // Append the URL back, separated by a space.
     return contentWithoutUrl + ' ' + url;
   }
+
   return entryContent; // Return original if regex match failed unexpectedly
 }
 
@@ -464,6 +505,7 @@ function mustContainKeywords(str: string, keywords: string[]): boolean {
   if (!keywords || keywords.length === 0) {
     return true; // If no keywords are mandatory, the condition is always met.
   }
+
   if (!str) return false; // If the string is empty/null, it cannot contain keywords.
   const lowerCaseStr = str.toLowerCase();
   for (const keyword of keywords) { // Use for...of for better readability
@@ -473,6 +515,7 @@ function mustContainKeywords(str: string, keywords: string[]): boolean {
       return true; // Found at least one keyword.
     }
   }
+
   return false; // No mandatory keywords were found.
 }
 
@@ -484,11 +527,13 @@ function mustContainKeywords(str: string, keywords: string[]): boolean {
  */
 function parseRealNameFromEntryContent(embedCode: string): string { // <-- Přidáno : string
   if (!embedCode) return "";
+
   // Looking for a pattern: &mdash; Real Name (@username)
   let match = embedCode.match(/&mdash;\s*([^<\(]+)\s*\(@/i);
   if (match && match[1]) {
     return match[1].trim();
   }
+
   return "";
 }
 
@@ -500,12 +545,14 @@ function parseRealNameFromEntryContent(embedCode: string): string { // <-- Přid
  */
 function parseTextFromEntryContent(embedCode: string): string { // <-- Přidáno : string
   if (!embedCode) return "";
+
   // Searches for the contents of the <p ...>...</p> tag
   let match = embedCode.match(/<p[^>]*>([\s\S]*?)<\/p>/i);
   if (match && match[1]) {
     // Returns text (HTML entities will be removed later)
     return match[1].trim();
   }
+
   return ""; // Return empty string if <p> not found
 }
 
@@ -516,8 +563,10 @@ function parseTextFromEntryContent(embedCode: string): string { // <-- Přidáno
  */
 function parseUsernameFromTweetUrl(url: string): string {
   if (!url) return "";
+
   // Regex to capture username between domain and /status/
   const match = url.match(/^https?:\/\/(?:twitter\.com|x\.com)\/([^\/]+)\/status\/\d+/i);
+
   // Return the captured group (username) or an empty string
   return match && match[1] ? match[1] : "";
 }
@@ -535,11 +584,13 @@ function replaceAmpersands(str: string): string {
   // Process the string word by word (or URL by URL) separated by spaces.
   return str.replace(/(\S+)/g, word => {
     if (isUrlIncluded(word)) {
+
       // Check if the URL is in the exclusion list (case-insensitive) using indexOf.
       const isExcluded = SETTINGS.EXCLUDED_URLS.some(excludedUrl =>
         // Use indexOf !== -1 instead of includes
         word.toLowerCase().indexOf(excludedUrl.toLowerCase()) !== -1
       );
+
       if (isExcluded) {
         // If excluded, just encode the whole URL.
         try {
@@ -552,6 +603,7 @@ function replaceAmpersands(str: string): string {
         } catch (e) { return trimUrl(word); } // Fallback if encoding fails
       }
     } else {
+
       // If it's not a URL, replace all forms of ampersand with the setting.
       return word.replace(/&(amp;|#38;|#038;)?/g, SETTINGS.AMPERSAND_REPLACEMENT);
     }
@@ -566,13 +618,17 @@ function replaceAmpersands(str: string): string {
  */
 function replaceAllSpecialCharactersAndHtml(str: string): string {
   if (!str) return ""; // Handle null/undefined input
+
   // 1. Remove all HTML tags except <br>, <br />, </p>
   str = str.replace(HTML_TAG_REGEX, '');
+
   // 2. Replace <br>, <br />, </p> with newline characters.
   str = str.replace(HTML_LINE_BREAKS_REGEX, "\n");
+
   // 3. Temporarily replace newlines to protect them during character replacement.
   const tempNewline = "__TEMP_NEWLINE_MARKER__"; // Use a more unique marker
   str = str.replace(/\n/g, tempNewline);
+
   // 4. Replace special character entities/codes using the characterMap.
   // Ensure characterMap keys are properly escaped if they contain regex metacharacters NOT intended as such.
   // Assuming keys in characterMap are valid regex patterns.
@@ -584,10 +640,13 @@ function replaceAllSpecialCharactersAndHtml(str: string): string {
       // console.error(`Invalid regex pattern in characterMap: ${pattern}`, e);
     }
   }
+
   // 5. Replace multiple spaces (including those from nbsp replacements) with a single space.
   str = str.replace(MULTIPLE_SPACES_REGEX, ' ');
+
   // 6. Restore newline characters.
   str = str.replace(new RegExp(tempNewline, "g"), "\n");
+
   // 7. Limit consecutive newline characters to a maximum of two.
   str = str.replace(MULTIPLE_EOL_REGEX, "\n\n");
   return str.trim(); // Trim leading/trailing whitespace from the final result.
@@ -609,6 +668,7 @@ function replaceQuoted(
   postFrom: string,
   entryFirstLinkUrl: string // URL of the QUOTED post
 ): string {
+
   // For BS quotes, remove the marker and format
   if (postFrom === 'BS') {
     const bsQuoteRegex = BS_QUOTE_REGEX;
@@ -619,6 +679,7 @@ function replaceQuoted(
       `${resultFeedAuthor}${SETTINGS.QUOTE_SENTENCE}${authorToDisplay}:\n${cleanedContent}` :
       str;
   }
+
   // For TW quotes, extract QUOTED author username from URL, prepend '@', and add the prefix
   if (postFrom === 'TW' && typeof entryFirstLinkUrl === 'string' &&
     /^https?:\/\/(twitter\.com|x\.com)\/[^\/]+\/status\/\d+/i.test(entryFirstLinkUrl)) {
@@ -627,6 +688,7 @@ function replaceQuoted(
     // Use the mention (@username) of the quoted author
     return `${resultFeedAuthor}${SETTINGS.QUOTE_SENTENCE}${quotedAuthorMention}:\n${str}`;
   }
+
   // Otherwise, return unchanged
   return str;
 }
@@ -656,7 +718,7 @@ function replaceReposted(
  * @returns The string with the prefix removed, or the original string if not found.
  */
 function replaceResponseTo(str: string): string {
-  return str.replace(RESPONSE_PREFIX_REGEX, "");
+  return str.replace(RESPONSE_PREFIX_REGEX, ""); // Removes the "R to @username: " prefix
 }
 
 /**
@@ -754,6 +816,9 @@ function trimContent(str: string): { content: string;needsEllipsis: boolean } {
     !/[.!?:)"…]$/.test(str) && // Check for common punctuation endings including ellipsis
     !/[\u{1F600}-\u{1F64F}]$|[\u{1F300}-\u{1F5FF}]$|[\u{1F680}-\u{1F6FF}]$|[\u{2600}-\u{26FF}]$/u.test(str) && // Emoji detection
     !/https?:\/\/[^\s]+$/.test(str) && // Check if it doesn't end with a URL
+    !/@([a-zA-Z0-9_]+)$/.test(str) && // Check if it doesn't end with a username mention (@username)
+    !/@[a-zA-Z0-9_]+([@.][a-zA-Z0-9_.-]+)?$/.test(str) && // Check if it doesn't end with a username mention (@username@twitter.com or .bsky.social)
+    !/#([a-zA-Z0-9_]+)$/.test(str) && // Check if it doesn't end with a hashtag
     !/\s>>$/.test(str) // Check if it doesn't end with " >>"
   ) {
     str += '…';
@@ -762,6 +827,7 @@ function trimContent(str: string): { content: string;needsEllipsis: boolean } {
 
   // Condition 2: Truncate if content exceeds POST_LENGTH.
   if (str.length > SETTINGS.POST_LENGTH) {
+
     // Slice to max length minus 1 for the ellipsis, then trim potential trailing space.
     let trimmedText = str.slice(0, SETTINGS.POST_LENGTH - 1).trim();
 
@@ -798,9 +864,11 @@ function trimUrl(str: string): string {
  */
 function findRepostUrl(str: string): string | null {
   if (!str) return null;
+
   // Reset the regex state for global searches
   REPOST_URL_REGEX.lastIndex = 0;
   const matches = REPOST_URL_REGEX.exec(str);
+
   // Access group by index (more compatible than named group potentially)
   return matches ? matches[1] : null;
 }
@@ -812,9 +880,11 @@ function findRepostUrl(str: string): string | null {
  */
 function findRepostUser(str: string): string {
   if (!str) return "";
+
   // Reset the regex state
   REPOST_USER_REGEX.lastIndex = 0;
   const matches = REPOST_USER_REGEX.exec(str);
+
   // Access group by index
   return matches ? matches[1] : '';
 }
@@ -852,6 +922,7 @@ function composeResultContent(
   // Platform-specific initial content selection and processing
   switch (SETTINGS.POST_FROM) {
     case "BS":
+
       // BS uses EntryContent (HTML post content)
       resultContent = entryContent;
 
@@ -864,12 +935,13 @@ function composeResultContent(
         feedAuthorUserName = feedTitle.trim(); // Fallback
         feedAuthorRealName = feedTitle.trim(); // Fallback
       }
+
       // Set username to skip for mention formatting
       userNameToSkip = feedAuthorUserName;
       resultFeedAuthor = SETTINGS.SHOULD_PREFER_REAL_NAME ? feedAuthorRealName : feedAuthorUserName;
 
       // Handle Bluesky quote posts.
-      if (isQuoteInPost(resultContent, "", "BS")) {
+      if (isQuoteInPost(resultContent, "", "BS", entryUrl)) {
         // For BS, entryAuthor from trigger is often "(none)". Pass quoting author's username.
         resultContent = replaceQuoted(resultContent, resultFeedAuthor, feedAuthorUserName, "BS", "");
       }
@@ -879,18 +951,20 @@ function composeResultContent(
       resultContent = replaceAmpersands(resultContent);
       resultContent = contentHack(resultContent);
       resultContent = moveUrlToEnd(resultContent); // Move URL to end for BS.
-      // DO NOT call replaceUserNames here.
       break;
 
     case "TW":
+
       // Extract tweet text from TweetEmbedCode (in entryContent)
       let tweetText = parseTextFromEntryContent(entryContent);
+
       // Use extracted text or fall back to entryTitle (original Text) if extraction fails
       resultContent = tweetText || entryTitle;
 
       // Extract username and real name of the QUOTING author
       feedAuthorUserName = feedTitle.trim(); // Username from trigger (e.g., "zpravobotnews")
       feedAuthorRealName = parseRealNameFromEntryContent(entryContent) || feedAuthorUserName; // Real name from embed code
+
       // Set username to skip for mention formatting
       userNameToSkip = feedAuthorUserName;
       resultFeedAuthor = SETTINGS.SHOULD_PREFER_REAL_NAME ? feedAuthorRealName : feedAuthorUserName;
@@ -900,11 +974,13 @@ function composeResultContent(
         const repostedUser = findRepostUser(entryTitle); // Get the @username being retweeted.
         resultContent = replaceReposted(resultContent, resultFeedAuthor, repostedUser); // Apply RT formatting. Adds "@repostedUser"
       }
+
       // Handle quotes - check if FirstLinkUrl (entryImageUrl) points to a tweet
-      else if (isQuoteInPost("", entryImageUrl, "TW")) {
+      else if (isQuoteInPost(resultContent, "", "BS", entryUrl)) {
         // Pass quoting author's username as 3rd arg for consistency, though not used in TW formatting part of replaceQuoted
         resultContent = replaceQuoted(resultContent, resultFeedAuthor, feedAuthorUserName, "TW", entryImageUrl); // Adds "@quotedUser"
       }
+
       // Handle replies (R to).
       resultContent = replaceResponseTo(resultContent); // Remove reply prefix.
 
@@ -913,7 +989,6 @@ function composeResultContent(
       resultContent = replaceAmpersands(resultContent);
       resultContent = contentHack(resultContent);
       resultContent = moveUrlToEnd(resultContent); // Move URL to end for TW.
-      // DO NOT call replaceUserNames here.
       break;
 
     default: // Includes RSS, YT, etc.
@@ -925,14 +1000,12 @@ function composeResultContent(
       resultContent = replaceAmpersands(resultContent);
       resultContent = contentHack(resultContent);
       // moveUrlToEnd is intentionally skipped for RSS/default.
-      // DO NOT call replaceUserNames here.
       break;
   }
 
   // --- Common step after switch ---
   // Apply username formatting (@username -> @username@suffix) for relevant platforms
   // (where userNameToSkip was set, i.e., BS and TW).
-  // This now correctly handles mentions potentially added by replaceQuoted/replaceReposted.
   if (userNameToSkip) {
     resultContent = replaceUserNames(resultContent, userNameToSkip, SETTINGS.POST_FROM);
   }
@@ -1166,12 +1239,16 @@ if (shouldSkipPost()) {
   MakerWebhooks.makeWebRequest.skip("Post skipped due to filter rules."); // Optional skip message
 } else {
   // If not skipped, proceed to compose the final content and status.
+
   // 1. Compose the core content string.
   const resultContent = composeResultContent(entryTitle, entryAuthor, feedTitle);
+
   // 2. Compose the final status string (including content, image URL, post URL).
   const resultStatus = composeResultStatus(resultContent, entryUrl, entryImageUrl, entryTitle, entryAuthor);
+
   // 3. Prepare the request body for the IFTTT webhook action.
   const requestBody = `status=${resultStatus}`;
+
   // 4. Set the body for the webhook request.
   MakerWebhooks.makeWebRequest.setBody(requestBody);
 }
