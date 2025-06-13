@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// settings for IFTTT 📙📗📘 webhook filter - Children's Day 2025 rev
+// settings for IFTTT 📙📗📘 webhook filter - June's Friday the 13th, 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Configuration settings for the IFTTT webhook filter.
@@ -15,7 +15,7 @@ interface AppSettings {
   EXCLUDED_URLS: string[]; // URLs that should NOT be trimmed by trimUrl, but should still be URL-encoded in replaceAmpersands.
   MANDATORY_KEYWORDS: string[]; // List of keywords that must appear in the post content or title for it to be published.
   MENTION_FORMATTING: { [platform: string]: { type: "prefix" | "suffix" | "none";value: string; } }; // Defines how @mentions are formatted per platform (e.g., add suffix, prefix, or do nothing).
-  POST_FROM: "BS" | "RSS" | "TW" | "YT"; // Identifier for the source platform of the post (e.g., Bluesky, RSS feed, Twitter, YouTube). This value might be overridden based on TREAT_RSS_AS_TW.
+  POST_FROM: "BS" | "RSS" | "TW" | "YT"; // Identifier for the source platform of the post (e.g., Bluesky, RSS feed, Twitter, YouTube).
   POST_LENGTH: number; // Maximum post length (0-500 chars) after processing.
   POST_LENGTH_TRIM_STRATEGY: "sentence" | "word"; // Strategy for truncation: word cut or attempt to preserve whole last sentence.
   POST_SOURCE: string; // Original post URL base string to be replaced (e.g., "https://x.com/"). Use escapeRegExp with this.
@@ -32,18 +32,17 @@ interface AppSettings {
   SHOW_TITLE_AS_CONTENT: boolean; // If true, prioritize entryTitle over entryContent as the main post content.
   STATUS_IMAGEURL_SENTENCE: string; // Prefix added before the image URL when included.
   STATUS_URL_SENTENCE: string; // Prefix/suffix formatting added before/after the final post URL.
-  TREAT_RSS_AS_TW: boolean; // If true AND the initial POST_FROM is "RSS", treat the feed item as if it came from Twitter ("TW").
   URL_DOMAIN_FIXES: string[]; // A list of domains (e.g. "rspkt.cz", "example.com") to add the https:// protocol to, if missing.
 }
 
-// application settings configuration
+// Application settings configuration
 const SETTINGS: AppSettings = {
   AMPERSAND_REPLACEMENT: `ꝸ`, // Replacement for & char to prevent encoding issues in URLs or text.
   BANNED_COMMERCIAL_PHRASES: [], // E.g., ["advertisement", "discount", "sale"]. Leave empty to disable this filter.
   CONTENT_HACK_PATTERNS: [], // E.g.: { pattern: "what", replacement: "by_what", flags: "gi", literal: false }, // Replaces pattern "what" by replacement "by_what" with flags.
   EXCLUDED_URLS: ["youtu.be", "youtube.com"], // E.g., ["youtu.be", "youtube.com", "example.com"]. URLs in this list are excluded from trimming but still encoded.
   MANDATORY_KEYWORDS: [], // E.g., ["news", "updates", "important"]. Leave empty to disable mandatory keyword filtering.
-  MENTION_FORMATTING: { "DEFAULT": { type: "none", value: "" }, }, // Default behavior if platform-specific rule is missing.
+  MENTION_FORMATTING: { "RSS": { type: "suffix", value: "@twitter.com" }, }, // Default behavior if platform-specific rule is missing.
   POST_FROM: "RSS", // "BS" | "RSS" | "TW" | "YT"
   POST_LENGTH: 444, // 0 - 500 chars
   POST_LENGTH_TRIM_STRATEGY: "sentence", // "sentence" | "word" // Try to preserve meaningful content during trimming.
@@ -61,6 +60,5 @@ const SETTINGS: AppSettings = {
   SHOW_TITLE_AS_CONTENT: false, // true | false
   STATUS_IMAGEURL_SENTENCE: "", // "" | "🖼️"
   STATUS_URL_SENTENCE: "\n", // "" | "\n\n🦋 " | "\n\n𝕏 " | "\n🔗 " | "\n🗣️🎙️👇👇👇\n" | "\nYT 📺👇👇👇\n"
-  TREAT_RSS_AS_TW: false, // Default: false. Set to true ONLY in applets where an RSS feed (usually from RSS.app) should be processed using Twitter rules.
-  URL_DOMAIN_FIXES: [], // E.g., "example.com" // Domains divided by , that are automatically added to https:// if the protocol is missing.
+  URL_DOMAIN_FIXES: [] // E.g., "example.com" // Domains divided by , that are automatically added to https:// if the protocol is missing.
 };
