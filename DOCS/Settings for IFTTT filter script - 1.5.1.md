@@ -321,14 +321,6 @@ Output:
 ```
 Your replacement has to stay between quotation marks. You can also use emojis or formatting.
 
-### TREAT_RSS_AS_TW - boolean
-Boolean determining whether RSS feed items should be processed as Twitter posts if `POST_FROM` is set to `"RSS"`. Default value: `false`
-
-Example: 
-```
-TREAT_RSS_AS_TW: false
-```
-
 ### URL_DOMAIN_FIXES - string[]
 List of domains to automatically prepend with `https://` if the protocol is missing. Default value: `[]`
 

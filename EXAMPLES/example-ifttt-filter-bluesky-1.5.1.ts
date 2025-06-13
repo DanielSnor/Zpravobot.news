@@ -1,12 +1,105 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter v1.5.0 - Children's Day 2025 rev
+// settings for IFTTT 🦋 webhook filter - June's Friday the 13th, 2025 rev
+///////////////////////////////////////////////////////////////////////////////
+//
+// Configuration settings for the IFTTT webhook filter.
+// These settings define content rules, platform-specific behavior, and formatting options.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+// Application settings definition
+interface AppSettings {
+  AMPERSAND_REPLACEMENT: string; // Character used to replace ampersands (&) in text to avoid encoding issues.
+  BANNED_COMMERCIAL_PHRASES: string[]; // List of phrases that indicate commercial or banned content. Posts containing these will be skipped.
+  CONTENT_HACK_PATTERNS: { pattern: string; replacement: string; flags?: string; literal?: boolean }[]; // Array of regex patterns and replacements for manipulating post content (e.g., fixing URLs or removing unwanted text).
+  EXCLUDED_URLS: string[]; // URLs that should NOT be trimmed by trimUrl, but should still be URL-encoded in replaceAmpersands.
+  MANDATORY_KEYWORDS: string[]; // List of keywords that must appear in the post content or title for it to be published.
+  MENTION_FORMATTING: { [platform: string]: { type: "prefix" | "suffix" | "none";value: string; } }; // Defines how @mentions are formatted per platform (e.g., add suffix, prefix, or do nothing).
+  POST_FROM: "BS" | "RSS" | "TW" | "YT"; // Identifier for the source platform of the post (e.g., Bluesky, RSS feed, Twitter, YouTube).
+  POST_LENGTH: number; // Maximum post length (0-500 chars) after processing.
+  POST_LENGTH_TRIM_STRATEGY: "sentence" | "word"; // Strategy for truncation: word cut or attempt to preserve whole last sentence.
+  POST_SOURCE: string; // Original post URL base string to be replaced (e.g., "https://x.com/"). Use escapeRegExp with this.
+  POST_TARGET: string; // Target post URL base string for replacement (e.g., "https://twitter.com/").
+  QUOTE_SENTENCE: string; // Prefix used when formatting a quote post (mainly for Bluesky).
+  REPOST_ALLOWED: boolean; // Whether reposts (retweets) are allowed to be published.
+  REPOST_SENTENCE: string; // Prefix used when formatting a repost (retweet).
+  RSS_INPUT_LIMIT: number; // Maximum input length for RSS feeds before processing (0 = no limit).
+  RSS_INPUT_TRUNCATION_STRATEGY: "simple" | "preserve_content"; // Strategy for truncation: simple cut or attempt to preserve meaningful content.
+  SHOULD_PREFER_REAL_NAME: boolean; // If true, use the author's real name (if available) instead of their username in certain contexts (e.g., reposts).
+  SHOW_FEEDURL_INSTD_POSTURL: boolean; // If true, show the feed's URL instead of the specific post's URL as a fallback.
+  SHOW_IMAGEURL: boolean; // If true, include image URLs in the post output (using STATUS_IMAGEURL_SENTENCE).
+  SHOW_ORIGIN_POSTURL_PERM: boolean; // If true, always include the original post URL in the output, regardless of other conditions. This might be overridden dynamically.
+  SHOW_TITLE_AS_CONTENT: boolean; // If true, prioritize entryTitle over entryContent as the main post content.
+  STATUS_IMAGEURL_SENTENCE: string; // Prefix added before the image URL when included.
+  STATUS_URL_SENTENCE: string; // Prefix/suffix formatting added before/after the final post URL.
+  URL_DOMAIN_FIXES: string[]; // A list of domains (e.g. "rspkt.cz", "example.com") to add the https:// protocol to, if missing.
+}
+
+// application settings configuration
+const SETTINGS: AppSettings = {
+  AMPERSAND_REPLACEMENT: `ꝸ`, // Replacement for & char to prevent encoding issues in URLs or text.
+  BANNED_COMMERCIAL_PHRASES: [], // E.g., ["advertisement", "discount", "sale"]. Leave empty to disable this filter.
+  CONTENT_HACK_PATTERNS: [], // E.g.: { pattern: "what", replacement: "by_what", flags: "gi", literal: false }, // Replaces pattern "what" by replacement "by_what" with flags.
+  EXCLUDED_URLS: ["youtu.be", "youtube.com"], // E.g., ["youtu.be", "youtube.com", "example.com"]. URLs in this list are excluded from trimming but still encoded.
+  MANDATORY_KEYWORDS: [], // E.g., ["news", "updates", "important"]. Leave empty to disable mandatory keyword filtering.
+  MENTION_FORMATTING: { "BS": { type: "prefix", value: "https://bsky.app/profile/" }, }, // Suffix added to BlueSky mentions for clarity or linking.
+  POST_FROM: "BS", // "BS" | "RSS" | "TW" | "YT"
+  POST_LENGTH: 444, // 0 - 500 chars
+  POST_LENGTH_TRIM_STRATEGY: "sentence", // "sentence" | "word" // Try to preserve meaningful content during trimming.
+  POST_SOURCE: "", // "" | `https://twitter.com/` | `https://x.com/`
+  POST_TARGET: "", // "" | `https://twitter.com/` | `https://x.com/`
+  QUOTE_SENTENCE: " 🦋📝💬", // e.g., "" | "comments post from" | "🦋📝💬" | "𝕏📝💬"
+  REPOST_ALLOWED: true, // true | false
+  REPOST_SENTENCE: "", // "" | "shares" | "𝕏📤"
+  RSS_INPUT_LIMIT: 1000, // Limit input to 1000 characters for RSS before HTML processing.
+  RSS_INPUT_TRUNCATION_STRATEGY: "preserve_content", // "simple" | "preserve_content" // Try to preserve meaningful content during truncation.
+  SHOULD_PREFER_REAL_NAME: true, // true | false
+  SHOW_FEEDURL_INSTD_POSTURL: false, // true | false
+  SHOW_IMAGEURL: false, // true | false
+  SHOW_ORIGIN_POSTURL_PERM: true, // true | false
+  SHOW_TITLE_AS_CONTENT: false, // true | false
+  STATUS_IMAGEURL_SENTENCE: "", // "" | "🖼️"
+  STATUS_URL_SENTENCE: "\n", // "" | "\n\n🦋 " | "\n\n𝕏 " | "\n🔗 " | "\n🗣️🎙️👇👇👇\n" | "\nYT 📺👇👇👇\n"
+  URL_DOMAIN_FIXES: [], // E.g., "example.com" // Domains divided by , that are automatically added to https:// if the protocol is missing.
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// connector for IFTTT 🦋📙📗📘 webhook - June's Friday the 13th, 2025 rev
+///////////////////////////////////////////////////////////////////////////////
+//
+// This connector processes data from various sources (e.g., RSS, Twitter, Bluesky)
+// and provides it to the IFTTT webhook for publishing. The data is filtered and
+// edited according to the settings in AppSettings.
+//
+// This section defines the input variables coming from the IFTTT trigger.
+// IMPORTANT: Adapt the source (e.g., Twitter.newTweetFromSearch or Feed.newFeedItem)
+// based on the specific trigger used in your IFTTT applet. 
+//
+///////////////////////////////////////////////////////////////////////////////
+
+// Main text content from the source. For BlueSky and RSS, this is often EntryContent (HTML or plain text).
+const entryContent = Feed.newFeedItem.EntryContent || '';
+// Title from the source. For BlueSky and RSS, this is the EntryTitle field.
+const entryTitle = Feed.newFeedItem.EntryTitle || '';
+// URL of the specific post/item. For BlueSky and RSS, this is the direct link to the item.
+const entryUrl = Feed.newFeedItem.EntryUrl || '';
+// URL of the first image/media link found in the post. For BlueSky and RSS, this is EntryImageUrl (might be unreliable).
+const entryImageUrl = Feed.newFeedItem.EntryImageUrl || '';
+// Username of the post author. For BlueSky and RSS, this is the EntryAuthor field.
+const entryAuthor = Feed.newFeedItem.EntryAuthor || '';
+// Title of the feed (can be username, feed name, etc.). For BlueSky and RSS, this is FeedTitle.
+const feedTitle = Feed.newFeedItem.FeedTitle || '';
+// URL of the source feed/profile. For BlueSky and RSS, this is the FeedUrl field.
+const feedUrl = Feed.newFeedItem.FeedUrl || '';
+
+///////////////////////////////////////////////////////////////////////////////
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v1.5.1 - June's Friday the 13th, 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Description:
 // Processes and filters posts from various platforms (Twitter, Bluesky, RSS, YouTube)
 // for IFTTT webhook publishing. Applies normalization, formatting, shortening,
 // and platform-specific rules based on settings.
-// Includes special handling for RSS feeds treated as Twitter feeds via TREAT_RSS_AS_TW.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -23,18 +116,9 @@ const escapeRegExpCache: { [key: string]: string } = {};
 const cacheOrder: string[] = [];
 
 // Creating domain fix patterns and adding them to CONTENT_HACK_PATTERNS
-if (SETTINGS.URL_DOMAIN_FIXES && Array.isArray(SETTINGS.URL_DOMAIN_FIXES)) {
-  // Creating patterns from domains
+if (SETTINGS.URL_DOMAIN_FIXES && SETTINGS.URL_DOMAIN_FIXES.length) {
   const domainFixPatterns = createDomainFixPatterns(SETTINGS.URL_DOMAIN_FIXES);
-  // Initialize CONTENT_HACK_PATTERNS if not already initialized
-  if (!SETTINGS.CONTENT_HACK_PATTERNS) {
-    SETTINGS.CONTENT_HACK_PATTERNS = [];
-  }
-  // Combining existing hacks with new domain fix patterns
-  SETTINGS.CONTENT_HACK_PATTERNS = [
-    ...SETTINGS.CONTENT_HACK_PATTERNS,
-    ...domainFixPatterns
-  ];
+  SETTINGS.CONTENT_HACK_PATTERNS = [...domainFixPatterns, ...(SETTINGS.CONTENT_HACK_PATTERNS || [])];
 }
 
 /**
@@ -141,24 +225,15 @@ const specialCharacters: Record < string, string > = {
 
 // Spaces, hyphens, quotes and ampersand map for normalization.
 const spacesAndDashes: Record < string, string > = {
-  // Grouped spaces (Note: \s+ is solved later by replace REGEX_PATTERNS.MULTIPLE_SPACES function)
-  '&#09;|&#009|&#10;|&#010|&#13;|&#013|&#32;|&#032|&#160;|&nbsp;|&#8192;|&#8193;|&#8194;|&#8195;|&#8196;|&#8197;|&#8198;|&#8199;|&#8200;|&#8201;|&#8202;|&#8203;|&#8204;|&#8205;|&#8206;|&#8207;|&#xA0;': ' ',
-  // Grouped hyphens/dashes
-  '&#173;|&shy;|&#8208;|&#x2010;|&#8209;|&#x2011;|&#8210;|&#x2012;|&#8211;|&ndash;|&#x2013;|&#8212;|&mdash;|&#x2014;|&#8213;|&#x2015;|&#8722;|&minus;|&#x2212;': '-',
-  // Grouped single quotes
-  '&#39;|&apos;|&#x27;|&#8216;|&lsquo;|&#x2018;|&#8217;|&rsquo;|&#x2019;|&#8218;|&sbquo;|&#x201A;|&#x201a;|&#8219;|&#x201B;|&#x201b;': "'",
-  // Grouped double quotes
-  '&#34;|&quot;|&#x22;|&#8220;|&ldquo;|&#x201C;|&#x201c;|&#8221;|&rdquo;|&#x201D;|&#x201d;|&#8222;|&bdquo;|&#x201E;|&#x201e;|&#8223;|&#x201F;|&#x201f;': '"',
-  // Grouped ampersand replacements - needs to be at the end of the map
-  '&#38;|&#038;|&amp;|&': SETTINGS.AMPERSAND_REPLACEMENT, // ampersands in entryContent
+  '&#09;|&#009|&#10;|&#010|&#13;|&#013|&#32;|&#032|&#160;|&nbsp;|&#8192;|&#8193;|&#8194;|&#8195;|&#8196;|&#8197;|&#8198;|&#8199;|&#8200;|&#8201;|&#8202;|&#8203;|&#8204;|&#8205;|&#8206;|&#8207;|&#xA0;': ' ', // Grouped spaces (Note: \s+ is solved later by replace REGEX_PATTERNS.MULTIPLE_SPACES function)
+  '&#173;|&shy;|&#8208;|&#x2010;|&#8209;|&#x2011;|&#8210;|&#x2012;|&#8211;|&ndash;|&#x2013;|&#8212;|&mdash;|&#x2014;|&#8213;|&#x2015;|&#8722;|&minus;|&#x2212;': '-', // Grouped hyphens/dashes
+  '&#39;|&#039;|&apos;|&#x27;|&#8216;|&lsquo;|&#x2018;|&#8217;|&rsquo;|&#x2019;|&#8218;|&sbquo;|&#x201A;|&#x201a;|&#8219;|&#x201B;|&#x201b;': "'", // Grouped single quotes
+  '&#34;|&quot;|&#x22;|&#8220;|&ldquo;|&#x201C;|&#x201c;|&#8221;|&rdquo;|&#x201D;|&#x201d;|&#8222;|&bdquo;|&#x201E;|&#x201e;|&#8223;|&#x201F;|&#x201f;': '"', // Grouped double quotes
+  '&#38;|&#038;|&amp;|&': SETTINGS.AMPERSAND_REPLACEMENT, // Grouped ampersand in entryContent replacements - needs to be at the end of the map
 };
 
 // Combine all thematic maps into a single characterMap for processing.
-const characterMap: Record < string, string > = {
-  ...czechCharacters,
-  ...specialCharacters,
-  ...spacesAndDashes,
-};
+const characterMap: Record < string, string > = { ...czechCharacters, ...specialCharacters, ...spacesAndDashes, };
 
 // precompiled regular expression patterns for content processing
 const BS_QUOTE_REGEX = new RegExp("\\[contains quote post or other embedded content\\]", "gi"); // Pattern indicating a Bluesky quote post.
@@ -183,13 +258,6 @@ const URL_REGEX = /https?:\/\//i; // Simple check for the presence of "http://" 
  * @returns The processed content string ready for final status composition.
  */
 function composeResultContent(entryTitle: string, entryAuthor: string, feedTitle: string): string {
-  // Ensure inputs are strings, fallback to empty string if null/undefined
-  entryTitle = entryTitle || "";
-  // entryAuthor is the QUOTING user's username from the trigger (e.g., "zpravobotnews")
-  entryAuthor = entryAuthor || "";
-  feedTitle = feedTitle || "";
-  // entryContent contains TweetEmbedCode for TW, HTML content for BS/RSS
-  entryContent = entryContent || "";
   if (!entryContent && !entryTitle) return ""; // Return early if both main inputs are empty.
   let resultContent = "";
   let resultFeedAuthor = ""; // Real name or username of the QUOTING author
@@ -293,10 +361,6 @@ function composeResultStatus(resultContent: string, entryUrl: string, entryImage
   let needsEllipsis = false;
   // Ensure inputs are strings or default to empty
   resultContent = resultContent || "";
-  entryUrl = entryUrl || "";
-  entryImageUrl = entryImageUrl || "";
-  entryTitle = entryTitle || "";
-  entryAuthor = entryAuthor || "";
   // Check if the image URL points to a specific Twitter/X media page (not a direct file).
   const isTwitterMediaPageLink = typeof entryImageUrl === 'string' && (entryImageUrl.endsWith('/photo/1') || entryImageUrl.endsWith('/video/1'));
   // Platform-specific logic for trimming, URL visibility, and URL selection.
@@ -307,8 +371,8 @@ function composeResultStatus(resultContent: string, entryUrl: string, entryImage
       trimmedContent = bsTrimmedResult.content;
       needsEllipsis = bsTrimmedResult.needsEllipsis;
       // 2. Determine URL visibility: Show URL if forced, if content was truncated, OR if it's a BS quote post.
-      // Pass original entryContent to isBsQuoteInPost as trimming might remove the marker.
-      shouldShowUrl = SETTINGS.SHOW_ORIGIN_POSTURL_PERM || needsEllipsis || isBsQuoteInPost(entryContent);
+      // Pass original entryContent to isQuoteInPost as trimming might remove the marker.
+      shouldShowUrl = SETTINGS.SHOW_ORIGIN_POSTURL_PERM || needsEllipsis || isQuoteInPost(resultContent, "", "BS");
       // 3. Select URL: Use entryUrl if shouldShowUrl is true.
       if (shouldShowUrl) {
         if (typeof entryUrl === 'string') {
@@ -402,54 +466,60 @@ function composeResultStatus(resultContent: string, entryUrl: string, entryImage
 }
 
 /**
- * Applies custom regex replacements defined in SETTINGS.CONTENT_HACK_PATTERNS.
- * @param str - The input string.
- * @returns The string after applying all defined hacks.
+ * Applies custom substitution using regular expressions defined in SETTINGS.CONTENT_HACK_PATTERNS.
+ * Processes domain fixes from URL_DOMAIN_FIXES first, then applies other defined hacks.
+ * Supports the 'literal' flag for escaping special characters in patterns.
+ * @param str - Input string to be modified.
+ * @returns Modified string after applying all defined hacks.
  */
 function contentHack(str: string): string {
-  if (!str) { return ''; } // Handle null or undefined input by returning an empty string
-  // Hard-coded replacement of "+" with "﹢"
-  str = str.replace(/\+/g, "﹢");
-  // Skip processing if no patterns are defined in settings
-  if (!SETTINGS.CONTENT_HACK_PATTERNS || SETTINGS.CONTENT_HACK_PATTERNS.length === 0) { return str; }
-  // Iterate through each pattern defined in CONTENT_HACK_PATTERNS
-  for (const pattern of SETTINGS.CONTENT_HACK_PATTERNS) {
-    // Skip invalid or incomplete pattern objects to avoid errors
-    if (!pattern || !pattern.pattern || !pattern.replacement) { continue; }
-    try {
-      // If 'literal' flag is true, escape the pattern to treat it literally
-      const patternToUse = pattern.literal ? escapeRegExp(pattern.pattern) : pattern.pattern;
-      // Create a RegExp object from the pattern and flags, defaulting to 'g' if flags are not specified
-      const regex = new RegExp(patternToUse, pattern.flags || "g");
-      // Apply the replacement to the input string
-      str = str.replace(regex, pattern.replacement);
-    } catch (e) {} // Error is ignored, continue with other patterns
-  }
-  return str;
+  if (!str) return ""; // Treatment of empty or undefined input
+  str = str.replace(/\+/g, "\uFE63"); // Replace the "+" character with its unicode equivalent "﹢" (hard-coded modification)
+  const domainFixPatterns = createDomainFixPatterns(SETTINGS.URL_DOMAIN_FIXES || []); // Create domain repair patterns from URL_DOMAIN_FIXES
+  // Processing domain fixes as the first priority
+  let result = domainFixPatterns.reduce((acc, pattern) => {
+    try {     
+      const regex = new RegExp(pattern.pattern, pattern.flags); // Creating a regular expression from a pattern and its flags
+      return acc.replace(regex, pattern.replacement); // Apply replacements to the current text
+    } catch (e) { /* ignore */ } // Ignoring invalid regex errors
+    return acc; // Return unchanged text on error
+  }, str);
+  // Processing of other defined CONTENT_HACK_PATTERNS
+  if (SETTINGS.CONTENT_HACK_PATTERNS) {
+    for (const pattern of SETTINGS.CONTENT_HACK_PATTERNS) {
+      try {
+        // If the 'literal' flag is set to true, special characters in the pattern are escaped
+        const patternText = pattern.literal ? 
+          escapeRegExp(pattern.pattern) : 
+          pattern.pattern;        
+        // Using defined flags or default 'gi' (global, case-insensitive)
+        const flags = pattern.flags || 'gi';
+        const regex = new RegExp(patternText, flags);
+        // Apply replacements to the current text
+        result = result.replace(regex, pattern.replacement);
+      } catch (e) { /* ignore */ } // Ignoring invalid regex errors
+    }
+  }  
+  return result; // Return of the final edited text
 }
 
 /**
-* A function that creates patterns for repairing domains from the URL_DOMAIN_FIXES array.
-* This function accepts a list of domains and creates a RegExp pattern for each of them,
-* which ensures that if the domain is not preceded by http:// or https://,
-* it will be preceded by https:// and followed by a space. Special characters in domains are escaped.
-* @param domains - An array of strings containing the domains to be modified by adding https://.
-* @returns An array of objects with RegExp patterns, replacement strings and flags, or an empty array if the input is not valid.
+ * Creates domain repair patterns from the URL_DOMAIN_FIXES field.
+ * This function accepts a list of domains and creates a RegExp pattern for each,
+ * which ensures that if a domain is not preceded by http:// or https://,
+ * it will be prefixed with https://. Special characters in domains are escaped.
+ * @param domains - An array of strings containing the domains to be modified by adding https://.
+ * @returns An array of objects with RegExp patterns, replacement strings and flags, or an empty array if the input is not valid.
  */
 function createDomainFixPatterns(domains: string[]) {
-  if (!domains || domains.length === 0) return [];
-  return domains.map(domain => {
-    if (!domain) return null;
-    // Using escapeRegExp for domain escaping
-    const escapedDomain = escapeRegExp(domain);
-    // Create a pattern according to the desired format
-    return {
-      // Negative lookbehind ensures that the pattern only matches if the domain is not preceded by http:// or https://
-      pattern: `\\b(?<!https?:\\/\\/)${escapedDomain}(?:[^\\s]*)?`,
-      replacement: `&nbsp;https://$& `,
-      flags: "gi"
-    };
-  }).filter(item => item !== null); // Removing possible null values
+  return domains
+    .filter(domain => !!domain) // Filtrování prázdných nebo nedefinovaných domén
+    .map(domain => ({
+      pattern: `(?<!https?:\\/\\/)${domain.replace(/\./g, '\\.')}\\/?`, // Pattern with negative lookbehind to check for absence of protocol
+      replacement: `https://${domain}/`, // Replace by adding https:// before the domain
+      flags: "gi", // Global replacement and case-insensitive flags
+      literal: false // Explicitly set that pattern is a regular expression, not literal text
+    }));
 }
 
 /**
@@ -523,30 +593,6 @@ function getContent(entryContent: any, entryTitle: any): string {
   }
 }
 
-// Function to handle RSS feeds as Twitter posts if TREAT_RSS_AS_TW is enabled.
-// This encapsulates the remapping of input variables and settings adjustments.
-function handleRssAsTwitter(): void {
-  if (SETTINGS.POST_FROM === "RSS" && SETTINGS.TREAT_RSS_AS_TW === true) {
-    // Temporarily override the POST_FROM setting for this specific run to "TW".
-    SETTINGS.POST_FROM = "TW";
-    // Remap/adjust input variables to match expectations of the "TW" processing logic.
-    if (entryAuthor) {
-      // Reconstruct feedTitle to resemble "Real Name / @username" format expected by TW logic.
-      feedTitle = `${entryAuthor.replace('@', '')} / ${entryAuthor}`; // Use author name if available.
-    }
-    entryImageUrl = ""; // Clear image URL as RSS.app might provide unreliable or irrelevant images.
-    SETTINGS.SHOW_IMAGEURL = false; // Forcefully disable image display for this mode.
-    SETTINGS.SHOW_ORIGIN_POSTURL_PERM = true; // Force showing the link to the original tweet (entryUrl).
-  }
-}
-
-/**
- * Checks if the input string contains the Bluesky quote post marker.
- * @param str - The input string.
- * @returns True if the marker is found, false otherwise.
- */
-function isBsQuoteInPost(str: string): boolean { return str ? BS_QUOTE_REGEX.test(str) : false; } // Add check for null/undefined str
-
 /**
  * Checks if the input string contains any banned commercial phrases from settings.
  * Uses escapeRegExp to treat banned phrases literally. Case-insensitive.
@@ -605,6 +651,18 @@ function isQuoteInPost(entryContent: string, entryFirstLinkUrl: string, postFrom
     return isStatusLink && !isMediaAttachment;
   }
   return false;
+}
+
+/**
+* Detects if the text is a reply starting with the user's name.
+ * @param {string} str - Input text to parse
+ * @returns {boolean} True if the text begins with a valid mention, false otherwise
+ */
+function isReply(str: string): boolean {
+  if (!str) return false; // Handle null or undefined input by returning an empty string
+  const trimmed = str.trim(); // Normalization - remove whitespace at the beginning/end
+  if (/^RT\s+@[\w]+/i.test(trimmed)) return false; // Exclude the beginning of "RT " (retweet)
+  return /^(\.?@[\w]+|R to @[\w]+(\s|:|))/i.test(trimmed); // We detect reply formats
 }
 
 /**
@@ -887,10 +945,6 @@ function replaceUserNames(str: string, skipName: string, postFrom: string): stri
  * @returns True if the post should be skipped, false otherwise.
  */
 function shouldSkipPost(): boolean {
-  // Ensure inputs are strings or default to empty
-  entryTitle = entryTitle || "";
-  entryAuthor = entryAuthor || "";
-  entryContent = entryContent || "";
   // 1. Skip if both content and title are effectively empty.
   if ((!entryContent || entryContent.trim() === "" || entryContent === "(none)") &&
     (!entryTitle || entryTitle.trim() === "" || entryTitle === "(none)")) {
@@ -899,14 +953,16 @@ function shouldSkipPost(): boolean {
   // 2. Skip if it's an external repost and reposts are disallowed.
   // Note: isRepost/isRepostOwn primarily check entryTitle for TW context. Adjust if needed for other sources.
   if (isRepost(entryTitle) && !isRepostOwn(entryTitle, entryAuthor) && !SETTINGS.REPOST_ALLOWED) { return true; }
-  // 3. Skip if content or title contains banned commercial phrases.
-  if (isCommercialInPost(entryTitle) || isCommercialInPost(entryContent)) { return true; }
+  // 3. Skip if content title or URLs contains banned commercial phrases.
+  if (isCommercialInPost(entryTitle) || isCommercialInPost(entryContent) || isCommercialInPost(entryUrl) || isCommercialInPost(entryImageUrl)) { return true; }
   // 4. Skip if mandatory keywords are defined BUT none are found in title or content.
   if (SETTINGS.MANDATORY_KEYWORDS && SETTINGS.MANDATORY_KEYWORDS.length > 0 &&
     !mustContainKeywords(entryTitle, SETTINGS.MANDATORY_KEYWORDS) &&
     !mustContainKeywords(entryContent, SETTINGS.MANDATORY_KEYWORDS)) {
     return true;
   }
+  // 5. Skip if content or title starts with @username (reply)
+  if (isReply(entryTitle) || isReply(entryContent)) { return true; }
   return false; // If none of the above skip conditions are met, don't skip.
 }
 
@@ -930,16 +986,10 @@ function trimContent(str: string): { content: string, needsEllipsis: boolean } {
   let needsEllipsis = false;
   // Twitter-specific logic
   if (SETTINGS.POST_FROM === 'TW') {
-    // Remove leading spaces before URLs to ensure correct terminator detection
-    str = str.replace(/\s+(https?:\/\/)/g, '$1');
-    // Unicode-aware regex for emoji including all skin tone modifiers
-    // Extended_Pictographic covers all modern emoji, including skin tone sequences
-    const EMOJI_REGEX = /\p{Extended_Pictographic}/gu;
-    // Improved regex for URLs as terminators (case-insensitive, word boundary, supports underscores and long paths)
-    // Also supports hashtags and mentions as terminators
-    const URL_HASHTAG_MENTION_REGEX = /(\bhttps?:\/\/[^\s]+\b|#[a-zA-Z0-9_]+|@[a-zA-Z0-9_]+)$/i;
-    // Dynamic threshold for shortening activation
-    const TRUNCATE_THRESHOLD = Math.min(257, SETTINGS.POST_LENGTH - 30);
+    str = str.replace(/\s+(https?:\/\/)/g, '$1'); // Remove leading spaces before URLs to ensure correct terminator detection
+    const EMOJI_REGEX = /\p{Extended_Pictographic}/gu; // Unicode-aware regex for emoji including all skin tone modifiers
+    const URL_HASHTAG_MENTION_REGEX = /(\bhttps?:\/\/[^\s]+\b|#[a-zA-Z0-9_]+|@[a-zA-Z0-9_]+)$/i; // Regex for hashtags, mentions and URLs as terminators (case-insensitive, word boundary, supports underscores and long paths)
+    const TRUNCATE_THRESHOLD = Math.min(257, SETTINGS.POST_LENGTH - 30); // Dynamic threshold for shortening activation
     // Termination check priority: URL > Emoji/Punctuation > Mentions/Hashtags
     const hasTerminator =
       URL_HASHTAG_MENTION_REGEX.test(str) ||
@@ -1000,15 +1050,11 @@ function trimUrl(str: string): string {
 }
 
 // --- Main Execution Logic ---
-// Execute the RSS to Twitter handling logic.
-handleRssAsTwitter();
 // Check if the post should be skipped based on the defined rules. 
 if (shouldSkipPost()) {
-  // If skip conditions are met, instruct IFTTT to skip this run.
-  MakerWebhooks.makeWebRequest.skip('Skipped due to filter rules.');
+  MakerWebhooks.makeWebRequest.skip('Skipped due to filter rules.'); // If skip conditions are met, instruct IFTTT to skip this run.
 } else {
   // If not skipped, proceed to compose the final content and status for the IFTTT webhook action.
   const finalStatus = composeResultStatus(composeResultContent(entryTitle, entryAuthor, feedTitle), entryUrl, entryImageUrl, entryTitle, entryAuthor);
-  // Use string format as in the original v2.0.0alpha6
   MakerWebhooks.makeWebRequest.setBody(`status=${finalStatus}`);
 }
