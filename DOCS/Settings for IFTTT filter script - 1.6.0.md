@@ -1,6 +1,6 @@
 # Settings for IFTTT filter script v1.6.0
 
-This document explains all settings possibilities for the IFTTT filter script version 1.5.0, including default behaviors and examples of use. The script is designed to process posts from various platforms (e.g., Twitter, Bluesky, RSS, YouTube) and publish them via an IFTTT webhook. The output is composed of several parts:
+This document explains all settings possibilities for the IFTTT filter script version 1.6.0, including default behaviors and examples of use. The script is designed to process posts from various platforms (e.g., Twitter, Bluesky, RSS, YouTube) and publish them via an IFTTT webhook. The output is composed of several parts:
 
 - Content: Text from the original post, including hashtags.
 - Image URL: URL link to the first picture attached to the original post.
