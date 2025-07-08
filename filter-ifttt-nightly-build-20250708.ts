@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter Nightly Build NG - 20250708 10:00 rev
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter Nightly Build NG - 20250708 15:00 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Processes and filters posts from various platforms (Twitter, Bluesky, RSS, YouTube)
@@ -22,8 +22,8 @@ const fifoRegexQueue: string[] = []; const fifoRegExpOrder: string[] = [];
 
 // Creating domain fix patterns and adding them to CONTENT_HACK_PATTERNS
 if (SETTINGS.URL_DOMAIN_FIXES && SETTINGS.URL_DOMAIN_FIXES.length) {
-	const domainFixPatterns = createDomainFixPatterns(SETTINGS.URL_DOMAIN_FIXES);
-	SETTINGS.CONTENT_HACK_PATTERNS = [...domainFixPatterns, ...(SETTINGS.CONTENT_HACK_PATTERNS || [])];
+  const domainFixPatterns = createDomainFixPatterns(SETTINGS.URL_DOMAIN_FIXES);
+  SETTINGS.CONTENT_HACK_PATTERNS = [...domainFixPatterns, ...(SETTINGS.CONTENT_HACK_PATTERNS || [])];
 }
 
 /**
@@ -32,102 +32,102 @@ if (SETTINGS.URL_DOMAIN_FIXES && SETTINGS.URL_DOMAIN_FIXES.length) {
  * with alternatives (|). Used by replaceAllSpecialCharactersAndHtml function.
  */
 const characterMap: Record < string, string > = {
-	// --- Czech characters (grouped representations) ---
-	'&#193;|&Aacute;|A&#769;': 'Á', // Capital Á
-	'&#225;|&aacute;|a&#769;': 'á', // Lower case á
-	'&Auml;|&#196;|A&#776;': 'Ä', // Capital Ä
-	'&auml;|&#228;|a&#776;': 'ä', // Lower case ä
-	'&#268;|&Ccaron;|C&#780;': 'Č', // Capital Č
-	'&#269;|&ccaron;|c&#780;': 'č', // Lower case č
-	'&#270;|&Dcaron;|D&#780;': 'Ď', // Capital Ď
-	'&#271;|&dcaron;|d&#780;': 'ď', // Lower case ď
-	'&#201;|&Eacute;|E&#769;': 'É', // Capital É
-	'&#233;|&eacute;|e&#769;': 'é', // Lower case é
-	'&Euml;|&#203;|E&#776;': 'Ë', // Capital Ë
-	'&euml;|&#235;|e&#776;': 'ë', // Lower case ë
-	'&#282;|&Ecaron;|E&#780;': 'Ě', // Capital Ě
-	'&#283;|&ecaron;|e&#780;': 'ě', // Lower case ě
-	'&#205;|&Iacute;|I&#769;': 'Í', // Capital Í
-	'&#237;|&iacute;|i&#769;': 'í', // Lower case í
-	'&Iuml;|&#207;|I&#776;': 'Ï', // Capital Ï
-	'&iuml;|&#239;|i&#776;': 'ï', // Lower case ï
-	'&#327;|&Ncaron;|N&#780;': 'Ň', // Capital Ň
-	'&#328;|&ncaron;|n&#780;': 'ň', // Lower case ň
-	'&#211;|&Oacute;|O&#769;': 'Ó', // Capital Ó
-	'&#243;|&oacute;|o&#769;': 'ó', // Lower case ó
-	'&Ouml;|&#214;|O&#776;': 'Ö', // Capital Ö
-	'&ouml;|&#246;|o&#776;': 'ö', // Lower case ö
-	'&Odblac;|&#336;|O&#778;': 'Ő', // Capital Ő
-	'&odblac;|&#337;|o&#778;': 'ő', // Lower case ő
-	'&#344;|&Rcaron;|R&#780;': 'Ř', // Capital Ř
-	'&#345;|&rcaron;|r&#780;': 'ř', // Lower case ř
-	'&#352;|&Scaron;|S&#780;': 'Š', // Capital Š
-	'&#353;|&scaron;|s&#780;': 'š', // Lower case š
-	'&#356;|&Tcaron;|T&#780;': 'Ť', // Capital Ť
-	'&#357;|&tcaron;|t&#780;': 'ť', // Lower case ť
-	'&#218;|&Uacute;|U&#769;': 'Ú', // Capital Ú
-	'&#250;|&uacute;|u&#769;': 'ú', // Lower case ú
-	'&Uuml;|&#220;|U&#776;': 'Ü', // Capital Ü
-	'&uuml;|&#252;|u&#776;': 'ü', // Lower case ü
-	'&#366;|&Uring;|U&#778;': 'Ů', // Capital Ů
-	'&#367;|&uring;|u&#778;': 'ů', // Lower case ů
-	'&Udblac;|&#368;|U&#369;': 'Ű', // Capital Ű
-	'&udblac;|&#369;|u&#369;': 'ű', // Lower case ű
-	'&#221;|&Yacute;|Y&#769;': 'Ý', // Capital Ý
-	'&#253;|&yacute;|y&#769;': 'ý', // Lower case ý
-	'&#381;|&Zcaron;|Z&#780;': 'Ž', // Capital Ž
-	'&#382;|&zcaron;|z&#780;': 'ž', // Lower case ž
-	// --- Special characters and symbols map for normalization. ---
-	'&#33;|&excl;|&#x21;': '!',
-	'&#36;|&dollar;|&#x24;|&#65284;|&#xFF04;': '$',
-	'&#37;|&percnt;|&#x25;': '%',
-	'&#40;|&lpar;|&#x28;': '(',
-	'&#41;|&rpar;|&#x29;': ')',
-	'&#43;|&plus;|&#x2B;|&#x2b;': '+', // replaced with Heavy Plus Sign emoji to avoid IFTTT processing issues
-	'&#46;|&period;|&#046;|&#x2e;': '.', // Dot (046 added for sure)
-	'&#60;|&lt;|&#x3c;': '<',
-	'&#61;|&equals;|&#x3d;': '=',
-	'&#62;|&gt;|&#x3e;': '>',
-	'&#63;|&quest;|&#x3f;': '?',
-	'&#91;|&lbrack;|&#x5b;': '[',
-	'&#93;|&rbrack;|&#x5d;': ']',
-	'&#95;|&lowbar;|&#x5f;': '_',
-	'&#123;|&lbrace;|&#x7b;': '{',
-	'&#124;|&vert;|&#x7c;|VerticalLine': '|', // VerticalLine added for security
-	'&#125;|&rbrace;|&#x7d;': '}',
-	'&#8230;|&hellip;|&mldr;|&#x2026;': '…', // Three dots to …
-	'&#162;|&cent;|&#xa2;|&#65504;|&#xFFE0;': '¢',
-	'&#163;|&pound;|&#xa3;|&#65505;|&#xFFE1;': '£',
-	'&#165;|&yen;|&#xa5;|&#65509;|&#xFFE5;': '¥',
-	'&#169;|&copy;|&#xA9;|&#xa9;': '©',
-	'&#174;|&reg;|&#xAE;|&#xae;': '®',
-	'&#176;|&deg;|&#xb0;': '°',
-	'&#177;|&plusmn;|&#xb1;': '±',
-	'&#183;|&centerdot;|&middot;|&#xB7;': '·',
-	'&#188;|&frac14;|&#xBC;': '¼',
-	'&#189;|&half;|&#xBD;': '½',
-	'&#190;|&frac34;|&#xBE;': '¾',
-	'&#215;|&times;|&#xd7;': '×',
-	'&#247;|&divide;|&#xf7;': '÷',
-	'&#8364;|&euro;|&#x20AC;': '€',
-	'&#8482;|&trade;|&#x2122;': '™',
-	'&#137;|&permil;|&#x89;|&#8241;|&#x2031;': '‰', // Per ten thousand sign
-	'&#139;|&#x8B;': '‹', // Single left-pointing angle quotation mark
-	'&#155;|&#x9B;': '›', // Single right-pointing angle quotation mark
-	'&#8242;|&prime;|&#x2032;': '′', // Prime
-	'&#8243;|&Prime;|&#x2033;': '″', // Double Prime
-	'&#8451;|&#x2103;': '℃', // Celsius degree
-	'&#8776;|&thickapprox;|&#x2248;': '≈', // Almost equal to
-	'&#8800;|&ne;|&#x2260;': '≠', // Not equal to
-	'&#9001;|&#x2329;': '〈', // Left-pointing angle bracket
-	'&#9002;|&#x232A;|&#x232a;': '〉', // Right-pointing angle bracket
-	// --- Spaces, hyphens, quotes and ampersand map for normalization. ---
-	'&#09;|&#009|&#10;|&#010|&#13;|&#013|&#32;|&#032|&#160;|&nbsp;|&#8192;|&#8193;|&#8194;|&#8195;|&#8196;|&#8197;|&#8198;|&#8199;|&#8200;|&#8201;|&#8202;|&#8203;|&#8204;|&#8205;|&#8206;|&#8207;|&#xA0;': ' ', // Grouped spaces (Note: \s+ is solved later by replace REGEX_PATTERNS.MULTIPLE_SPACES function)
-	'&#173;|&shy;|&#8208;|&#x2010;|&#8209;|&#x2011;|&#8210;|&#x2012;|&#8211;|&ndash;|&#x2013;|&#8212;|&mdash;|&#x2014;|&#8213;|&#x2015;|&#8722;|&minus;|&#x2212;': '-', // Grouped hyphens/dashes
-	'&#39;|&#039;|&apos;|&#x27;|&#8216;|&lsquo;|&#x2018;|&#8217;|&rsquo;|&#x2019;|&#8218;|&sbquo;|&#x201A;|&#x201a;|&#8219;|&#x201B;|&#x201b;': "'", // Grouped single quotes
-	'&#34;|&quot;|&#x22;|&#8220;|&ldquo;|&#x201C;|&#x201c;|&#8221;|&rdquo;|&#x201D;|&#x201d;|&#8222;|&bdquo;|&#x201E;|&#x201e;|&#8223;|&#x201F;|&#x201f;': '"', // Grouped double quotes
-	'\\[&#8230;\\]|\\[&hellip;\\]|\\[&mldr;\\]|\\[&#x2026;\\]': '…', // Simplification of the elipse in brackets
-	'&#38;|&#038;|&amp;|&': SETTINGS.AMPERSAND_REPLACEMENT, // Grouped ampersand in entryContent replacements - needs to be at the end of the map
+  // --- Czech characters (grouped representations) ---
+  '&#193;|&Aacute;|A&#769;': 'Á', // Capital Á
+  '&#225;|&aacute;|a&#769;': 'á', // Lower case á
+  '&Auml;|&#196;|A&#776;': 'Ä', // Capital Ä
+  '&auml;|&#228;|a&#776;': 'ä', // Lower case ä
+  '&#268;|&Ccaron;|C&#780;': 'Č', // Capital Č
+  '&#269;|&ccaron;|c&#780;': 'č', // Lower case č
+  '&#270;|&Dcaron;|D&#780;': 'Ď', // Capital Ď
+  '&#271;|&dcaron;|d&#780;': 'ď', // Lower case ď
+  '&#201;|&Eacute;|E&#769;': 'É', // Capital É
+  '&#233;|&eacute;|e&#769;': 'é', // Lower case é
+  '&Euml;|&#203;|E&#776;': 'Ë', // Capital Ë
+  '&euml;|&#235;|e&#776;': 'ë', // Lower case ë
+  '&#282;|&Ecaron;|E&#780;': 'Ě', // Capital Ě
+  '&#283;|&ecaron;|e&#780;': 'ě', // Lower case ě
+  '&#205;|&Iacute;|I&#769;': 'Í', // Capital Í
+  '&#237;|&iacute;|i&#769;': 'í', // Lower case í
+  '&Iuml;|&#207;|I&#776;': 'Ï', // Capital Ï
+  '&iuml;|&#239;|i&#776;': 'ï', // Lower case ï
+  '&#327;|&Ncaron;|N&#780;': 'Ň', // Capital Ň
+  '&#328;|&ncaron;|n&#780;': 'ň', // Lower case ň
+  '&#211;|&Oacute;|O&#769;': 'Ó', // Capital Ó
+  '&#243;|&oacute;|o&#769;': 'ó', // Lower case ó
+  '&Ouml;|&#214;|O&#776;': 'Ö', // Capital Ö
+  '&ouml;|&#246;|o&#776;': 'ö', // Lower case ö
+  '&Odblac;|&#336;|O&#778;': 'Ő', // Capital Ő
+  '&odblac;|&#337;|o&#778;': 'ő', // Lower case ő
+  '&#344;|&Rcaron;|R&#780;': 'Ř', // Capital Ř
+  '&#345;|&rcaron;|r&#780;': 'ř', // Lower case ř
+  '&#352;|&Scaron;|S&#780;': 'Š', // Capital Š
+  '&#353;|&scaron;|s&#780;': 'š', // Lower case š
+  '&#356;|&Tcaron;|T&#780;': 'Ť', // Capital Ť
+  '&#357;|&tcaron;|t&#780;': 'ť', // Lower case ť
+  '&#218;|&Uacute;|U&#769;': 'Ú', // Capital Ú
+  '&#250;|&uacute;|u&#769;': 'ú', // Lower case ú
+  '&Uuml;|&#220;|U&#776;': 'Ü', // Capital Ü
+  '&uuml;|&#252;|u&#776;': 'ü', // Lower case ü
+  '&#366;|&Uring;|U&#778;': 'Ů', // Capital Ů
+  '&#367;|&uring;|u&#778;': 'ů', // Lower case ů
+  '&Udblac;|&#368;|U&#369;': 'Ű', // Capital Ű
+  '&udblac;|&#369;|u&#369;': 'ű', // Lower case ű
+  '&#221;|&Yacute;|Y&#769;': 'Ý', // Capital Ý
+  '&#253;|&yacute;|y&#769;': 'ý', // Lower case ý
+  '&#381;|&Zcaron;|Z&#780;': 'Ž', // Capital Ž
+  '&#382;|&zcaron;|z&#780;': 'ž', // Lower case ž
+  // --- Special characters and symbols map for normalization. ---
+  '&#33;|&excl;|&#x21;': '!',
+  '&#36;|&dollar;|&#x24;|&#65284;|&#xFF04;': '$',
+  '&#37;|&percnt;|&#x25;': '%',
+  '&#40;|&lpar;|&#x28;': '(',
+  '&#41;|&rpar;|&#x29;': ')',
+  '&#43;|&plus;|&#x2B;|&#x2b;': '+', // replaced with Heavy Plus Sign emoji to avoid IFTTT processing issues
+  '&#46;|&period;|&#046;|&#x2e;': '.', // Dot (046 added for sure)
+  '&#60;|&lt;|&#x3c;': '<',
+  '&#61;|&equals;|&#x3d;': '=',
+  '&#62;|&gt;|&#x3e;': '>',
+  '&#63;|&quest;|&#x3f;': '?',
+  '&#91;|&lbrack;|&#x5b;': '[',
+  '&#93;|&rbrack;|&#x5d;': ']',
+  '&#95;|&lowbar;|&#x5f;': '_',
+  '&#123;|&lbrace;|&#x7b;': '{',
+  '&#124;|&vert;|&#x7c;|VerticalLine': '|', // VerticalLine added for security
+  '&#125;|&rbrace;|&#x7d;': '}',
+  '&#8230;|&hellip;|&mldr;|&#x2026;': '…', // Three dots to …
+  '&#162;|&cent;|&#xa2;|&#65504;|&#xFFE0;': '¢',
+  '&#163;|&pound;|&#xa3;|&#65505;|&#xFFE1;': '£',
+  '&#165;|&yen;|&#xa5;|&#65509;|&#xFFE5;': '¥',
+  '&#169;|&copy;|&#xA9;|&#xa9;': '©',
+  '&#174;|&reg;|&#xAE;|&#xae;': '®',
+  '&#176;|&deg;|&#xb0;': '°',
+  '&#177;|&plusmn;|&#xb1;': '±',
+  '&#183;|&centerdot;|&middot;|&#xB7;': '·',
+  '&#188;|&frac14;|&#xBC;': '¼',
+  '&#189;|&half;|&#xBD;': '½',
+  '&#190;|&frac34;|&#xBE;': '¾',
+  '&#215;|&times;|&#xd7;': '×',
+  '&#247;|&divide;|&#xf7;': '÷',
+  '&#8364;|&euro;|&#x20AC;': '€',
+  '&#8482;|&trade;|&#x2122;': '™',
+  '&#137;|&permil;|&#x89;|&#8241;|&#x2031;': '‰', // Per ten thousand sign
+  '&#139;|&#x8B;': '‹', // Single left-pointing angle quotation mark
+  '&#155;|&#x9B;': '›', // Single right-pointing angle quotation mark
+  '&#8242;|&prime;|&#x2032;': '′', // Prime
+  '&#8243;|&Prime;|&#x2033;': '″', // Double Prime
+  '&#8451;|&#x2103;': '℃', // Celsius degree
+  '&#8776;|&thickapprox;|&#x2248;': '≈', // Almost equal to
+  '&#8800;|&ne;|&#x2260;': '≠', // Not equal to
+  '&#9001;|&#x2329;': '〈', // Left-pointing angle bracket
+  '&#9002;|&#x232A;|&#x232a;': '〉', // Right-pointing angle bracket
+  // --- Spaces, hyphens, quotes and ampersand map for normalization. ---
+  '&#09;|&#009|&#10;|&#010|&#13;|&#013|&#32;|&#032|&#160;|&nbsp;|&#8192;|&#8193;|&#8194;|&#8195;|&#8196;|&#8197;|&#8198;|&#8199;|&#8200;|&#8201;|&#8202;|&#8203;|&#8204;|&#8205;|&#8206;|&#8207;|&#xA0;': ' ', // Grouped spaces (Note: \s+ is solved later by replace REGEX_PATTERNS.MULTIPLE_SPACES function)
+  '&#173;|&shy;|&#8208;|&#x2010;|&#8209;|&#x2011;|&#8210;|&#x2012;|&#8211;|&ndash;|&#x2013;|&#8212;|&mdash;|&#x2014;|&#8213;|&#x2015;|&#8722;|&minus;|&#x2212;': '-', // Grouped hyphens/dashes
+  '&#39;|&#039;|&apos;|&#x27;|&#8216;|&lsquo;|&#x2018;|&#8217;|&rsquo;|&#x2019;|&#8218;|&sbquo;|&#x201A;|&#x201a;|&#8219;|&#x201B;|&#x201b;': "'", // Grouped single quotes
+  '&#34;|&quot;|&#x22;|&#8220;|&ldquo;|&#x201C;|&#x201c;|&#8221;|&rdquo;|&#x201D;|&#x201d;|&#8222;|&bdquo;|&#x201E;|&#x201e;|&#8223;|&#x201F;|&#x201f;': '"', // Grouped double quotes
+  '\\[&#8230;\\]|\\[&hellip;\\]|\\[&mldr;\\]|\\[&#x2026;\\]': '…', // Simplification of the elipse in brackets
+  '&#38;|&#038;|&amp;|&': SETTINGS.AMPERSAND_REPLACEMENT, // Grouped ampersand in entryContent replacements - needs to be at the end of the map
 };
 
 /**
@@ -135,19 +135,19 @@ const characterMap: Record < string, string > = {
  * Grouped into a single object for better organization and maintainability.
  */
 const REGEX_PATTERNS = {
-	BS_QUOTE: new RegExp("\\[contains quote post or other embedded content\\]", "gi"), // Pattern indicating a Bluesky quote post.
-	EMOJI: /\p{Extended_Pictographic}/gu, // Unicode-aware regex for emoji including all skin tone modifiers
-	HTML_LINE_BREAKS: /<(br|br\/|\/p)[^>]*>/gi, // Matches various HTML line break tags. Used in replaceAllSpecialCharactersAndHtml.
-	HTML_TAG: /<(?!br|\/p|br\/)[^>]+>/gi, // Matches all HTML tags EXCEPT line break tags. Used in replaceAllSpecialCharactersAndHtml.
-	MULTIPLE_EOL: /(\r?\n){3,}/g, // Matches 3 or more consecutive newline characters. Used to limit excessive line breaks.
-	MULTIPLE_SPACES: /\s+/g, // Matches one or more whitespace characters. Used to normalize spacing.
-	REPOST_PREFIX: /^(RT @([^:]+): )/i, // Matches the standard Twitter "RT @username: " prefix.
-	REPOST_URL: new RegExp('href="(?<url>https:\/\/twitter\.com[^"]+)"', 'gi'), // Extracts the original tweet URL from Twitter RT structure (often embedded in HTML). Note: Named capture group `<url>` is not used in current logic, only index 1.
-	REPOST_USER: new RegExp('RT (@[a-z0-9_]+)', 'gi'), // Extracts the @username being retweeted.
-	RESPONSE_PREFIX: /^R to (.*?): /, // Matches the "R to @username: " prefix used in some contexts for replies.
-	TCO_URL: /https:\/\/t\.co\/[^\s]+/gi, // Matches Twitter's shortened t.co URLs.
-	URL: /https?:\/\//i, // Simple check for the presence of "http://" or "https://".
-	URL_HASHTAG_MENTION: /(\bhttps?:\/\/[^\s]+\b|#[a-zA-Z0-9_]+|@[a-zA-Z0-9_]+)$/i, // Regex for hashtags, mentions and URLs as terminators (case-insensitive, 
+  BS_QUOTE: new RegExp("\\[contains quote post or other embedded content\\]", "gi"), // Pattern indicating a Bluesky quote post.
+  EMOJI: /\p{Extended_Pictographic}/gu, // Unicode-aware regex for emoji including all skin tone modifiers
+  HTML_LINE_BREAKS: /<(br|br\/|\/p)[^>]*>/gi, // Matches various HTML line break tags. Used in replaceAllSpecialCharactersAndHtml.
+  HTML_TAG: /<(?!br|\/p|br\/)[^>]+>/gi, // Matches all HTML tags EXCEPT line break tags. Used in replaceAllSpecialCharactersAndHtml.
+  MULTIPLE_EOL: /(\r?\n){3,}/g, // Matches 3 or more consecutive newline characters. Used to limit excessive line breaks.
+  MULTIPLE_SPACES: /\s+/g, // Matches one or more whitespace characters. Used to normalize spacing.
+  REPOST_PREFIX: /^(RT @([^:]+): )/i, // Matches the standard Twitter "RT @username: " prefix.
+  REPOST_URL: new RegExp('href="(?<url>https:\/\/twitter\.com[^"]+)"', 'gi'), // Extracts the original tweet URL from Twitter RT structure (often embedded in HTML). Note: Named capture group `<url>` is not used in current logic, only index 1.
+  REPOST_USER: new RegExp('RT (@[a-z0-9_]+)', 'gi'), // Extracts the @username being retweeted.
+  RESPONSE_PREFIX: /^R to (.*?): /, // Matches the "R to @username: " prefix used in some contexts for replies.
+  TCO_URL: /https:\/\/t\.co\/[^\s]+/gi, // Matches Twitter's shortened t.co URLs.
+  URL: /https?:\/\//i, // Simple check for the presence of "http://" or "https://".
+  URL_HASHTAG_MENTION: /(\bhttps?:\/\/[^\s]+\b|#[a-zA-Z0-9_]+|@[a-zA-Z0-9_]+)$/i, // Regex for hashtags, mentions and URLs as terminators (case-insensitive, 
 };
 
 /**
@@ -160,54 +160,56 @@ const REGEX_PATTERNS = {
  * @returns The processed content string ready for final status composition.
  */
 function composeResultContent(entryTitle: string, entryAuthor: string, feedTitle: string): string {
-	// Input normalization - trim all inputs once at the start
-	const trimmedEntryTitle = (entryTitle || '').trim();
-	const trimmedEntryAuthor = (entryAuthor || '').trim();
-	const trimmedFeedTitle = (feedTitle || '').trim();
-	// Optimization 3: Use isEffectivelyEmpty for consistent empty checks
-	if (isEffectivelyEmpty(entryContent) && isEffectivelyEmpty(trimmedEntryTitle)) { return ""; } // Return early if both main inputs are effectively empty
-	let resultContent = "";
-	let resultFeedAuthor = ""; // Real name or username of the QUOTING author
-	let feedAuthorUserName = ""; // Username of the QUOTING author
-	let feedAuthorRealName = ""; // Real name of the QUOTING author
-	let userNameToSkip = ""; // Username to exclude from mention formatting (usually the quoting author)   
-	switch (SETTINGS.POST_FROM) {
-		case "BS":
-			// Invoke Bluesky helper to process and clean BS-specific content
-			var bsResult = processBlueskyContent(entryContent, trimmedFeedTitle);
-			resultContent = bsResult.resultContent;
-			resultFeedAuthor = bsResult.resultFeedAuthor;
-			feedAuthorUserName = bsResult.feedAuthorUserName;
-			userNameToSkip = bsResult.userNameToSkip;
-			break;
-		case "TW":
-			// Invoke Twitter helper to process and clean Twitter-specific content
-			var twResult = processTwitterContent(
-				entryContent,
-				trimmedEntryTitle,
-				trimmedFeedTitle,
-				entryImageUrl
-			);
-			resultContent = twResult.resultContent;
-			resultFeedAuthor = twResult.resultFeedAuthor;
-			feedAuthorUserName = twResult.feedAuthorUserName;
-			userNameToSkip = twResult.userNameToSkip;
-			break;
-		default:
-			// Invoke default helper for RSS, YouTube, and other feeds
-			var defaultResult = processDefaultContent(
-				entryContent,
-				trimmedEntryTitle
-			);
-			resultContent = defaultResult.resultContent;
-			resultFeedAuthor = defaultResult.resultFeedAuthor;
-			feedAuthorUserName = defaultResult.feedAuthorUserName;
-			userNameToSkip = defaultResult.userNameToSkip;
-			break;
-	} // --- Common step after switch ---
-	// Apply username formatting (@username -> @username@suffix) for relevant platforms (where userNameToSkip was set, i.e., BS and TW).
-	if (userNameToSkip) { resultContent = replaceUserNames(resultContent, userNameToSkip, SETTINGS.POST_FROM); }
-	return resultContent;
+  // Input normalization - trim all inputs once at the start
+  const trimmedEntryTitle = (entryTitle || '').trim();
+  const trimmedEntryAuthor = (entryAuthor || '').trim();
+  const trimmedFeedTitle = (feedTitle || '').trim();
+  // Optimization 3: Use isEffectivelyEmpty for consistent empty checks
+  if (isEffectivelyEmpty(entryContent) && isEffectivelyEmpty(trimmedEntryTitle)) { return ""; } // Return early if both main inputs are effectively empty
+  let resultContent = "";
+  let resultFeedAuthor = ""; // Real name or username of the QUOTING author
+  let feedAuthorUserName = ""; // Username of the QUOTING author
+  let feedAuthorRealName = ""; // Real name of the QUOTING author
+  let userNameToSkip = ""; // Username to exclude from mention formatting (usually the quoting author)   
+  // Platform-specific logic for content processing.
+  switch (SETTINGS.POST_FROM) {
+    case "BS":
+      // Invoke Bluesky helper to process and clean BS-specific content
+      var bsResult = processBsContent(entryContent, trimmedFeedTitle);
+      resultContent = bsResult.resultContent;
+      resultFeedAuthor = bsResult.resultFeedAuthor;
+      feedAuthorUserName = bsResult.feedAuthorUserName;
+      userNameToSkip = bsResult.userNameToSkip;
+      break;
+    case "TW":
+      // Invoke Twitter helper to process and clean Twitter-specific content
+      var twResult = processTwContent(
+        entryContent,
+        trimmedEntryTitle,
+        trimmedFeedTitle,
+        entryImageUrl
+      );
+      resultContent = twResult.resultContent;
+      resultFeedAuthor = twResult.resultFeedAuthor;
+      feedAuthorUserName = twResult.feedAuthorUserName;
+      userNameToSkip = twResult.userNameToSkip;
+      break;
+    default:
+      // Invoke default helper for RSS, YouTube, and other feeds
+      var defaultResult = processDefaultContent(
+        entryContent,
+        trimmedEntryTitle
+      );
+      resultContent = defaultResult.resultContent;
+      resultFeedAuthor = defaultResult.resultFeedAuthor;
+      feedAuthorUserName = defaultResult.feedAuthorUserName;
+      userNameToSkip = defaultResult.userNameToSkip;
+      break;
+  } // End switch (SETTINGS.POST_FROM)
+  // --- Common step after switch ---
+  // Apply username formatting (@username -> @username@suffix) for relevant platforms (where userNameToSkip was set, i.e., BS and TW).
+  if (userNameToSkip) { resultContent = replaceUserNames(resultContent, userNameToSkip, SETTINGS.POST_FROM); }
+  return resultContent;
 }
 
 /**
@@ -224,46 +226,46 @@ function composeResultContent(entryTitle: string, entryAuthor: string, feedTitle
  * @returns The final status string ready to be sent.
  */
 function composeResultStatus(resultContent: string, entryUrl: string, entryImageUrl: string, entryTitle: string, entryAuthor: string): string {
-	// Normalize input
-	resultContent = resultContent || '';
-	// Initialize variables
-	// let urlStatus = '';
-	let repostUrl = null;
-	let shouldShowUrl = false;
-	// Platform-specific processing
-	let trimmedContent = '';
-	let needsEllipsis = false;
-	let urlToShow = '';
-	// Check if the image URL points to a specific Twitter/X media page (not a direct file).
-	const isTwitterMediaPageLink = typeof entryImageUrl === 'string' && (entryImageUrl.endsWith('/photo/1') || entryImageUrl.endsWith('/video/1'));
-	// Platform-specific logic for trimming, URL visibility, and URL selection.
-	switch (SETTINGS.POST_FROM) {
-		case 'BS': // Use Bluesky helper
-			const bsResult = processBlueskyStatus(resultContent, entryUrl, entryImageUrl, entryTitle, entryAuthor);
-			trimmedContent = bsResult.trimmedContent;
-			needsEllipsis = bsResult.needsEllipsis;
-			urlToShow = bsResult.urlToShow;
-			break;
-		case 'TW': // Use Twitter helper
-			const twResult = processTwitterStatus(resultContent, entryUrl, entryImageUrl, entryTitle, entryAuthor);
-			trimmedContent = twResult.trimmedContent;
-			needsEllipsis = twResult.needsEllipsis;
-			urlToShow = twResult.urlToShow;
-			break;
-		default: // Use default helper for RSS, YT, etc.
-			const defaultResult = processDefaultStatus(resultContent, entryUrl, entryImageUrl, entryTitle, entryAuthor);
-			trimmedContent = defaultResult.trimmedContent;
-			needsEllipsis = defaultResult.needsEllipsis;
-			urlToShow = defaultResult.urlToShow;
-			break;
-	} // End switch (SETTINGS.POST_FROM)
-	// Common final steps: format image URL if enabled
-	const resultImageUrl = typeof entryImageUrl === 'string' ? replaceAmpersands(entryImageUrl) : ''; // Process image URL (handle ampersands).
-	const imageStatus = isImageInPost(entryImageUrl) && SETTINGS.SHOW_IMAGEURL ? `${SETTINGS.STATUS_IMAGEURL_SENTENCE}${resultImageUrl}` : ''; // Build image status string if applicable.
-	// Append the selected URL if any
-	const urlStatus = urlToShow && typeof urlToShow === 'string' ? `${SETTINGS.STATUS_URL_SENTENCE}${replaceAmpersands(urlToShow)}` : ''; // Build final URL status string if applicable (handle ampersands in urlToShow).
-	// Return combined content, image, and URL
-	return `${trimmedContent}${imageStatus}${urlStatus}`; // Compose the final output string.
+  // Normalize input
+  resultContent = resultContent || '';
+  // Initialize variables
+  let urlStatus = '';
+  let repostUrl = null;
+  let shouldShowUrl = false;
+  // Platform-specific processing
+  let trimmedContent = '';
+  let needsEllipsis = false;
+  let urlToShow = '';
+  // Check if the image URL points to a specific Twitter/X media page (not a direct file).
+  const isTwitterMediaPageLink = typeof entryImageUrl === 'string' && (entryImageUrl.endsWith('/photo/1') || entryImageUrl.endsWith('/video/1'));
+  // Platform-specific logic for trimming, URL visibility, and URL selection.
+  switch (SETTINGS.POST_FROM) {
+    case 'BS': // Use Bluesky helper
+      const bsResult = processBsStatus(resultContent, entryUrl, entryImageUrl, entryTitle, entryAuthor);
+      trimmedContent = bsResult.trimmedContent;
+      needsEllipsis = bsResult.needsEllipsis;
+      urlToShow = bsResult.urlToShow;
+      break;
+    case 'TW': // Use Twitter helper
+      const twResult = processTwStatus(resultContent, entryUrl, entryImageUrl, entryTitle, entryAuthor);
+      trimmedContent = twResult.trimmedContent;
+      needsEllipsis = twResult.needsEllipsis;
+      urlToShow = twResult.urlToShow;
+      break;
+    default: // Use default helper for RSS, YT, etc.
+      const defaultResult = processDefaultStatus(resultContent, entryUrl, entryImageUrl, entryTitle, entryAuthor);
+      trimmedContent = defaultResult.trimmedContent;
+      needsEllipsis = defaultResult.needsEllipsis;
+      urlToShow = defaultResult.urlToShow;
+      break;
+  } // End switch (SETTINGS.POST_FROM)
+  // --- Common final steps for all platforms ---
+  const resultImageUrl = typeof entryImageUrl === 'string' ? replaceAmpersands(entryImageUrl) : ''; // Process image URL (handle ampersands).
+  const imageStatus = (isImageInPost(entryImageUrl) && SETTINGS.SHOW_IMAGEURL) ? `${SETTINGS.STATUS_IMAGEURL_SENTENCE}${resultImageUrl}` : ''; // Build image status string if applicable.
+  // Append the selected URL if any
+  urlStatus = (urlToShow && typeof urlToShow === 'string') ? `${SETTINGS.STATUS_URL_SENTENCE}${replaceAmpersands(urlToShow)}` : ''; // Build final URL status string if applicable (handle ampersands in urlToShow).
+  // Return combined content, image, and URL
+  return `${trimmedContent}${imageStatus}${urlStatus}`; // Compose the final output string.
 }
 
 /**
@@ -273,39 +275,39 @@ function composeResultStatus(resultContent: string, entryUrl: string, entryImage
  * @returns The string after applying all defined hacks.
  */
 function contentHack(str: string): string {
-   if (!str) return ""; // Handle null or undefined input by returning an empty string
-   let result = str.replace(/\+/g, "\uFE63"); // Replace the "+" character with its unicode equivalent "﹢"
-   const domainFixPatterns = createDomainFixPatterns(SETTINGS.URL_DOMAIN_FIXES || []);
-   // Processing domain fixes
-   result = domainFixPatterns.reduce(function(acc, domainPattern) {
-	 try {
-	   const regex = getCachedRegex(domainPattern.pattern, domainPattern.flags || '');
-	   return acc.replace(regex, domainPattern.replacement);
-	 } catch (e) {
-	   MakerWebhooks.makeWebRequest.skip(`Content hack domain fix failed - Pattern: ${domainPattern.pattern}`); 
-	   return acc;
-	 }
-   }, result);
-   // Processing other content hack patterns
-   if (SETTINGS.CONTENT_HACK_PATTERNS) {
-	 for (let i = 0; i < SETTINGS.CONTENT_HACK_PATTERNS.length; i++) {
-	   const contentPattern = SETTINGS.CONTENT_HACK_PATTERNS[i];
-	   let regexFlags = 'gi'; // default flags
-	   try {
-		 const patternText = contentPattern.literal ? escapeRegExp(contentPattern.pattern) : contentPattern.pattern;
-		 const rawFlags = contentPattern.flags || 'gi';
-		 // Fixed: Use type casting instead of String() constructor
-		 regexFlags = (rawFlags as string).replace(/[^gimuy]/g, '');
-		 const regex = getCachedRegex(patternText, regexFlags);
-		 result = result.replace(regex, contentPattern.replacement);
-	   } catch (e) {
-		 MakerWebhooks.makeWebRequest.skip(`Content hack pattern failed - Pattern: ${contentPattern.pattern}`); 
-		 continue;
-	   }
-	 }
-   }
-   return result;
- }
+  if (!str) return ""; // Handle null or undefined input by returning an empty string
+  let result = str.replace(/\+/g, "\uFE63"); // Replace the "+" character with its unicode equivalent "﹢"
+  const domainFixPatterns = createDomainFixPatterns(SETTINGS.URL_DOMAIN_FIXES || []);
+  // Processing domain fixes
+  result = domainFixPatterns.reduce(function(acc, domainPattern) {
+    try {
+      const regex = getCachedRegex(domainPattern.pattern, domainPattern.flags || '');
+      return acc.replace(regex, domainPattern.replacement);
+    } catch (e) {
+      MakerWebhooks.makeWebRequest.skip(`Content hack domain fix failed - Pattern: ${domainPattern.pattern}`);
+      return acc;
+    }
+  }, result);
+  // Processing other content hack patterns
+  if (SETTINGS.CONTENT_HACK_PATTERNS) {
+    for (let i = 0; i < SETTINGS.CONTENT_HACK_PATTERNS.length; i++) {
+      const contentPattern = SETTINGS.CONTENT_HACK_PATTERNS[i];
+      let regexFlags = 'gi'; // default flags
+      try {
+        const patternText = contentPattern.literal ? escapeRegExp(contentPattern.pattern) : contentPattern.pattern;
+        const rawFlags = contentPattern.flags || 'gi';
+        // Fixed: Use type casting instead of String() constructor
+        regexFlags = (rawFlags as string).replace(/[^gimuy]/g, '');
+        const regex = getCachedRegex(patternText, regexFlags);
+        result = result.replace(regex, contentPattern.replacement);
+      } catch (e) {
+        MakerWebhooks.makeWebRequest.skip(`Content hack pattern failed - Pattern: ${contentPattern.pattern}`);
+        continue;
+      }
+    }
+  }
+  return result;
+}
 
 /**
  * Creates domain repair patterns from the URL_DOMAIN_FIXES field.
@@ -317,14 +319,14 @@ function contentHack(str: string): string {
  */
 function createDomainFixPatterns(domains: string[]) {
   return domains
-	.filter(domain => !!domain) // Filtrování prázdných nebo nedefinovaných domén
-	.map(domain => {
-	  try { return { pattern: `(?<!https?:\\/\\/)${domain.replace(/\./g, '\\.')}\\/?`, replacement: `https://${domain}/`, flags: "gi", literal: false }; } 
-	  catch (e) {
-		MakerWebhooks.makeWebRequest.skip(`Domain fix pattern creation failed - Domain: ${domain}`); 
-		return null;
-	  }
-	}).filter(Boolean);
+  .filter(domain => !!domain) // Filtrování prázdných nebo nedefinovaných domén
+  .map(domain => {
+    try { return { pattern: `(?<!https?:\\/\\/)${domain.replace(/\./g, '\\.')}\\/?`, replacement: `https://${domain}/`, flags: "gi", literal: false }; } 
+    catch (e) {
+    MakerWebhooks.makeWebRequest.skip(`Domain fix pattern creation failed - Domain: ${domain}`); 
+    return null;
+    }
+  }).filter(Boolean);
 }
 
 /**
@@ -342,8 +344,8 @@ function escapeRegExp(str: string): string {
   fifoRegExpOrder.push(str);
   // Remove oldest entry if cache exceeds the size limit
   if (fifoRegExpOrder.length > MAX_CACHE_SIZE) {
-	const oldestKey = fifoRegExpOrder.shift();
-	if (oldestKey) delete escapeRegExpCache[oldestKey];
+  const oldestKey = fifoRegExpOrder.shift();
+  if (oldestKey) delete escapeRegExpCache[oldestKey];
   }
   return escaped;
 }
@@ -386,11 +388,11 @@ function findRepostUser(str: string): string {
  */
 function getContent(entryContent: any, entryTitle: any): string {
   if (SETTINGS.SHOW_TITLE_AS_CONTENT) {
-	return entryTitle || ""; // Return title if preferred, or empty string if title is null/undefined.
+  return entryTitle || ""; // Return title if preferred, or empty string if title is null/undefined.
   } else {
-	// Return content if it's a non-empty string, otherwise return title (or empty string if title is also null/undefined).
-	const contentIsEffectivelyEmpty = (typeof entryContent !== "string" || isEffectivelyEmpty(entryContent));
-	return contentIsEffectivelyEmpty ? (entryTitle || "") : entryContent;
+  // Return content if it's a non-empty string, otherwise return title (or empty string if title is also null/undefined).
+  const contentIsEffectivelyEmpty = (typeof entryContent !== "string" || isEffectivelyEmpty(entryContent));
+  return contentIsEffectivelyEmpty ? (entryTitle || "") : entryContent;
   }
 }
 
@@ -411,8 +413,8 @@ function getCachedRegex(pattern: string, flags: string): RegExp {
   fifoRegexQueue.push(key);
   // If the cache exceeds the maximum size, remove the oldest entry (FIFO)
   if (fifoRegexQueue.length > MAX_CACHE_SIZE) {
-	const oldestKey = fifoRegexQueue.shift();
-	if (oldestKey) delete regexCache[oldestKey];
+  const oldestKey = fifoRegexQueue.shift();
+  if (oldestKey) delete regexCache[oldestKey];
   }
   return regex;
 }
@@ -427,15 +429,15 @@ function isCommercialInPost(str: string): boolean {
   if (!str || !SETTINGS.BANNED_COMMERCIAL_PHRASES || SETTINGS.BANNED_COMMERCIAL_PHRASES.length === 0) { return false; }
   const lowerCaseStr = str.toLowerCase();
   for (const phrase of SETTINGS.BANNED_COMMERCIAL_PHRASES) {
-	if (!phrase) continue; // Skip empty phrases in the settings array
-	try {
-	  // Escape the phrase to treat it literally in the regex
-	  const regex = getCachedRegex(escapeRegExp(phrase), "i");
-	  if (regex.test(lowerCaseStr)) { return true; }
-	} catch (e) {
-	  MakerWebhooks.makeWebRequest.skip(`Commercial phrase check failed - Phrase: ${phrase}`); 
-	  continue; // Skip this phrase and continue checking others
-	}
+  if (!phrase) continue; // Skip empty phrases in the settings array
+  try {
+    // Escape the phrase to treat it literally in the regex
+    const regex = getCachedRegex(escapeRegExp(phrase), "i");
+    if (regex.test(lowerCaseStr)) { return true; }
+  } catch (e) {
+    MakerWebhooks.makeWebRequest.skip(`Commercial phrase check failed - Phrase: ${phrase}`); 
+    continue; // Skip this phrase and continue checking others
+  }
   }
   return false;
 }
@@ -479,11 +481,11 @@ function isQuoteInPost(entryContent: string, entryFirstLinkUrl: string, postFrom
   if (postFrom === 'BS') { return REGEX_PATTERNS.BS_QUOTE.test(entryContent); }
   // TW: Check if FirstLinkUrl points to a tweet
   if (postFrom === 'TW' && typeof entryFirstLinkUrl === 'string') {
-	// Check if it's a tweet status link
-	const isStatusLink = /^https?:\/\/(twitter\.com|x\.com)\/[^\/]+\/status\/\d+/i.test(entryFirstLinkUrl);
-	// Exclude media attachments to avoid false positives
-	const isMediaAttachment = /\/(photo|video)\/\d+$/i.test(entryFirstLinkUrl);
-	return isStatusLink && !isMediaAttachment;
+  // Check if it's a tweet status link
+  const isStatusLink = /^https?:\/\/(twitter\.com|x\.com)\/[^\/]+\/status\/\d+/i.test(entryFirstLinkUrl);
+  // Exclude media attachments to avoid false positives
+  const isMediaAttachment = /\/(photo|video)\/\d+$/i.test(entryFirstLinkUrl);
+  return isStatusLink && !isMediaAttachment;
   }
   return false;
 }
@@ -541,12 +543,12 @@ function moveUrlToEnd(entryContent: string): string {
   // More robust URL extraction matching non-whitespace characters after protocol.
   const urlMatch = entryContent.match(/https?:\/\/[^\s]+/);
   if (urlMatch && urlMatch[0]) {
-	const url = urlMatch[0];
-	// Remove the first occurrence of the URL and trim whitespace.
-	const contentWithoutUrl = entryContent.replace(url, '');
-	const finalContent = contentWithoutUrl.length > 0 ? contentWithoutUrl.trim() : '';
-	// Append the URL back, separated by a space.
-	return finalContent + ' ' + url;
+  const url = urlMatch[0];
+  // Remove the first occurrence of the URL and trim whitespace.
+  const contentWithoutUrl = entryContent.replace(url, '');
+  const finalContent = contentWithoutUrl.length > 0 ? contentWithoutUrl.trim() : '';
+  // Append the URL back, separated by a space.
+  return finalContent + ' ' + url;
   }
   return entryContent; // Return original if regex match failed unexpectedly
 }
@@ -562,9 +564,9 @@ function mustContainKeywords(str: string, keywords: string[]): boolean {
   if (!str) return false; // If the string is empty/null, it cannot contain keywords.
   const lowerCaseStr = str.toLowerCase();
   for (const keyword of keywords) { // Use for...of for better readability
-	if (!keyword) continue; // Skip empty keywords in the settings array
-	// Use indexOf !== -1 instead of includes
-	if (lowerCaseStr.indexOf(keyword.toLowerCase()) !== -1) { return true; } // Found at least one keyword.
+  if (!keyword) continue; // Skip empty keywords in the settings array
+  // Use indexOf !== -1 instead of includes
+  if (lowerCaseStr.indexOf(keyword.toLowerCase()) !== -1) { return true; } // Found at least one keyword.
   }
   return false; // No mandatory keywords were found.
 }
@@ -579,8 +581,8 @@ function parseRealNameFromEntryContent(embedCode: string): string {
   if (!embedCode) return ""; // Handle null or undefined input by returning an empty string
   // Looking for a pattern: &mdash; Real Name (@username)
   try {
-	let match = embedCode.match(/&mdash;\s*([^<\(]+)\s*\(@/i);
-	if (match && match[1]) { return match[1].trim(); }
+  let match = embedCode.match(/&mdash;\s*([^<\(]+)\s*\(@/i);
+  if (match && match[1]) { return match[1].trim(); }
   } catch (e) { MakerWebhooks.makeWebRequest.skip(`Real name parsing failed - Content length: ${(embedCode && embedCode.length || 0)}`); }
   return "";
 }
@@ -595,8 +597,8 @@ function parseTextFromEntryContent(embedCode: string): string {
   if (!embedCode) return ""; // Handle null or undefined input by returning an empty string
   // Searches for the contents of the <p ...>...</p> tag
   try {
-	let match = embedCode.match(/<p[^>]*>([\s\S]*?)<\/p>/i);
-	if (match && match[1]) { return match[1].trim(); } // Returns text (HTML entities will be removed later)
+  let match = embedCode.match(/<p[^>]*>([\s\S]*?)<\/p>/i);
+  if (match && match[1]) { return match[1].trim(); } // Returns text (HTML entities will be removed later)
   } catch (e) { MakerWebhooks.makeWebRequest.skip(`Text parsing from entry content failed - Content length: ${(embedCode && embedCode.length || 0)}`); }
   return ""; // Return empty string if <p> not found
 }
@@ -614,54 +616,47 @@ function parseUsernameFromTweetUrl(url: string): string {
 
 /**
  * Helper function to process Bluesky content.
- * @param entryContent - Raw HTML post content from the feed item.
- * @param trimmedFeedTitle - The feed title trimmed of whitespace.
  * @returns Structured result including cleaned content and author info.
  */
-function processBlueskyContent(entryContent: any, trimmedFeedTitle: string): {
-	resultContent: string;
-	resultFeedAuthor: string;
-	feedAuthorUserName: string;
-	userNameToSkip: string;
+function processBsContent(entryContent: any, trimmedFeedTitle: string): {
+  resultContent: string;
+  resultFeedAuthor: string;
+  feedAuthorUserName: string;
+  userNameToSkip: string;
 } {
-	// Initialize variables for result and author information
-	var resultContent = entryContent; // BS uses raw HTML content
-	var resultFeedAuthor = "";
-	var feedAuthorUserName = "";
-	var feedAuthorRealName = "";
-	// Extract username and real name from feed title ("username.bsky.social - Real Name")
-	var bsSeparatorIndex = trimmedFeedTitle.indexOf(" - ");
-	if (bsSeparatorIndex !== -1) {
-		feedAuthorUserName = trimmedFeedTitle.substring(0, bsSeparatorIndex);
-		feedAuthorRealName = trimmedFeedTitle.substring(bsSeparatorIndex + 3);
-	} else {
-		// Fallback if no separator found
-		feedAuthorUserName = trimmedFeedTitle;
-		feedAuthorRealName = trimmedFeedTitle;
-	}
-	// Choose display name based on settings preference
-	resultFeedAuthor = SETTINGS.SHOULD_PREFER_REAL_NAME ? feedAuthorRealName : feedAuthorUserName;
-	// Apply standard cleaning utilities and move URLs to end for Bluesky
-	resultContent = replaceAllSpecialCharactersAndHtml(resultContent);
-	resultContent = replaceAmpersands(resultContent);
-	resultContent = contentHack(resultContent);
-	resultContent = moveUrlToEnd(resultContent);
-	// Handle quote posts specifically for Bluesky
-	if (isQuoteInPost(resultContent, "", "BS")) { resultContent = replaceQuoted(resultContent, resultFeedAuthor, feedAuthorUserName, "BS", ""); } // Replace quoted portion, pass quoting author's usernames
-	return { resultContent: resultContent, resultFeedAuthor: resultFeedAuthor, feedAuthorUserName: feedAuthorUserName, userNameToSkip: feedAuthorUserName };
+  // Initialize variables for result and author information
+  var resultContent = entryContent; // BS uses raw HTML content
+  var resultFeedAuthor = "";
+  var feedAuthorUserName = "";
+  var feedAuthorRealName = "";
+  // Extract username and real name from feed title ("username.bsky.social - Real Name")
+  var bsSeparatorIndex = trimmedFeedTitle.indexOf(" - ");
+  if (bsSeparatorIndex !== -1) {
+    feedAuthorUserName = trimmedFeedTitle.substring(0, bsSeparatorIndex);
+    feedAuthorRealName = trimmedFeedTitle.substring(bsSeparatorIndex + 3);
+  } else {
+    // Fallback if no separator found
+    feedAuthorUserName = trimmedFeedTitle;
+    feedAuthorRealName = trimmedFeedTitle;
+  }
+  // Choose display name based on settings preference
+  resultFeedAuthor = SETTINGS.SHOULD_PREFER_REAL_NAME ? feedAuthorRealName : feedAuthorUserName;
+  // Apply standard cleaning utilities and move URLs to end for Bluesky
+  resultContent = replaceAllSpecialCharactersAndHtml(resultContent);
+  resultContent = replaceAmpersands(resultContent);
+  resultContent = contentHack(resultContent);
+  resultContent = moveUrlToEnd(resultContent);
+  // Handle quote posts specifically for Bluesky
+  if (isQuoteInPost(resultContent, "", "BS")) { resultContent = replaceQuoted(resultContent, resultFeedAuthor, feedAuthorUserName, "BS", ""); } // Replace quoted portion, pass quoting author's usernames
+  return { resultContent: resultContent, resultFeedAuthor: resultFeedAuthor, feedAuthorUserName: feedAuthorUserName, userNameToSkip: feedAuthorUserName };
 }
 
 /**
  * Applies Bluesky-specific processing: trims content, checks for quotes or truncation,
  * and selects the URL to display, with optional source→target replacement.
- * @param resultContent - The raw post content.
- * @param entryUrl - The original Bluesky post URL.
- * @param entryImageUrl - The Bluesky image URL.
- * @param entryTitle - The post title input (unused in BS logic).
- * @param entryAuthor - The post author username.
  * @returns An object containing the trimmed content, ellipsis flag, and URL to display.
  */
-function processBlueskyStatus(resultContent: string, entryUrl: string, entryImageUrl: string, entryTitle: string, entryAuthor: string): { trimmedContent: string; needsEllipsis: boolean; urlToShow: string } {
+function processBsStatus(resultContent: string, entryUrl: string, entryImageUrl: string, entryTitle: string, entryAuthor: string): { trimmedContent: string; needsEllipsis: boolean; urlToShow: string } {
   // 1. Trim the content
   const bsTrimmed = trimContent(resultContent);
   let trimmedContent = bsTrimmed.content;
@@ -672,39 +667,32 @@ function processBlueskyStatus(resultContent: string, entryUrl: string, entryImag
   let urlToShow = '';
   // 3. If showing, apply optional source→target replacement
   if (shouldShowUrl && typeof entryUrl === 'string') {
-	const sourcePattern = SETTINGS.POST_SOURCE ? escapeRegExp(SETTINGS.POST_SOURCE) : '';
-	urlToShow = sourcePattern
-	  ? entryUrl.replace(getCachedRegex(sourcePattern, 'gi'), SETTINGS.POST_TARGET)
-	  : entryUrl;
+  const sourcePattern = SETTINGS.POST_SOURCE ? escapeRegExp(SETTINGS.POST_SOURCE) : '';
+  urlToShow = sourcePattern
+    ? entryUrl.replace(getCachedRegex(sourcePattern, 'gi'), SETTINGS.POST_TARGET)
+    : entryUrl;
   }
   return { trimmedContent, needsEllipsis, urlToShow };
 }
 
 /**
  * Helper function to process default content (RSS, YouTube, etc.).
- * @param entryContent - Raw feed content or HTML.
- * @param trimmedEntryTitle - The feed title trimmed of whitespace.
  * @returns Structured result including cleaned content (no author data).
  */
 function processDefaultContent(entryContent: any, trimmedEntryTitle: string): {	resultContent: string; resultFeedAuthor: string; feedAuthorUserName: string; userNameToSkip: string; } {
-	// Choose between content and title according to getContent logic
-	var resultContent = getContent(entryContent, trimmedEntryTitle);
-	var userNameToSkip = "(none)"; // No author mentions to skip here
-	// Apply standard cleaning steps without moving URLs
-	resultContent = replaceAllSpecialCharactersAndHtml(resultContent);
-	resultContent = replaceAmpersands(resultContent);
-	resultContent = contentHack(resultContent);
-	return { resultContent: resultContent, resultFeedAuthor: "", feedAuthorUserName: "", userNameToSkip: userNameToSkip };
+  // Choose between content and title according to getContent logic
+  var resultContent = getContent(entryContent, trimmedEntryTitle);
+  var userNameToSkip = "(none)"; // No author mentions to skip here
+  // Apply standard cleaning steps without moving URLs
+  resultContent = replaceAllSpecialCharactersAndHtml(resultContent);
+  resultContent = replaceAmpersands(resultContent);
+  resultContent = contentHack(resultContent);
+  return { resultContent: resultContent, resultFeedAuthor: "", feedAuthorUserName: "", userNameToSkip: userNameToSkip };
 }
 
 /**
  * Trims content, determines if an ellipsis is needed, and selects the URL to show
  * by applying source→target replacements if configured.
- * @param resultContent - The raw post content to process.
- * @param entryUrl - The original post URL from the trigger.
- * @param entryImageUrl - The image URL from the trigger.
- * @param entryTitle - The post title input (unused in default).
- * @param entryAuthor - The post author username (unused in default).
  * @returns An object containing the trimmed content, ellipsis flag, and URL to display.
  */
 function processDefaultStatus(resultContent: string, entryUrl: string, entryImageUrl: string, entryTitle: string, entryAuthor: string): { trimmedContent: string; needsEllipsis: boolean; urlToShow: string } {
@@ -717,57 +705,48 @@ function processDefaultStatus(resultContent: string, entryUrl: string, entryImag
   let urlToShow = '';
   // 3. If we should show it, apply POST_SOURCE → POST_TARGET replacement if configured
   if (shouldShowUrl && typeof entryUrl === 'string') {
-	const sourcePattern = SETTINGS.POST_SOURCE ? escapeRegExp(SETTINGS.POST_SOURCE) : '';
-	urlToShow = sourcePattern ? entryUrl.replace(getCachedRegex(sourcePattern, 'gi'), SETTINGS.POST_TARGET) : entryUrl;
+  const sourcePattern = SETTINGS.POST_SOURCE ? escapeRegExp(SETTINGS.POST_SOURCE) : '';
+  urlToShow = sourcePattern ? entryUrl.replace(getCachedRegex(sourcePattern, 'gi'), SETTINGS.POST_TARGET) : entryUrl;
   }
   return { trimmedContent, needsEllipsis, urlToShow };
 }
 
 /**
  * Helper function to process Twitter content.
- * @param entryContent - Raw TweetEmbedCode HTML.
- * @param trimmedEntryTitle - The tweet text trimmed of whitespace.
- * @param trimmedFeedTitle - The Twitter username from trigger.
- * @param entryImageUrl - First link URL used to detect quote tweets.
  * @returns Structured result including cleaned content and author info.
  */
-function processTwitterContent(entryContent: any, trimmedEntryTitle: string, trimmedFeedTitle: string, entryImageUrl: string): { resultContent: string; resultFeedAuthor: string; feedAuthorUserName: string; userNameToSkip: string; } {
-	// Extract tweet text from embed code, fallback to trimmed title
-	var tweetText = parseTextFromEntryContent(entryContent);
-	var resultContent = tweetText || trimmedEntryTitle;
-	// Extract username and real name of tweeting author
-	var feedAuthorUserName = trimmedFeedTitle;
-	var feedAuthorRealName = parseRealNameFromEntryContent(entryContent) || feedAuthorUserName;
-	// Determine which name to show based on settings
-	var resultFeedAuthor = SETTINGS.SHOULD_PREFER_REAL_NAME ? feedAuthorRealName : feedAuthorUserName;
-	var userNameToSkip = feedAuthorUserName;
-	// Apply common cleaning steps (no URL reordering for Twitter)
-	resultContent = replaceAllSpecialCharactersAndHtml(resultContent);
-	resultContent = replaceAmpersands(resultContent);
-	resultContent = contentHack(resultContent);
-	// Remove reply prefix ("R to ...")
-	resultContent = replaceResponseTo(resultContent);
-	// Handle retweets (RT) detection and formatting
-	if (isRepost(trimmedEntryTitle)) {
-		var repostedUser = findRepostUser(trimmedEntryTitle);
-		resultContent = replaceReposted(resultContent, resultFeedAuthor, repostedUser);
-	}
-	// Handle quote tweets via first link URL
-	else if (isQuoteInPost("", entryImageUrl, "TW")) { resultContent = replaceQuoted(resultContent, resultFeedAuthor, feedAuthorUserName, "TW", entryImageUrl); }
-	return { resultContent: resultContent, resultFeedAuthor: resultFeedAuthor, feedAuthorUserName: feedAuthorUserName, userNameToSkip: userNameToSkip };
+function processTwContent(entryContent: any, trimmedEntryTitle: string, trimmedFeedTitle: string, entryImageUrl: string): { resultContent: string;resultFeedAuthor: string;feedAuthorUserName: string;userNameToSkip: string; } {
+  // Extract tweet text from embed code, fallback to trimmed title
+  var tweetText = parseTextFromEntryContent(entryContent);
+  var resultContent = tweetText || trimmedEntryTitle;
+  // Extract username and real name of tweeting author
+  var feedAuthorUserName = trimmedFeedTitle;
+  var feedAuthorRealName = parseRealNameFromEntryContent(entryContent) || feedAuthorUserName;
+  // Determine which name to show based on settings
+  var resultFeedAuthor = SETTINGS.SHOULD_PREFER_REAL_NAME ? feedAuthorRealName : feedAuthorUserName;
+  var userNameToSkip = feedAuthorUserName;
+  // Apply common cleaning steps (no URL reordering for Twitter)
+  resultContent = replaceAllSpecialCharactersAndHtml(resultContent);
+  resultContent = replaceAmpersands(resultContent);
+  resultContent = contentHack(resultContent);
+  // Remove reply prefix ("R to ...")
+  resultContent = replaceResponseTo(resultContent);
+  // Handle retweets (RT) detection and formatting
+  if (isRepost(trimmedEntryTitle)) {
+    var repostedUser = findRepostUser(trimmedEntryTitle);
+    resultContent = replaceReposted(resultContent, resultFeedAuthor, repostedUser);
+  }
+  // Handle quote tweets via first link URL
+  else if (isQuoteInPost("", entryImageUrl, "TW")) { resultContent = replaceQuoted(resultContent, resultFeedAuthor, feedAuthorUserName, "TW", entryImageUrl); }
+  return { resultContent: resultContent, resultFeedAuthor: resultFeedAuthor, feedAuthorUserName: feedAuthorUserName, userNameToSkip: userNameToSkip };
 }
 
 /**
  * Applies Twitter-specific processing: removes t.co links, trims content, detects reposts,
  * applies dynamic URL rules, and selects the URL to display with replacements.
- * @param resultContent - The raw tweet content.
- * @param entryUrl - The original tweet URL.
- * @param entryImageUrl - The tweet’s media URL.
- * @param entryTitle - The tweet text used for repost detection.
- * @param entryAuthor - The tweet author username.
  * @returns An object containing the trimmed content, ellipsis flag, and URL to display.
  */
-function processTwitterStatus(resultContent: string, entryUrl: string, entryImageUrl: string, entryTitle: string, entryAuthor: string): { trimmedContent: string; needsEllipsis: boolean; urlToShow: string } {
+function processTwStatus(resultContent: string, entryUrl: string, entryImageUrl: string, entryTitle: string, entryAuthor: string): { trimmedContent: string;needsEllipsis: boolean;urlToShow: string } {
   // 1. Remove t.co links before trimming
   const cleanedContent = resultContent.replace(REGEX_PATTERNS.TCO_URL, '');
   // 2. Trim the cleaned content
@@ -788,16 +767,16 @@ function processTwitterStatus(resultContent: string, entryUrl: string, entryImag
   const contentHasUrl = isUrlIncluded(cleanedContent);
   const postHasImage = isImageInPost(entryImageUrl);
   if (shouldShowUrl || contentHasUrl) {
-	if (contentHasUrl) {
-	  urlToShow = postHasImage ? entryImageUrl : entryUrl;
-	} else {
-	  urlToShow = postHasImage ? entryImageUrl : entryUrl;
-	}
-	// 7. Apply POST_SOURCE → POST_TARGET replacement if needed
-	if (urlToShow && urlToShow !== '(none)') {
-	  const sourcePattern = SETTINGS.POST_SOURCE ? escapeRegExp(SETTINGS.POST_SOURCE) : '';
-	  if (sourcePattern) { urlToShow = urlToShow.replace(getCachedRegex(sourcePattern, 'gi'), SETTINGS.POST_TARGET); }
-	}
+    if (contentHasUrl) {
+      urlToShow = postHasImage ? entryImageUrl : entryUrl;
+    } else {
+      urlToShow = postHasImage ? entryImageUrl : entryUrl;
+    }
+    // 7. Apply POST_SOURCE → POST_TARGET replacement if needed
+    if (urlToShow && urlToShow !== '(none)') {
+      const sourcePattern = SETTINGS.POST_SOURCE ? escapeRegExp(SETTINGS.POST_SOURCE) : '';
+      if (sourcePattern) { urlToShow = urlToShow.replace(getCachedRegex(sourcePattern, 'gi'), SETTINGS.POST_TARGET); }
+    }
   }
   return { trimmedContent, needsEllipsis, urlToShow };
 }
@@ -819,13 +798,13 @@ function replaceAllSpecialCharactersAndHtml(str: string): string {
   str = str.replace(/\r?\n/g, tempNewline);
   // 4. Replace special character entities/codes using the characterMap
   for (const [pattern, replacement] of Object.entries(characterMap)) {
-	try {
-	  const regex = getCachedRegex(pattern, 'g');
-	  str = str.replace(regex, replacement);
-	} catch (e) {
-	  MakerWebhooks.makeWebRequest.skip(`Character replacement failed - Pattern: ${pattern}, Replacement: ${replacement}`); 
-	  continue;
-	}
+    try {
+      const regex = getCachedRegex(pattern, 'g');
+      str = str.replace(regex, replacement);
+    } catch (e) {
+      MakerWebhooks.makeWebRequest.skip(`Character replacement failed - Pattern: ${pattern}, Replacement: ${replacement}`);
+      continue;
+    }
   }
   // 5. Replace multiple spaces with a single space (after completion of all replacements)
   str = str.replace(REGEX_PATTERNS.MULTIPLE_SPACES, ' ');
@@ -846,15 +825,15 @@ function replaceAllSpecialCharactersAndHtml(str: string): string {
  * @returns The string with ampersands processed.
  */
 function replaceAmpersands(str: string): string {
-   if (!str) return ''; // Return empty string if input is null or undefined
-   return str.replace(/https?:\/\/\S+|\S+/g, (word) => {
-	 if (isUrlIncluded(word)) { // Check if the current word contains a URL (starts with http:// or https://)
-	   const isExcluded = SETTINGS.EXCLUDED_URLS.some(excludedUrl => word.toLowerCase().indexOf(excludedUrl.toLowerCase()) !== -1); // Check if the URL matches any domain in the EXCLUDED_URLS list (case-insensitive)
-	   return isExcluded ? word.replace(/&/g, '%26') : encodeURI(trimUrl(word)); // Encode the URL using encodeURI; if not excluded, trim query parameters first
-	 }
-	 return word; // Return non-URL parts unchanged as ampersand replacement is handled in replaceAllSpecialCharactersAndHtml
-   });
- }
+  if (!str) return ''; // Return empty string if input is null or undefined
+  return str.replace(/https?:\/\/\S+|\S+/g, (word) => {
+    if (isUrlIncluded(word)) { // Check if the current word contains a URL (starts with http:// or https://)
+      const isExcluded = SETTINGS.EXCLUDED_URLS.some(excludedUrl => word.toLowerCase().indexOf(excludedUrl.toLowerCase()) !== -1); // Check if the URL matches any domain in the EXCLUDED_URLS list (case-insensitive)
+      return isExcluded ? word.replace(/&/g, '%26') : encodeURI(trimUrl(word)); // Encode the URL using encodeURI; if not excluded, trim query parameters first
+    }
+    return word; // Return non-URL parts unchanged as ampersand replacement is handled in replaceAllSpecialCharactersAndHtml
+  });
+}
 
 /**
  * Formats a quote post by adding author attribution.
@@ -868,19 +847,19 @@ function replaceAmpersands(str: string): string {
 function replaceQuoted(str: string, resultFeedAuthor: string, entryAuthor: string, postFrom: string, entryFirstLinkUrl: string): string {
   // For BS quotes, remove the marker and format
   if (postFrom === 'BS') {
-	const bsQuoteRegex = REGEX_PATTERNS.BS_QUOTE;
-	// Use entryAuthor (quoting author) for BS quotes, as original author might not be available reliably
-	const authorToDisplay = ""; // Now empty string but once maybe potentially parse from content if a standard exists? Sticking with quoting author for now.
-	const cleanedContent = str.replace(bsQuoteRegex, '').trim();
-	return cleanedContent ? `${resultFeedAuthor}${SETTINGS.QUOTE_SENTENCE}${authorToDisplay}:\n${cleanedContent}` : str;
+    const bsQuoteRegex = REGEX_PATTERNS.BS_QUOTE;
+    // Use entryAuthor (quoting author) for BS quotes, as original author might not be available reliably
+    const authorToDisplay = ""; // Now empty string but once maybe potentially parse from content if a standard exists? Sticking with quoting author for now.
+    const cleanedContent = str.replace(bsQuoteRegex, '').trim();
+    return cleanedContent ? `${resultFeedAuthor}${SETTINGS.QUOTE_SENTENCE}${authorToDisplay}:\n${cleanedContent}` : str;
   }
   // For TW quotes, extract QUOTED author username from URL, prepend '@', and add the prefix
   if (postFrom === 'TW' && typeof entryFirstLinkUrl === 'string' &&
-	/^https?:\/\/(twitter\.com|x\.com)\/[^\/]+\/status\/\d+/i.test(entryFirstLinkUrl)) {
-	const quotedAuthorUsername = parseUsernameFromTweetUrl(entryFirstLinkUrl); // Extract username of QUOTED author
-	const quotedAuthorMention = quotedAuthorUsername ? `@${quotedAuthorUsername}` : ""; // Add '@' if username exists
-	// Use the mention (@username) of the quoted author
-	return `${resultFeedAuthor}${SETTINGS.QUOTE_SENTENCE}${quotedAuthorMention}:\n${str}`;
+    /^https?:\/\/(twitter\.com|x\.com)\/[^\/]+\/status\/\d+/i.test(entryFirstLinkUrl)) {
+    const quotedAuthorUsername = parseUsernameFromTweetUrl(entryFirstLinkUrl); // Extract username of QUOTED author
+    const quotedAuthorMention = quotedAuthorUsername ? `@${quotedAuthorUsername}` : ""; // Add '@' if username exists
+    // Use the mention (@username) of the quoted author
+    return `${resultFeedAuthor}${SETTINGS.QUOTE_SENTENCE}${quotedAuthorMention}:\n${str}`;
   }
   // Otherwise, return unchanged
   return str;
@@ -888,9 +867,6 @@ function replaceQuoted(str: string, resultFeedAuthor: string, entryAuthor: strin
 
 /**
  * Formats a retweet string by replacing the "RT @username: " prefix with custom attribution.
- * @param str - The input string (tweet content starting with RT).
- * @param resultFeedAuthor - The user performing the retweet (not currently used in replacement string).
- * @param entryAuthor - The original author being retweeted (extracted by findRepostUser).
  * @returns The formatted retweet string.
  */
 function replaceReposted(str: string, resultFeedAuthor: string, entryAuthor: string): string {
@@ -899,7 +875,6 @@ function replaceReposted(str: string, resultFeedAuthor: string, entryAuthor: str
 
 /**
  * Removes the "R to @username: " prefix if present at the beginning of a string.
- * @param str - The input string.
  * @returns The string with the prefix removed, or the original string if not found.
  */
 function replaceResponseTo(str: string): string { return str.replace(REGEX_PATTERNS.RESPONSE_PREFIX, ""); }
@@ -918,7 +893,7 @@ function replaceUserNames(str: string, skipName: string, postFrom: string): stri
   if (!str) return ""; // Handle null/undefined input
   // Get the formatting configuration for the current platform, falling back to DEFAULT or "none".
   const platformFormat = SETTINGS.MENTION_FORMATTING[postFrom] ||
-	SETTINGS.MENTION_FORMATTING["DEFAULT"] || { type: "none", value: "" };
+    SETTINGS.MENTION_FORMATTING["DEFAULT"] || { type: "none", value: "" };
   // If no formatting action is defined for this platform, return the original string immediately.
   if (platformFormat.type === "none" || !platformFormat.value) { return str; } // Also check if value is empty
   // Prepare the username to skip. Remove leading '@' if present, as the regex captures the name without it. Also handle potential null/undefined skipName.
@@ -926,26 +901,26 @@ function replaceUserNames(str: string, skipName: string, postFrom: string): stri
   // Regex to find "@username".
   let regexPattern = `(?<![a-zA-Z0-9@])@`; // (?<![a-zA-Z0-9@]) - Lookbehind: Ensure '@' is not preceded by alphanumeric or another '@' (prevents matching emails or partial handles). Adjusted to include '@'.
   if (skipNameClean) {
-	const escapedSkipName = escapeRegExp(skipNameClean); // Escape the name to skip
-	regexPattern += `(?!(?:${escapedSkipName})\\b)`; // (?!(?:${escapedSkipName})\b) - Negative Lookahead: Ensure the captured username IS NOT the skipped username (whole word match). Only apply if skipNameClean is not empty.
+    const escapedSkipName = escapeRegExp(skipNameClean); // Escape the name to skip
+    regexPattern += `(?!(?:${escapedSkipName})\\b)`; // (?!(?:${escapedSkipName})\b) - Negative Lookahead: Ensure the captured username IS NOT the skipped username (whole word match). Only apply if skipNameClean is not empty.
   }
   regexPattern += `([a-zA-Z0-9_.]+)\\b`; // ([a-zA-Z0-9_.]+) - Capture Group 1: The username itself (letters, numbers, underscore, period).
   try {
-	const regex = getCachedRegex(regexPattern, "gi");
-	return str.replace(regex, (match, capturedUsername) => {
-	  // 'match' is the full "@username" (e.g., "@exampleUser"), 'capturedUsername' is just the name part (e.g., "exampleUser")
-	  switch (platformFormat.type) {
-		case "prefix":
-		  return platformFormat.value + capturedUsername; // Prepend the prefix value to the captured username (without '@').
-		case "suffix":
-		  return match + platformFormat.value; // Append the suffix value to the original full "@username" match.
-		default: // Should not happen due to filter above, but acts as safety net.
-		  return match; // Return the original mention unchanged.
-	  }
-	});
+    const regex = getCachedRegex(regexPattern, "gi");
+    return str.replace(regex, (match, capturedUsername) => {
+      // 'match' is the full "@username" (e.g., "@exampleUser"), 'capturedUsername' is just the name part (e.g., "exampleUser")
+      switch (platformFormat.type) {
+        case "prefix":
+          return platformFormat.value + capturedUsername; // Prepend the prefix value to the captured username (without '@').
+        case "suffix":
+          return match + platformFormat.value; // Append the suffix value to the original full "@username" match.
+        default: // Should not happen due to filter above, but acts as safety net.
+          return match; // Return the original mention unchanged.
+      }
+    });
   } catch (e) {
-	MakerWebhooks.makeWebRequest.skip(`User names replacement failed - Pattern: ${regexPattern}`); 
-	return str; // Return original string if regex fails
+    MakerWebhooks.makeWebRequest.skip(`User names replacement failed - Pattern: ${regexPattern}`);
+    return str; // Return original string if regex fails
   }
 }
 
@@ -963,8 +938,8 @@ function shouldSkipPost(): { shouldSkip: boolean, reason: string } {
   if (isCommercialInPost(entryTitle) || isCommercialInPost(entryContent) || isCommercialInPost(entryUrl) || isCommercialInPost(entryImageUrl)) { return { shouldSkip: true, reason: 'Contains banned commercial phrases' }; }
   // 4. Skip if mandatory keywords are defined BUT none are found in title or content.
   if (SETTINGS.MANDATORY_KEYWORDS && SETTINGS.MANDATORY_KEYWORDS.length > 0 &&
-	  !mustContainKeywords(entryTitle, SETTINGS.MANDATORY_KEYWORDS) &&
-	  !mustContainKeywords(entryContent, SETTINGS.MANDATORY_KEYWORDS)) { return { shouldSkip: true, reason: 'Missing mandatory keywords' }; }
+    !mustContainKeywords(entryTitle, SETTINGS.MANDATORY_KEYWORDS) &&
+    !mustContainKeywords(entryContent, SETTINGS.MANDATORY_KEYWORDS)) { return { shouldSkip: true, reason: 'Missing mandatory keywords' }; }
   // 5. Skip if content or title starts with @username (reply)
   if (isReply(entryTitle) || isReply(entryContent)) { return { shouldSkip: true, reason: 'Reply post (starts with @username)' }; }
   return { shouldSkip: false, reason: '' }; // If none of the skip conditions are met, don't skip.
@@ -990,53 +965,51 @@ function trimContent(str: string): { content: string, needsEllipsis: boolean } {
   let needsEllipsis = false;
   // Twitter-specific logic
   if (SETTINGS.POST_FROM === 'TW') {
-	str = str.replace(/\s+(https?:\/\/)/g, '$1'); // Remove leading spaces before URLs to ensure correct terminator detection
-	const TRUNCATE_THRESHOLD = Math.min(257, SETTINGS.POST_LENGTH - 30); // Dynamic threshold for shortening activation
-	// Termination check priority: URL > Emoji/Punctuation > Mentions/Hashtags
-	const hasTerminator =
-	  REGEX_PATTERNS.URL_HASHTAG_MENTION.test(str) ||
-	  REGEX_PATTERNS.EMOJI.test(str.slice(-4)) ||
-	  /[.!?;:)"'\]}…]$/.test(str) ||
-	  /\s>>$/.test(str);
-	// Condition 1: Content needs truncation but lacks terminators - only for TW
-	if (str.length > TRUNCATE_THRESHOLD && str.length <= SETTINGS.POST_LENGTH && !hasTerminator) {
-	  str += '…';
-	  needsEllipsis = true;
-	}
+    str = str.replace(/\s+(https?:\/\/)/g, '$1'); // Remove leading spaces before URLs to ensure correct terminator detection
+    const TRUNCATE_THRESHOLD = Math.min(257, SETTINGS.POST_LENGTH - 30); // Dynamic threshold for shortening activation
+    // Termination check priority: URL > Emoji/Punctuation > Mentions/Hashtags
+    const hasTerminator =
+      REGEX_PATTERNS.URL_HASHTAG_MENTION.test(str) ||
+      REGEX_PATTERNS.EMOJI.test(str.slice(-4)) ||
+      /[.!?;:)"'\]}…]$/.test(str) ||
+      /\s>>$/.test(str);
+    // Condition 1: Content needs truncation but lacks terminators - only for TW
+    if (str.length > TRUNCATE_THRESHOLD && str.length <= SETTINGS.POST_LENGTH && !hasTerminator) {
+      str += '…';
+      needsEllipsis = true;
+    }
   }
   // General truncation logic for all platforms
   if (str.length > SETTINGS.POST_LENGTH) {
-	if (SETTINGS.POST_LENGTH_TRIM_STRATEGY === 'sentence') {
-	  // Find the last period within the limit
-	  const lastPeriodIndex = str.slice(0, SETTINGS.POST_LENGTH).lastIndexOf('.');
-	  if (lastPeriodIndex > 0) {
-		// Slice at period and only trim if there are trailing spaces after the period
-		str = str.slice(0, lastPeriodIndex + 1);
-		if (str.endsWith('. ') || str.endsWith('.\t') || str.endsWith('.\n')) { str = str.trim(); }
-		needsEllipsis = false;
-	  } else {
-		// If no period, fallback to word strategy - slice without additional trimming
-		const lastSpaceIndex = str.slice(0, SETTINGS.POST_LENGTH - 1).lastIndexOf(' ');
-		if (lastSpaceIndex > 0) { str = str.slice(0, lastSpaceIndex); } 
-		else { str = str.slice(0, SETTINGS.POST_LENGTH - 1); }
-		needsEllipsis = true;
-	  }
-	} else {
-	  // Word strategy - slice without additional trimming since input is already normalized
-	  const lastSpaceIndex = str.slice(0, SETTINGS.POST_LENGTH - 1).lastIndexOf(' ');
-	  if (lastSpaceIndex > 0) { str = str.slice(0, lastSpaceIndex); } 
-	  else { str = str.slice(0, SETTINGS.POST_LENGTH - 1); }
-	  needsEllipsis = true;
-	}
+    if (SETTINGS.POST_LENGTH_TRIM_STRATEGY === 'sentence') {
+      // Find the last period within the limit
+      const lastPeriodIndex = str.slice(0, SETTINGS.POST_LENGTH).lastIndexOf('.');
+      if (lastPeriodIndex > 0) {
+        // Slice at period and only trim if there are trailing spaces after the period
+        str = str.slice(0, lastPeriodIndex + 1);
+        if (str.endsWith('. ') || str.endsWith('.\t') || str.endsWith('.\n')) { str = str.trim(); }
+        needsEllipsis = false;
+      } else {
+        // If no period, fallback to word strategy - slice without additional trimming
+        const lastSpaceIndex = str.slice(0, SETTINGS.POST_LENGTH - 1).lastIndexOf(' ');
+        if (lastSpaceIndex > 0) { str = str.slice(0, lastSpaceIndex); } else { str = str.slice(0, SETTINGS.POST_LENGTH - 1); }
+        needsEllipsis = true;
+      }
+    } else {
+      // Word strategy - slice without additional trimming since input is already normalized
+      const lastSpaceIndex = str.slice(0, SETTINGS.POST_LENGTH - 1).lastIndexOf(' ');
+      if (lastSpaceIndex > 0) { str = str.slice(0, lastSpaceIndex); } else { str = str.slice(0, SETTINGS.POST_LENGTH - 1); }
+      needsEllipsis = true;
+    }
   }
   // Condition for all platforms: The content has exactly the maximum length and has no terminator
   if (SETTINGS.POST_FROM !== 'TW' && str.length === SETTINGS.POST_LENGTH) {
-	// Simple terminator check for non-TW platforms
-	const hasSimpleTerminator = /[.!?;:)"'\]}…]$/.test(str);
-	if (!hasSimpleTerminator && !needsEllipsis) {
-	  str += '…';
-	  needsEllipsis = true;
-	}
+    // Simple terminator check for non-TW platforms
+    const hasSimpleTerminator = /[.!?;:)"'\]}…]$/.test(str);
+    if (!hasSimpleTerminator && !needsEllipsis) {
+      str += '…';
+      needsEllipsis = true;
+    }
   }
   return { content: str, needsEllipsis: needsEllipsis };
 }
@@ -1055,7 +1028,7 @@ function trimUrl(str: string): string {
 
 // --- Main Execution Logic ---
 // Check if the post should be skipped based on the defined rules. 
-const skipResult = shouldSkipPost();  
+const skipResult = shouldSkipPost();
 if (skipResult.shouldSkip) {
   MakerWebhooks.makeWebRequest.skip(`Skipped due to filter rules: ${skipResult.reason}`); // If skip conditions are met, instruct IFTTT to skip this run.
 } else {
