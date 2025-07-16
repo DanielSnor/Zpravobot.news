@@ -1,4 +1,4 @@
-# Settings for IFTTT filter script v1.6.0
+# Settings for IFTTT filter script v2.0.0
 
 This document explains all settings possibilities for the IFTTT filter script version 1.6.0, including default behaviors and examples of use. The script is designed to process posts from various platforms (e.g., Twitter, Bluesky, RSS, YouTube) and publish them via an IFTTT webhook. The output is composed of several parts:
 
@@ -351,4 +351,4 @@ The script includes tailored logic for different platforms (`TW`, `BS`, `RSS`, `
 ## That’s all, folks
 That’s all, folks. I hope the explanation clarifies the configuration possibilities for modifying the output and everything is crystal clear now. Otherwise, you can still contact me via social networks or the About.me page.
 
-(Children's Day 2025)
+(World Emoji day, 2025)
