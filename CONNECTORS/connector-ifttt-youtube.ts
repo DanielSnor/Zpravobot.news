@@ -1,14 +1,10 @@
 ///////////////////////////////////////////////////////////////////////////////
-// connector for IFTTT 📺 webhook - World Juggling day, 2025 rev
+// connector for IFTTT 📺 webhook - World Emoji day, 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // This connector processes data from various sources (e.g., RSS, Twitter, Bluesky)
 // and provides it to the IFTTT webhook for publishing. The data is filtered and
 // edited according to the settings in AppSettings.
-//
-// This section defines the input variables coming from the IFTTT trigger.
-// IMPORTANT: Adapt the source (e.g., Twitter.newTweetFromSearch or Feed.newFeedItem)
-// based on the specific trigger used in your IFTTT applet.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
