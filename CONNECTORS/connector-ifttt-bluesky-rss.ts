@@ -6,10 +6,6 @@
 // and provides it to the IFTTT webhook for publishing. The data is filtered and
 // edited according to the settings in AppSettings.
 //
-// This section defines the input variables coming from the IFTTT trigger.
-// IMPORTANT: Adapt the source (e.g., Twitter.newTweetFromSearch or Feed.newFeedItem)
-// based on the specific trigger used in your IFTTT applet. 
-//
 ///////////////////////////////////////////////////////////////////////////////
 
 // Main text content from the source. For BlueSky and RSS, this is often EntryContent (HTML or plain text).
