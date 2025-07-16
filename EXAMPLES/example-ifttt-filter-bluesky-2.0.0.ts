@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// settings for IFTTT 🦋 webhook filter - World Juggling day, 2025 rev
+// settings for IFTTT 🦋 webhook filter - World Emoji day, 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Configuration settings for the IFTTT webhook filter.
@@ -64,16 +64,12 @@ const SETTINGS: AppSettings = {
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// connector for IFTTT 🦋📙📗📘 webhook - World Juggling day, 2025 rev
+// connector for IFTTT 🦋📙📗📘 webhook - World Emoji day, 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // This connector processes data from various sources (e.g., RSS, Twitter, Bluesky)
 // and provides it to the IFTTT webhook for publishing. The data is filtered and
 // edited according to the settings in AppSettings.
-//
-// This section defines the input variables coming from the IFTTT trigger.
-// IMPORTANT: Adapt the source (e.g., Twitter.newTweetFromSearch or Feed.newFeedItem)
-// based on the specific trigger used in your IFTTT applet. 
 //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -93,23 +89,32 @@ const feedTitle = Feed.newFeedItem.FeedTitle || '';
 const feedUrl = Feed.newFeedItem.FeedUrl || '';
 
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter v1.6.0b - World Juggling day, 2025 rev
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v2.0.0 - World Emoji day, 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Description:
 // Processes and filters posts from various platforms (Twitter, Bluesky, RSS, YouTube)
 // for IFTTT webhook publishing. Applies normalization, formatting, shortening,
 // and platform-specific rules based on settings.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-// type definitions for string manipulation (standard augmentation)
+// Type definitions for string manipulation (standard augmentation)
 interface String { startsWith(searchString: string, position ? : number): boolean; endsWith(searchString: string, endPosition ? : number): boolean; }
-// type definitions for Object.entries (standard augmentation)
+// Type definitions for Object.entries (standard augmentation)
 interface ObjectConstructor { entries < T > (o: { [s: string]: T } | ArrayLike < T > ): [string, T][]; }
+// Type definitions for Platform configurations
+interface PlatformConfig { useParsedText?: boolean; useFeedTitleAuthor?: boolean; applyMoveUrlToEnd?: boolean; handleReplies?: boolean; handleRetweets?: boolean; handleQuotes?: boolean; useGetContent?: boolean; }
+
+// Define platform specific content cleaning.
+const platformConfigs: { [key: string]: PlatformConfig } = {
+  BS: { useFeedTitleAuthor: true, applyMoveUrlToEnd: true, handleQuotes: true, useGetContent: true },
+  RSS: { useGetContent: true },
+  TW: { useParsedText: true, handleReplies: true, handleRetweets: true, handleQuotes: true },
+  YT: { useGetContent: true }
+};
 
 // Define the maximum number of items allowed in the cache to prevent unlimited memory growth.
-const MAX_CACHE_SIZE = 100;
+const MAX_REGEX_CACHE_SIZE = 10; const MAX_ESCREGEXP_CACHE_SIZE = 390;
 // Cache objects to store regexes and escaped strings for quick lookup.
 const regexCache: { [key: string]: RegExp } = {}; const escapeRegExpCache: { [key: string]: string } = {};
 // Array to track the order of keys added to the cache for FIFO eviction strategy.
@@ -127,210 +132,139 @@ if (SETTINGS.URL_DOMAIN_FIXES && SETTINGS.URL_DOMAIN_FIXES.length) {
  * with alternatives (|). Used by replaceAllSpecialCharactersAndHtml function.
  */
 const characterMap: Record < string, string > = {
-  // --- Czech characters (grouped representations) ---
-  '&#193;|&Aacute;|A&#769;': 'Á', // Capital Á
-  '&#225;|&aacute;|a&#769;': 'á', // Lower case á
-  '&Auml;|&#196;|A&#776;': 'Ä', // Capital Ä
-  '&auml;|&#228;|a&#776;': 'ä', // Lower case ä
-  '&#268;|&Ccaron;|C&#780;': 'Č', // Capital Č
-  '&#269;|&ccaron;|c&#780;': 'č', // Lower case č
-  '&#270;|&Dcaron;|D&#780;': 'Ď', // Capital Ď
-  '&#271;|&dcaron;|d&#780;': 'ď', // Lower case ď
-  '&#201;|&Eacute;|E&#769;': 'É', // Capital É
-  '&#233;|&eacute;|e&#769;': 'é', // Lower case é
-  '&Euml;|&#203;|E&#776;': 'Ë', // Capital Ë
-  '&euml;|&#235;|e&#776;': 'ë', // Lower case ë
-  '&#282;|&Ecaron;|E&#780;': 'Ě', // Capital Ě
-  '&#283;|&ecaron;|e&#780;': 'ě', // Lower case ě
-  '&#205;|&Iacute;|I&#769;': 'Í', // Capital Í
-  '&#237;|&iacute;|i&#769;': 'í', // Lower case í
-  '&Iuml;|&#207;|I&#776;': 'Ï', // Capital Ï
-  '&iuml;|&#239;|i&#776;': 'ï', // Lower case ï
-  '&#327;|&Ncaron;|N&#780;': 'Ň', // Capital Ň
-  '&#328;|&ncaron;|n&#780;': 'ň', // Lower case ň
-  '&#211;|&Oacute;|O&#769;': 'Ó', // Capital Ó
-  '&#243;|&oacute;|o&#769;': 'ó', // Lower case ó
-  '&Ouml;|&#214;|O&#776;': 'Ö', // Capital Ö
-  '&ouml;|&#246;|o&#776;': 'ö', // Lower case ö
-  '&Odblac;|&#336;|O&#778;': 'Ő', // Capital Ő
-  '&odblac;|&#337;|o&#778;': 'ő', // Lower case ő
-  '&#344;|&Rcaron;|R&#780;': 'Ř', // Capital Ř
-  '&#345;|&rcaron;|r&#780;': 'ř', // Lower case ř
-  '&#352;|&Scaron;|S&#780;': 'Š', // Capital Š
-  '&#353;|&scaron;|s&#780;': 'š', // Lower case š
-  '&#356;|&Tcaron;|T&#780;': 'Ť', // Capital Ť
-  '&#357;|&tcaron;|t&#780;': 'ť', // Lower case ť
-  '&#218;|&Uacute;|U&#769;': 'Ú', // Capital Ú
-  '&#250;|&uacute;|u&#769;': 'ú', // Lower case ú
-  '&Uuml;|&#220;|U&#776;': 'Ü', // Capital Ü
-  '&uuml;|&#252;|u&#776;': 'ü', // Lower case ü
-  '&#366;|&Uring;|U&#778;': 'Ů', // Capital Ů
-  '&#367;|&uring;|u&#778;': 'ů', // Lower case ů
-  '&Udblac;|&#368;|U&#369;': 'Ű', // Capital Ű
-  '&udblac;|&#369;|u&#369;': 'ű', // Lower case ű
-  '&#221;|&Yacute;|Y&#769;': 'Ý', // Capital Ý
-  '&#253;|&yacute;|y&#769;': 'ý', // Lower case ý
-  '&#381;|&Zcaron;|Z&#780;': 'Ž', // Capital Ž
-  '&#382;|&zcaron;|z&#780;': 'ž', // Lower case ž
-  // --- Special characters and symbols map for normalization. ---
-  '&#33;|&excl;|&#x21;': '!',
-  '&#36;|&dollar;|&#x24;|&#65284;|&#xFF04;': '$',
-  '&#37;|&percnt;|&#x25;': '%',
-  '&#40;|&lpar;|&#x28;': '(',
-  '&#41;|&rpar;|&#x29;': ')',
-  '&#43;|&plus;|&#x2B;|&#x2b;': '+', // replaced with Heavy Plus Sign emoji to avoid IFTTT processing issues
-  '&#46;|&period;|&#046;|&#x2e;': '.', // Dot (046 added for sure)
-  '&#60;|&lt;|&#x3c;': '<',
-  '&#61;|&equals;|&#x3d;': '=',
-  '&#62;|&gt;|&#x3e;': '>',
-  '&#63;|&quest;|&#x3f;': '?',
-  '&#91;|&lbrack;|&#x5b;': '[',
-  '&#93;|&rbrack;|&#x5d;': ']',
-  '&#95;|&lowbar;|&#x5f;': '_',
-  '&#123;|&lbrace;|&#x7b;': '{',
-  '&#124;|&vert;|&#x7c;|VerticalLine': '|', // VerticalLine added for security
-  '&#125;|&rbrace;|&#x7d;': '}',
-  '&#8230;|&hellip;|&mldr;|&#x2026;': '…', // Three dots to …
-  '&#162;|&cent;|&#xa2;|&#65504;|&#xFFE0;': '¢',
-  '&#163;|&pound;|&#xa3;|&#65505;|&#xFFE1;': '£',
-  '&#165;|&yen;|&#xa5;|&#65509;|&#xFFE5;': '¥',
-  '&#169;|&copy;|&#xA9;|&#xa9;': '©',
-  '&#174;|&reg;|&#xAE;|&#xae;': '®',
-  '&#176;|&deg;|&#xb0;': '°',
-  '&#177;|&plusmn;|&#xb1;': '±',
-  '&#183;|&centerdot;|&middot;|&#xB7;': '·',
-  '&#188;|&frac14;|&#xBC;': '¼',
-  '&#189;|&half;|&#xBD;': '½',
-  '&#190;|&frac34;|&#xBE;': '¾',
-  '&#215;|&times;|&#xd7;': '×',
-  '&#247;|&divide;|&#xf7;': '÷',
-  '&#8364;|&euro;|&#x20AC;': '€',
-  '&#8482;|&trade;|&#x2122;': '™',
-  '&#137;|&permil;|&#x89;|&#8241;|&#x2031;': '‰', // Per ten thousand sign
-  '&#139;|&#x8B;': '‹', // Single left-pointing angle quotation mark
-  '&#155;|&#x9B;': '›', // Single right-pointing angle quotation mark
-  '&#8242;|&prime;|&#x2032;': '′', // Prime
-  '&#8243;|&Prime;|&#x2033;': '″', // Double Prime
-  '&#8451;|&#x2103;': '℃', // Celsius degree
-  '&#8776;|&thickapprox;|&#x2248;': '≈', // Almost equal to
-  '&#8800;|&ne;|&#x2260;': '≠', // Not equal to
-  '&#9001;|&#x2329;': '〈', // Left-pointing angle bracket
-  '&#9002;|&#x232A;|&#x232a;': '〉', // Right-pointing angle bracket
-  // --- Spaces, hyphens, quotes and ampersand map for normalization. ---
-  '&#09;|&#009|&#10;|&#010|&#13;|&#013|&#32;|&#032|&#160;|&nbsp;|&#8192;|&#8193;|&#8194;|&#8195;|&#8196;|&#8197;|&#8198;|&#8199;|&#8200;|&#8201;|&#8202;|&#8203;|&#8204;|&#8205;|&#8206;|&#8207;|&#xA0;': ' ', // Grouped spaces (Note: \s+ is solved later by replace REGEX_PATTERNS.MULTIPLE_SPACES function)
-  '&#173;|&shy;|&#8208;|&#x2010;|&#8209;|&#x2011;|&#8210;|&#x2012;|&#8211;|&ndash;|&#x2013;|&#8212;|&mdash;|&#x2014;|&#8213;|&#x2015;|&#8722;|&minus;|&#x2212;': '-', // Grouped hyphens/dashes
-  '&#39;|&#039;|&apos;|&#x27;|&#8216;|&lsquo;|&#x2018;|&#8217;|&rsquo;|&#x2019;|&#8218;|&sbquo;|&#x201A;|&#x201a;|&#8219;|&#x201B;|&#x201b;': "'", // Grouped single quotes
-  '&#34;|&quot;|&#x22;|&#8220;|&ldquo;|&#x201C;|&#x201c;|&#8221;|&rdquo;|&#x201D;|&#x201d;|&#8222;|&bdquo;|&#x201E;|&#x201e;|&#8223;|&#x201F;|&#x201f;': '"', // Grouped double quotes
-  '&#38;|&#038;|&amp;|&': SETTINGS.AMPERSAND_REPLACEMENT, // Grouped ampersand in entryContent replacements - needs to be at the end of the map
-};
+   // --- Czech characters (grouped representations) ---
+   '&#193;|&Aacute;|A&#769;': 'Á', // Capital Á
+   '&#225;|&aacute;|a&#769;': 'á', // Lower case á
+   '&Auml;|&#196;|A&#776;': 'Ä', // Capital Ä
+   '&auml;|&#228;|a&#776;': 'ä', // Lower case ä
+   '&#268;|&Ccaron;|C&#780;': 'Č', // Capital Č
+   '&#269;|&ccaron;|c&#780;': 'č', // Lower case č
+   '&#270;|&Dcaron;|D&#780;': 'Ď', // Capital Ď
+   '&#271;|&dcaron;|d&#780;': 'ď', // Lower case ď
+   '&#201;|&Eacute;|E&#769;': 'É', // Capital É
+   '&#233;|&eacute;|e&#769;': 'é', // Lower case é
+   '&Euml;|&#203;|E&#776;': 'Ë', // Capital Ë
+   '&euml;|&#235;|e&#776;': 'ë', // Lower case ë
+   '&#282;|&Ecaron;|E&#780;': 'Ě', // Capital Ě
+   '&#283;|&ecaron;|e&#780;': 'ě', // Lower case ě
+   '&#205;|&Iacute;|I&#769;': 'Í', // Capital Í
+   '&#237;|&iacute;|i&#769;': 'í', // Lower case í
+   '&Iuml;|&#207;|I&#776;': 'Ï', // Capital Ï
+   '&iuml;|&#239;|i&#776;': 'ï', // Lower case ï
+   '&#327;|&Ncaron;|N&#780;': 'Ň', // Capital Ň
+   '&#328;|&ncaron;|n&#780;': 'ň', // Lower case ň
+   '&#211;|&Oacute;|O&#769;': 'Ó', // Capital Ó
+   '&#243;|&oacute;|o&#769;': 'ó', // Lower case ó
+   '&Ouml;|&#214;|O&#776;': 'Ö', // Capital Ö
+   '&ouml;|&#246;|o&#776;': 'ö', // Lower case ö
+   '&Odblac;|&#336;|O&#778;': 'Ő', // Capital Ő
+   '&odblac;|&#337;|o&#778;': 'ő', // Lower case ő
+   '&#344;|&Rcaron;|R&#780;': 'Ř', // Capital Ř
+   '&#345;|&rcaron;|r&#780;': 'ř', // Lower case ř
+   '&#352;|&Scaron;|S&#780;': 'Š', // Capital Š
+   '&#353;|&scaron;|s&#780;': 'š', // Lower case š
+   '&#356;|&Tcaron;|T&#780;': 'Ť', // Capital Ť
+   '&#357;|&tcaron;|t&#780;': 'ť', // Lower case ť
+   '&#218;|&Uacute;|U&#769;': 'Ú', // Capital Ú
+   '&#250;|&uacute;|u&#769;': 'ú', // Lower case ú
+   '&Uuml;|&#220;|U&#776;': 'Ü', // Capital Ü
+   '&uuml;|&#252;|u&#776;': 'ü', // Lower case ü
+   '&#366;|&Uring;|U&#778;': 'Ů', // Capital Ů
+   '&#367;|&uring;|u&#778;': 'ů', // Lower case ů
+   '&Udblac;|&#368;|U&#369;': 'Ű', // Capital Ű
+   '&udblac;|&#369;|u&#369;': 'ű', // Lower case ű
+   '&#221;|&Yacute;|Y&#769;': 'Ý', // Capital Ý
+   '&#253;|&yacute;|y&#769;': 'ý', // Lower case ý
+   '&#381;|&Zcaron;|Z&#780;': 'Ž', // Capital Ž
+   '&#382;|&zcaron;|z&#780;': 'ž', // Lower case ž
+   // --- Special characters and symbols map for normalization. ---
+   '&#33;|&excl;|&#x21;': '!',
+   '&#36;|&dollar;|&#x24;|&#65284;|&#xFF04;': '$',
+   '&#37;|&percnt;|&#x25;': '%',
+   '&#40;|&lpar;|&#x28;': '(',
+   '&#41;|&rpar;|&#x29;': ')',
+   '&#43;|&plus;|&#x2B;|&#x2b;': '+', // replaced with Heavy Plus Sign emoji to avoid IFTTT processing issues
+   '&#46;|&period;|&#046;|&#x2e;': '.', // Dot (046 added for sure)
+   '&#60;|&lt;|&#x3c;': '<',
+   '&#61;|&equals;|&#x3d;': '=',
+   '&#62;|&gt;|&#x3e;': '>',
+   '&#63;|&quest;|&#x3f;': '?',
+   '&#91;|&lbrack;|&#x5b;': '[',
+   '&#93;|&rbrack;|&#x5d;': ']',
+   '&#95;|&lowbar;|&#x5f;': '_',
+   '&#123;|&lbrace;|&#x7b;': '{',
+   '&#124;|&vert;|&#x7c;|VerticalLine': '|', // VerticalLine added for security
+   '&#125;|&rbrace;|&#x7d;': '}',
+   '&#162;|&cent;|&#xa2;|&#65504;|&#xFFE0;': '¢',
+   '&#163;|&pound;|&#xa3;|&#65505;|&#xFFE1;': '£',
+   '&#165;|&yen;|&#xa5;|&#65509;|&#xFFE5;': '¥',
+   '&#169;|&copy;|&#xA9;|&#xa9;': '©',
+   '&#174;|&reg;|&#xAE;|&#xae;': '®',
+   '&#176;|&deg;|&#xb0;': '°',
+   '&#177;|&plusmn;|&#xb1;': '±',
+   '&#183;|&centerdot;|&middot;|&#xB7;': '·',
+   '&#188;|&frac14;|&#xBC;': '¼',
+   '&#189;|&half;|&#xBD;': '½',
+   '&#190;|&frac34;|&#xBE;': '¾',
+   '&#215;|&times;|&#xd7;': '×',
+   '&#247;|&divide;|&#xf7;': '÷',
+   '&#8364;|&euro;|&#x20AC;': '€',
+   '&#8482;|&trade;|&#x2122;': '™',
+   '&#137;|&permil;|&#x89;|&#8241;|&#x2031;': '‰', // Per ten thousand sign
+   '&#139;|&#x8B;': '‹', // Single left-pointing angle quotation mark
+   '&#155;|&#x9B;': '›', // Single right-pointing angle quotation mark
+   '&#8242;|&prime;|&#x2032;': '′', // Prime
+   '&#8243;|&Prime;|&#x2033;': '″', // Double Prime
+   '&#8451;|&#x2103;': '℃', // Celsius degree
+   '&#8776;|&thickapprox;|&#x2248;': '≈', // Almost equal to
+   '&#8800;|&ne;|&#x2260;': '≠', // Not equal to
+   '&#9001;|&#x2329;': '〈', // Left-pointing angle bracket
+   '&#9002;|&#x232A;|&#x232a;': '〉', // Right-pointing angle bracket
+   // --- Spaces, hyphens, quotes and ampersand map for normalization. ---
+   // '\\[ꝸ#8230;\\]|\\[&(?:amp;)?#8230;\\]|\\[&(?:amp;)?hellip;\\]|\\[&(?:amp;)?mldr;\\]|\\[&(?:amp;)?#x2026;\\]': '…', // Simplification of the elipse in brackets
+   '&#09;|&#009|&#10;|&#010|&#13;|&#013|&#32;|&#032|&#160;|&nbsp;|&#8192;|&#8193;|&#8194;|&#8195;|&#8196;|&#8197;|&#8198;|&#8199;|&#8200;|&#8201;|&#8202;|&#8203;|&#8204;|&#8205;|&#8206;|&#8207;|&#xA0;': ' ', // Grouped spaces (Note: \s+ is solved later by replace REGEX_PATTERNS.MULTIPLE_SPACES function)
+   '&#173;|&shy;|&#8208;|&#x2010;|&#8209;|&#x2011;|&#8210;|&#x2012;|&#8211;|&ndash;|&#x2013;|&#8212;|&mdash;|&#x2014;|&#8213;|&#x2015;|&#8722;|&minus;|&#x2212;': '-', // Grouped hyphens/dashes
+   '&#39;|&#039;|&apos;|&#x27;|&#8216;|&lsquo;|&#x2018;|&#8217;|&rsquo;|&#x2019;|&#8218;|&sbquo;|&#x201A;|&#x201a;|&#8219;|&#x201B;|&#x201b;': "'", // Grouped single quotes
+   '&#34;|&quot;|&#x22;|&#8220;|&ldquo;|&#x201C;|&#x201c;|&#8221;|&rdquo;|&#x201D;|&#x201d;|&#8222;|&bdquo;|&#x201E;|&#x201e;|&#8223;|&#x201F;|&#x201f;': '"', // Grouped double quotes
+   '&#38;|&#038;|&amp;|&': SETTINGS.AMPERSAND_REPLACEMENT, // Grouped ampersand in entryContent replacements - needs to be at the end of the map
+ };
 
 /**
  * Configuration object for precompiled regular expression patterns used in content processing.
  * Grouped into a single object for better organization and maintainability.
  */
 const REGEX_PATTERNS = {
-  BS_QUOTE: new RegExp("\\[contains quote post or other embedded content\\]", "gi"), // Pattern indicating a Bluesky quote post.
-  EMOJI: /\p{Extended_Pictographic}/gu, // Unicode-aware regex for emoji including all skin tone modifiers
+  BS_QUOTE: /\[contains quote post or other embedded content\]/gi, // Pattern indicating a Bluesky quote post.
+  EMOJI: /\p{Extended_Pictographic}/gu, // Unicode-aware regex for emoji including all skin tone modifiers (alt: /[\uD800-\uDBFF][\uDC00-\uDFFF]/g)
   HTML_LINE_BREAKS: /<(br|br\/|\/p)[^>]*>/gi, // Matches various HTML line break tags. Used in replaceAllSpecialCharactersAndHtml.
   HTML_TAG: /<(?!br|\/p|br\/)[^>]+>/gi, // Matches all HTML tags EXCEPT line break tags. Used in replaceAllSpecialCharactersAndHtml.
-  MULTIPLE_EOL: /(\r?\n){3,}/g, // Matches 3 or more consecutive newline characters. Used to limit excessive line breaks.
-  MULTIPLE_SPACES: /\s+/g, // Matches one or more whitespace characters. Used to normalize spacing.
   REPOST_PREFIX: /^(RT @([^:]+): )/i, // Matches the standard Twitter "RT @username: " prefix.
-  REPOST_URL: new RegExp('href="(?<url>https:\/\/twitter\.com[^"]+)"', 'gi'), // Extracts the original tweet URL from Twitter RT structure (often embedded in HTML). Note: Named capture group `<url>` is not used in current logic, only index 1.
-  REPOST_USER: new RegExp('RT (@[a-z0-9_]+)', 'gi'), // Extracts the @username being retweeted.
+  REPOST_URL: /href="(https:\/\/twitter\.com[^"]+)"/gi, // Extracts the original tweet URL from Twitter RT structure (often embedded in HTML). Note: Named capture group `<url>` is not used in current logic, only index 1.
+  REPOST_USER: /RT (@[a-z0-9_]+)/gi, // Extracts the @username being retweeted.
   RESPONSE_PREFIX: /^R to (.*?): /, // Matches the "R to @username: " prefix used in some contexts for replies.
   TCO_URL: /https:\/\/t\.co\/[^\s]+/gi, // Matches Twitter's shortened t.co URLs.
   URL: /https?:\/\//i, // Simple check for the presence of "http://" or "https://".
   URL_HASHTAG_MENTION: /(\bhttps?:\/\/[^\s]+\b|#[a-zA-Z0-9_]+|@[a-zA-Z0-9_]+)$/i, // Regex for hashtags, mentions and URLs as terminators (case-insensitive, 
+  WHITESPACE_CLEANUP: /[ \t\u00A0]{2,}|(\r?\n){3,}/g,
 };
 
 /**
- * Composes the core content string by applying platform-specific logic (BS, TW, default),
- * cleaning HTML, normalizing characters, applying hacks, handling quotes/reposts,
- * and finally formatting mentions based on settings.
- * @param entryTitle - The title input (original Text for TW).
- * @param entryAuthor - The author username from the trigger (quoting user).
- * @param feedTitle - The feed title input (used for author names).
- * @returns The processed content string ready for final status composition.
+ * Compose final content by running processContent and
+ * applying username formatting before returning.
+ * @returns Final processed content string
  */
 function composeResultContent(entryTitle: string, entryAuthor: string, feedTitle: string): string {
-   // Input normalization - trim all inputs once at the start
-   const trimmedEntryTitle = (entryTitle || '').trim();
-   const trimmedEntryAuthor = (entryAuthor || '').trim();
-   const trimmedFeedTitle = (feedTitle || '').trim();
-   // Optimization 3: Use isEffectivelyEmpty for consistent empty checks
-   if (isEffectivelyEmpty(entryContent) && isEffectivelyEmpty(trimmedEntryTitle)) { return ""; } // Return early if both main inputs are effectively empty
-   let resultContent = "";
-   let resultFeedAuthor = ""; // Real name or username of the QUOTING author
-   let feedAuthorUserName = ""; // Username of the QUOTING author
-   let feedAuthorRealName = ""; // Real name of the QUOTING author
-   let userNameToSkip = ""; // Username to exclude from mention formatting (usually the quoting author)   
-   // Platform-specific initial content selection and processing
-   switch (SETTINGS.POST_FROM) {
-     case "BS":
-       resultContent = entryContent; // BS uses EntryContent (HTML post content)
-       // Extract username and real name of the QUOTING author from trimmedFeedTitle ("username.bsky.social - Real Name")
-       const bsSeparatorIndex = trimmedFeedTitle.indexOf(" - ");
-       if (bsSeparatorIndex !== -1) {
-         feedAuthorUserName = trimmedFeedTitle.substring(0, bsSeparatorIndex);
-         feedAuthorRealName = trimmedFeedTitle.substring(bsSeparatorIndex + 3);
-       } else {
-         feedAuthorUserName = trimmedFeedTitle; // Fallback
-         feedAuthorRealName = trimmedFeedTitle; // Fallback
-       }
-       // Set username to skip for mention formatting
-       userNameToSkip = feedAuthorUserName;
-       resultFeedAuthor = SETTINGS.SHOULD_PREFER_REAL_NAME ? feedAuthorRealName : feedAuthorUserName;
-       // Apply common cleaning steps + moveUrlToEnd for BS.
-       resultContent = replaceAllSpecialCharactersAndHtml(resultContent);
-       resultContent = replaceAmpersands(resultContent);
-       resultContent = contentHack(resultContent);
-       resultContent = moveUrlToEnd(resultContent); // Move URL to end for BS.
-       // Handle Bluesky quote posts.
-       if (isQuoteInPost(resultContent, "", "BS")) { resultContent = replaceQuoted(resultContent, resultFeedAuthor, feedAuthorUserName, "BS", ""); } // For BS, trimmedEntryAuthor from trigger is often "(none)". Pass quoting author's username.
-       break;
-     case "TW":
-       let tweetText = parseTextFromEntryContent(entryContent); // Extract tweet text from TweetEmbedCode (in entryContent)
-       // Use extracted text or fall back to trimmedEntryTitle (original Text) if extraction fails
-       resultContent = tweetText || trimmedEntryTitle;
-       // Extract username and real name of the QUOTING author
-       feedAuthorUserName = trimmedFeedTitle; // Username from trigger (e.g., "zpravobotnews")
-       feedAuthorRealName = parseRealNameFromEntryContent(entryContent) || feedAuthorUserName; // Real name from embed code
-       // Set username to skip for mention formatting
-       userNameToSkip = feedAuthorUserName;
-       resultFeedAuthor = SETTINGS.SHOULD_PREFER_REAL_NAME ? feedAuthorRealName : feedAuthorUserName;
-       // Apply common cleaning steps BUT NOT moveUrlToEnd for TW.
-       resultContent = replaceAllSpecialCharactersAndHtml(resultContent);
-       resultContent = replaceAmpersands(resultContent);
-       resultContent = contentHack(resultContent);
-       // Handle replies (R to).
-       resultContent = replaceResponseTo(resultContent); // Remove reply prefix.
-       // Handle retweets (RT) - use trimmedEntryTitle (original Text) for detection
-       if (isRepost(trimmedEntryTitle)) {
-         const repostedUser = findRepostUser(trimmedEntryTitle); // Get the @username being retweeted.
-         resultContent = replaceReposted(resultContent, resultFeedAuthor, repostedUser); // Apply RT formatting. Adds "@repostedUser"
-       }
-       // Handle quotes - check if FirstLinkUrl (entryImageUrl) points to a tweet
-       else if (isQuoteInPost("", entryImageUrl, "TW")) {
-         // Pass quoting author's username as 3rd arg for consistency, though not used in TW formatting part of replaceQuoted
-         resultContent = replaceQuoted(resultContent, resultFeedAuthor, feedAuthorUserName, "TW", entryImageUrl); // Adds "@quotedUser"
-       }
-       break;   
-     default: // Includes RSS, YT, etc.
-       resultContent = getContent(entryContent, trimmedEntryTitle); // Use standard content/title selection.
-       userNameToSkip = ""; // Don't skip any username by default for RSS/other.
-       // Apply common cleaning steps BUT NOT moveUrlToEnd for default/RSS.
-       resultContent = replaceAllSpecialCharactersAndHtml(resultContent);
-       resultContent = replaceAmpersands(resultContent);
-       resultContent = contentHack(resultContent);
-       // moveUrlToEnd is intentionally skipped for RSS/default.
-       break;
-   }
-   // --- Common step after switch ---
-   // Apply username formatting (@username -> @username@suffix) for relevant platforms (where userNameToSkip was set, i.e., BS and TW).
-   if (userNameToSkip) { resultContent = replaceUserNames(resultContent, userNameToSkip, SETTINGS.POST_FROM); } 
-   return resultContent;
- }
+  // Trim inputs
+  const trimmedTitle = (entryTitle || '').trim();
+  const trimmedFeed = (feedTitle || '').trim();
+  // Skip entirely empty posts
+  if (isEffectivelyEmpty(entryContent) && isEffectivelyEmpty(trimmedTitle)) { return ""; }
+  // Process core content
+  const { resultContent, userNameToSkip } = processContent(entryContent, trimmedTitle, trimmedFeed, entryImageUrl);
+  // Apply common username formatting for Bluesky/Twitter
+  if (userNameToSkip) { return replaceUserNames(resultContent, userNameToSkip, SETTINGS.POST_FROM); }
+  return resultContent;
+}
 
 /**
  * Composes the final status string including processed content, optional image URL,
@@ -341,172 +275,83 @@ function composeResultContent(entryTitle: string, entryAuthor: string, feedTitle
  * @param resultContent - The processed content from composeResultContent.
  * @param entryUrl - The original post/item URL.
  * @param entryImageUrl - The original image URL.
- * @param entryTitle - The original title (used for isRepost check).
- * @param entryAuthor - The original author username (used for isRepostOwn check).
+ * @param entryTitle - The original title (used for repost detection).
+ * @param entryAuthor - The original author username (used for checking own reposts).
  * @returns The final status string ready to be sent.
  */
 function composeResultStatus(resultContent: string, entryUrl: string, entryImageUrl: string, entryTitle: string, entryAuthor: string): string {
-  // Initialize variables
-  let urlToShow = '';
-  let urlStatus = '';
-  let repostUrl = null;
-  let shouldShowUrl = false;
-  let trimmedContent = '';
-  let needsEllipsis = false;
-  // Ensure inputs are strings or default to empty
-  resultContent = resultContent || "";
-  // Check if the image URL points to a specific Twitter/X media page (not a direct file).
-  const isTwitterMediaPageLink = typeof entryImageUrl === 'string' && (entryImageUrl.endsWith('/photo/1') || entryImageUrl.endsWith('/video/1'));
-  // Platform-specific logic for trimming, URL visibility, and URL selection.
-  switch (SETTINGS.POST_FROM) {
-    case "BS": // Bluesky-specific actions
-      // 1. Trim content.
-      const bsTrimmedResult = trimContent(resultContent);
-      trimmedContent = bsTrimmedResult.content;
-      needsEllipsis = bsTrimmedResult.needsEllipsis;
-      // 2. Determine URL visibility: Show URL if forced, if content was truncated, OR if it's a BS quote post.
-      // Pass original entryContent to isQuoteInPost as trimming might remove the marker.
-      shouldShowUrl = SETTINGS.SHOW_ORIGIN_POSTURL_PERM || needsEllipsis || isQuoteInPost(resultContent, "", "BS");
-      // 3. Select URL: Use entryUrl if shouldShowUrl is true.
-      if (shouldShowUrl) {
-        if (typeof entryUrl === 'string') {
-          // No POST_SOURCE/POST_TARGET replacement typically needed for BS URLs, but apply if configured.
-          const sourcePattern = SETTINGS.POST_SOURCE ? escapeRegExp(SETTINGS.POST_SOURCE) : '';
-          if (sourcePattern) { urlToShow = entryUrl.replace(getCachedRegex(sourcePattern, "gi"), SETTINGS.POST_TARGET); } 
-          else { urlToShow = entryUrl; } // Use original BS URL
-        } else { urlToShow = ''; } // Safety net
-      } else { urlToShow = ''; } // Ensure empty if not needed.
-      break; // End case "BS"
-    case "TW": // Twitter-specific actions
-      // 1. Clean content: Remove t.co URLs before trimming.
-      const cleanedContent = resultContent.replace(REGEX_PATTERNS.TCO_URL, '');
-      // 2. Trim content: Apply length constraints and ellipsis logic.
-      const trimmedResult = trimContent(cleanedContent);
-      trimmedContent = trimmedResult.content;
-      needsEllipsis = trimmedResult.needsEllipsis;
-      // 3. Dynamic URL visibility override: Force showing origin URL if no other URLs remain after cleaning (unless the missing image was just a /photo/1 or /video/1 link).
-      if (!isUrlIncluded(cleanedContent) && !isTwitterMediaPageLink) { SETTINGS.SHOW_ORIGIN_POSTURL_PERM = true; }
-      // 4. Find repost URL (if any) from the original content structure.
-      repostUrl = findRepostUrl(resultContent);
-      // 5. Determine if *any* URL should be shown based on multiple factors.
-      const isRepostUrlDetected = repostUrl !== null;
-      const wasContentTruncated = needsEllipsis === true;
-      const isPermittedExternalRepost = isRepost(entryTitle) && !isRepostOwn(entryTitle, entryAuthor) && SETTINGS.REPOST_ALLOWED === true;
-      shouldShowUrl =
-        isRepostUrlDetected ||
-        SETTINGS.SHOW_ORIGIN_POSTURL_PERM || // Use potentially updated value
-        wasContentTruncated ||
-        isPermittedExternalRepost ||
-        isTwitterMediaPageLink;
-      // 6. Select the specific URL to show (urlToShow).
-      const contentHasUrl = isUrlIncluded(cleanedContent); // Check cleaned content for non-t.co URLs.
-      const postHasImage = isImageInPost(entryImageUrl); // Check if it's a valid image URL (not /photo/1 etc.)
-      if (shouldShowUrl || contentHasUrl) { // Only proceed if a URL needs to be shown.
-        if (contentHasUrl) { // If cleaned content still has a URL...
-          urlToShow = postHasImage ? entryImageUrl : entryUrl; // Prefer valid image URL, fallback to entry URL.
-        } else { // If cleaned content has no URL...
-          urlToShow = postHasImage ? entryImageUrl : (shouldShowUrl ? entryUrl : ''); // Use valid image URL, or entry URL if forced, else empty.
-        }
-        // 7. Format urlToShow: Replace source/target, handle fallback.
-        if (urlToShow && urlToShow !== '(none)') {
-          if (typeof urlToShow === 'string') {
-            const sourcePattern = SETTINGS.POST_SOURCE ? escapeRegExp(SETTINGS.POST_SOURCE) : '';
-            if (sourcePattern) { urlToShow = urlToShow.replace(getCachedRegex(sourcePattern, "gi"), SETTINGS.POST_TARGET); }
-          } else { urlToShow = ''; } // Safety net for non-string values.
-        } else { // If urlToShow is empty or "(none)"...
-          urlToShow = SETTINGS.SHOW_FEEDURL_INSTD_POSTURL ? feedUrl : ''; // Use feed URL as fallback if enabled.
-        }
-      } else { urlToShow = ''; } // Ensure empty if no URL should be shown
-      break; // End case "TW"
-    default: // Default behavior for other platforms (RSS, YT, etc.)
-      // 1. Trim content.
-      const defaultTrimmedResult = trimContent(resultContent);
-      trimmedContent = defaultTrimmedResult.content;
-      needsEllipsis = defaultTrimmedResult.needsEllipsis;
-      // 2. Determine URL visibility: Show URL only if forced or if content was truncated.
-      shouldShowUrl = SETTINGS.SHOW_ORIGIN_POSTURL_PERM || needsEllipsis;
-      // 3. Select URL: Use entryUrl if shouldShowUrl is true.
-      if (shouldShowUrl) {
-        if (typeof entryUrl === 'string') {
-          const sourcePattern = SETTINGS.POST_SOURCE ? escapeRegExp(SETTINGS.POST_SOURCE) : '';
-          if (sourcePattern) { urlToShow = entryUrl.replace(getCachedRegex(sourcePattern, "gi"), SETTINGS.POST_TARGET); } 
-          else { urlToShow = entryUrl; } // Use original if no source pattern
-        } else { urlToShow = ''; } // Safety net
-      } else { urlToShow = ''; } // Ensure empty if not needed.
-      break; // End default case
-  } // End switch (SETTINGS.POST_FROM)
-  // --- Common final steps for all platforms ---
-  const resultImageUrl = typeof entryImageUrl === 'string' ? replaceAmpersands(entryImageUrl) : ''; // Process image URL (handle ampersands).
-  const imageStatus = (isImageInPost(entryImageUrl) && SETTINGS.SHOW_IMAGEURL) ? `${SETTINGS.STATUS_IMAGEURL_SENTENCE}${resultImageUrl}` : ''; // Build image status string if applicable.
-  urlStatus = (urlToShow && typeof urlToShow === 'string') ? `${SETTINGS.STATUS_URL_SENTENCE}${replaceAmpersands(urlToShow)}` : ''; // Build final URL status string if applicable (handle ampersands in urlToShow).
-  return `${trimmedContent}${imageStatus}${urlStatus}`; // Compose the final output string.
+  // Ensure resultContent is a string, defaulting to empty if falsy
+  resultContent = resultContent || '';
+  // --- Universal processing of content and URL ---
+  // processStatus returns:
+  //   trimmedContent: the content trimmed according to settings and ellipsis rules
+  //   needsEllipsis: flag indicating if an ellipsis was added
+  //   urlToShow: the URL to append (if any) based on repost and external checks
+  const { trimmedContent, needsEllipsis, urlToShow } = processStatus(resultContent, entryUrl, entryImageUrl, entryTitle, entryAuthor);
+  // --- Image URL handling ---
+  const resultImageUrl: string = typeof entryImageUrl === 'string' ? replaceAmpersands(entryImageUrl) : ''; // Clean the image URL by replacing ampersands if it's a valid string
+  const imageStatus: string = (isImageInPost(entryImageUrl) && SETTINGS.SHOW_IMAGEURL) ? `${SETTINGS.STATUS_IMAGEURL_SENTENCE}${resultImageUrl}` : ''; // Build the image status fragment if an image should be shown
+  // --- URL handling ---
+  const finalUrl: string = (urlToShow && typeof urlToShow === 'string') ? `${SETTINGS.STATUS_URL_SENTENCE}${replaceAmpersands(urlToShow)}` : ''; // Build the final URL fragment if a URL is determined to be shown
+  // --- Compose and return the full status string ---
+  return `${trimmedContent}${imageStatus}${finalUrl}`; // Concatenate trimmed content, image fragment, and URL fragment
 }
 
 /**
  * Applies custom regex replacements defined in SETTINGS.CONTENT_HACK_PATTERNS.
  * Uses cached RegExp objects for performance optimization.
- * @param str - The input string to process.
  * @returns The string after applying all defined hacks.
  */
 function contentHack(str: string): string {
-   if (!str) return ""; // Handle null or undefined input by returning an empty string
-   let result = str.replace(/\+/g, "\uFE63"); // Replace the "+" character with its unicode equivalent "﹢"
-   const domainFixPatterns = createDomainFixPatterns(SETTINGS.URL_DOMAIN_FIXES || []);
-   // Processing domain fixes
-   result = domainFixPatterns.reduce(function(acc, domainPattern) {
-     try {
-       const regex = getCachedRegex(domainPattern.pattern, domainPattern.flags || '');
-       return acc.replace(regex, domainPattern.replacement);
-     } catch (e) {
-       MakerWebhooks.makeWebRequest.skip(`Content hack domain fix failed - Pattern: ${domainPattern.pattern}`); 
-       return acc;
-     }
-   }, result);
-   // Processing other content hack patterns
-   if (SETTINGS.CONTENT_HACK_PATTERNS) {
-     for (let i = 0; i < SETTINGS.CONTENT_HACK_PATTERNS.length; i++) {
-       const contentPattern = SETTINGS.CONTENT_HACK_PATTERNS[i];
-       let regexFlags = 'gi'; // default flags
-       try {
-         const patternText = contentPattern.literal ? escapeRegExp(contentPattern.pattern) : contentPattern.pattern;
-         const rawFlags = contentPattern.flags || 'gi';
-         // Fixed: Use type casting instead of String() constructor
-         regexFlags = (rawFlags as string).replace(/[^gimuy]/g, '');
-         const regex = getCachedRegex(patternText, regexFlags);
-         result = result.replace(regex, contentPattern.replacement);
-       } catch (e) {
-         MakerWebhooks.makeWebRequest.skip(`Content hack pattern failed - Pattern: ${contentPattern.pattern}`); 
-         continue;
-       }
-     }
-   }
-   return result;
- }
+  if (!str) return ""; // Handle null or undefined input by returning an empty string
+  let result = str.replace(/\+/g, "\uFE63"); // Replace the "+" character with its unicode equivalent "﹢"
+  const domainFixPatterns = createDomainFixPatterns(SETTINGS.URL_DOMAIN_FIXES || []);
+  // Early-return if no domain fix patterns defined
+  if (!domainFixPatterns.length) return result;
+  // Processing domain fixes
+  result = domainFixPatterns.reduce(function(acc, domainPattern) {
+    try {
+      const regex = getCachedRegex(domainPattern.pattern, domainPattern.flags || '');
+      return acc.replace(regex, domainPattern.replacement);
+    } catch (e) { MakerWebhooks.makeWebRequest.skip(`Content hack domain fix failed - Pattern: ${domainPattern.pattern}`); return acc; }
+  }, result);
+  // Early-return if no custom content hack patterns defined
+  if (!SETTINGS.CONTENT_HACK_PATTERNS || SETTINGS.CONTENT_HACK_PATTERNS.length === 0) { return result; }
+  // Processing other content hack patterns
+  if (SETTINGS.CONTENT_HACK_PATTERNS) {
+    for (let i = 0; i < SETTINGS.CONTENT_HACK_PATTERNS.length; i++) {
+      const contentPattern = SETTINGS.CONTENT_HACK_PATTERNS[i];
+      let regexFlags = 'gi'; // default flags
+      try {
+        const patternText = contentPattern.literal ? escapeRegExp(contentPattern.pattern) : contentPattern.pattern;
+        const rawFlags = contentPattern.flags || 'gi';
+        // Fixed: Use type casting instead of String() constructor
+        regexFlags = (rawFlags as string).replace(/[^gimuy]/g, '');
+        const regex = getCachedRegex(patternText, regexFlags);
+        result = result.replace(regex, contentPattern.replacement);
+      } catch (e) { MakerWebhooks.makeWebRequest.skip(`Content hack pattern failed - Pattern: ${contentPattern.pattern}`); continue; }
+    }
+  }
+  return result;
+}
 
 /**
  * Creates domain repair patterns from the URL_DOMAIN_FIXES field.
  * This function accepts a list of domains and creates a RegExp pattern for each,
  * which ensures that if a domain is not preceded by http:// or https://,
  * it will be prefixed with https://. Special characters in domains are escaped.
- * @param domains - An array of strings containing the domains to be modified by adding https://.
  * @returns An array of objects with RegExp patterns, replacement strings and flags, or an empty array if the input is not valid.
  */
 function createDomainFixPatterns(domains: string[]) {
-  return domains
-    .filter(domain => !!domain) // Filtrování prázdných nebo nedefinovaných domén
-    .map(domain => {
-      try { return { pattern: `(?<!https?:\\/\\/)${domain.replace(/\./g, '\\.')}\\/?`, replacement: `https://${domain}/`, flags: "gi", literal: false }; } 
-      catch (e) {
-        MakerWebhooks.makeWebRequest.skip(`Domain fix pattern creation failed - Domain: ${domain}`); 
-        return null;
-      }
+  return domains .filter(domain => !!domain) .map(domain => { // Filtering empty or undefined domains
+      try { return { pattern: `(?<!https?:\\/\\/)${domain.replace(/\./g, '\\.')}\\/?`, replacement: `https://${domain}/`, flags: "gi", literal: false }; 
+      } catch (e) { MakerWebhooks.makeWebRequest.skip(`Domain fix pattern creation failed - Domain: ${domain}`); return null; }
     }).filter(Boolean);
 }
 
 /**
  * Escapes special characters in a string to make it safe for use in regular expressions.
  * Uses memoization with a size-limited cache to optimize performance and manage memory usage.
- * @param str - The input string to be escaped.
  * @returns The escaped string with special characters prefixed by backslashes, or empty string if input is invalid.
  */
 function escapeRegExp(str: string): string {
@@ -517,7 +362,7 @@ function escapeRegExp(str: string): string {
   escapeRegExpCache[str] = escaped;
   fifoRegExpOrder.push(str);
   // Remove oldest entry if cache exceeds the size limit
-  if (fifoRegExpOrder.length > MAX_CACHE_SIZE) {
+  if (fifoRegExpOrder.length > MAX_ESCREGEXP_CACHE_SIZE) {
     const oldestKey = fifoRegExpOrder.shift();
     if (oldestKey) delete escapeRegExpCache[oldestKey];
   }
@@ -527,42 +372,33 @@ function escapeRegExp(str: string): string {
 /**
  * Extracts the first Twitter URL found within an href attribute in an HTML string.
  * Primarily used for finding the original tweet URL within Twitter's RT structure.
- * @param str - The input HTML string.
  * @returns The extracted Twitter URL, or null if not found.
  */
 function findRepostUrl(str: string): string | null {
   if (!str) return null; // Handle null or undefined input by returning an empty string
-  // Reset the regex state for global searches
-  REGEX_PATTERNS.REPOST_URL.lastIndex = 0;
+  REGEX_PATTERNS.REPOST_URL.lastIndex = 0; // Reset the regex state for global searches
   const matches = REGEX_PATTERNS.REPOST_URL.exec(str);
-  // Access group by index (more compatible than named group potentially)
-  return matches ? matches[1] : null;
+  return matches ? matches[1] : null; // Access group by index (more compatible than named group potentially)
 }
 
 /**
  * Extracts the @username of the user being retweeted from a string starting with "RT @...".
- * @param str - The input string (typically the tweet content).
  * @returns The extracted @username (e.g., "@originalAuthor"), or an empty string if not found.
  */
 function findRepostUser(str: string): string {
   if (!str) return ""; // Handle null or undefined input by returning an empty string
-  // Reset the regex state
-  REGEX_PATTERNS.REPOST_USER.lastIndex = 0;
+  REGEX_PATTERNS.REPOST_USER.lastIndex = 0; // Reset the regex state
   const matches = REGEX_PATTERNS.REPOST_USER.exec(str);
-  // Access group by index
-  return matches ? matches[1] : '';
+  return matches ? matches[1] : ''; // Access group by index
 }
 
 /**
  * Retrieves the primary content source, prioritizing title if SHOW_TITLE_AS_CONTENT is true,
  * otherwise using content (with title as fallback for empty content).
- * @param entryContent - The main content field.
- * @param entryTitle - The title field.
  * @returns The selected content string, or an empty string if both are effectively empty.
  */
 function getContent(entryContent: any, entryTitle: any): string {
-  if (SETTINGS.SHOW_TITLE_AS_CONTENT) {
-    return entryTitle || ""; // Return title if preferred, or empty string if title is null/undefined.
+  if (SETTINGS.SHOW_TITLE_AS_CONTENT) { return entryTitle || ""; // Return title if preferred, or empty string if title is null/undefined.
   } else {
     // Return content if it's a non-empty string, otherwise return title (or empty string if title is also null/undefined).
     const contentIsEffectivelyEmpty = (typeof entryContent !== "string" || isEffectivelyEmpty(entryContent));
@@ -579,16 +415,16 @@ function getContent(entryContent: any, entryTitle: any): string {
  * @returns The cached or newly created RegExp object
  */
 function getCachedRegex(pattern: string, flags: string): RegExp {
-  const key = pattern + '|' + flags; // Unique key for each pattern + flags combination
+  const key = [pattern, flags].join('|'); // Unique key for each pattern + flags combination
   if (regexCache.hasOwnProperty(key)) { return regexCache[key]; } // If the regex is already cached, return it
   // Compile a new RegExp object and cache it
   const regex = new RegExp(pattern, flags);
   regexCache[key] = regex;
   fifoRegexQueue.push(key);
   // If the cache exceeds the maximum size, remove the oldest entry (FIFO)
-  if (fifoRegexQueue.length > MAX_CACHE_SIZE) {
+  if (fifoRegexQueue.length > MAX_REGEX_CACHE_SIZE) {
     const oldestKey = fifoRegexQueue.shift();
-    if (oldestKey) delete regexCache[oldestKey];
+    if (oldestKey && regexCache.hasOwnProperty(oldestKey)) { delete regexCache[oldestKey]; }
   }
   return regex;
 }
@@ -596,7 +432,6 @@ function getCachedRegex(pattern: string, flags: string): RegExp {
 /**
  * Checks if the input string contains any banned commercial phrases from settings.
  * Uses escapeRegExp to treat banned phrases literally. Case-insensitive.
- * @param str - The input string (content or title).
  * @returns True if a banned phrase is found, false otherwise.
  */
 function isCommercialInPost(str: string): boolean {
@@ -605,11 +440,10 @@ function isCommercialInPost(str: string): boolean {
   for (const phrase of SETTINGS.BANNED_COMMERCIAL_PHRASES) {
     if (!phrase) continue; // Skip empty phrases in the settings array
     try {
-      // Escape the phrase to treat it literally in the regex
-      const regex = getCachedRegex(escapeRegExp(phrase), "i");
+      const regex = getCachedRegex(escapeRegExp(phrase), "i"); // Escape the phrase to treat it literally in the regex
       if (regex.test(lowerCaseStr)) { return true; }
     } catch (e) {
-      MakerWebhooks.makeWebRequest.skip(`Commercial phrase check failed - Phrase: ${phrase}`); 
+      MakerWebhooks.makeWebRequest.skip(`Commercial phrase check failed - Phrase: ${phrase}`);
       continue; // Skip this phrase and continue checking others
     }
   }
@@ -619,7 +453,6 @@ function isCommercialInPost(str: string): boolean {
 /**
  * Helper function to determine if the string is effectively empty.
  * Checks if the string is null, undefined, empty, contains only white characters or is equal to "(none)".
- * @param str - String to check
  * @returns True if the string is effectively empty, false otherwise
  */
 function isEffectivelyEmpty(str: string): boolean {
@@ -631,7 +464,6 @@ function isEffectivelyEmpty(str: string): boolean {
 /**
  * Validates if the input string represents a usable image URL.
  * Excludes known placeholder URLs and specific Twitter media page links (/photo/1, /video/1).
- * @param str - The input string (potential image URL).
  * @returns True if it seems like a valid and desired image URL, false otherwise.
  */
 function isImageInPost(str: string): boolean {
@@ -665,8 +497,7 @@ function isQuoteInPost(entryContent: string, entryFirstLinkUrl: string, postFrom
 }
 
 /**
-* Detects if the text is a reply starting with the user's name.
- * @param {string} str - Input text to parse
+ * Detects if the text is a reply starting with the user's name.
  * @returns {boolean} True if the text begins with a valid mention, false otherwise
  */
 function isReply(str: string): boolean {
@@ -678,7 +509,6 @@ function isReply(str: string): boolean {
 
 /**
  * Checks if the input string starts with the standard Twitter "RT @" prefix.
- * @param str - The input string (usually entryTitle for Twitter).
  * @returns True if it's a retweet, false otherwise.
  */
 function isRepost(str: string): boolean { return str ? REGEX_PATTERNS.REPOST_PREFIX.test(str) : false; } // Check for null/undefined str
@@ -697,11 +527,10 @@ function isRepostOwn(str: string, authorName: string): boolean {
   // Regex checks for "RT @escapedAuthorName:" at the beginning.
   const regex = getCachedRegex(`^RT @${escapedAuthorName}: `, "i"); // Added 'i' flag for case-insensitivity
   return regex.test(str);
-};
+}
 
 /**
  * Checks if the input string contains "http://" or "https://".
- * @param str - The input string.
  * @returns True if a URL protocol is found, false otherwise.
  */
 function isUrlIncluded(str: string): boolean { return str ? REGEX_PATTERNS.URL.test(str) : false; } // Check for null/undefined str
@@ -709,7 +538,6 @@ function isUrlIncluded(str: string): boolean { return str ? REGEX_PATTERNS.URL.t
 /**
  * Moves the first detected URL (http/https) in a string to the end.
  * If no URL is found, returns the original string.
- * @param entryContent - The input string.
  * @returns The string with the first URL moved to the end, or the original string.
  */
 function moveUrlToEnd(entryContent: string): string {
@@ -748,7 +576,6 @@ function mustContainKeywords(str: string, keywords: string[]): boolean {
 /**
  * Extracts the real author name from the TweetEmbedCode (entryContent).
  * Returns an empty string if it cannot be found.
- * @param embedCode - HTML embed code of the tweet
  * @returns Real author name or empty string
  */
 function parseRealNameFromEntryContent(embedCode: string): string {
@@ -764,7 +591,6 @@ function parseRealNameFromEntryContent(embedCode: string): string {
 /**
  * Extracts the tweet text from the <p> tag in TweetEmbedCode (entryContent).
  * If not found, returns an empty string.
- * @param embedCode - HTML embed code of the tweet
  * @returns Tweet text or empty string
  */
 function parseTextFromEntryContent(embedCode: string): string {
@@ -779,7 +605,6 @@ function parseTextFromEntryContent(embedCode: string): string {
 
 /**
  * Extracts the username from a Twitter status URL.
- * @param url - The Twitter status URL (e.g., https://twitter.com/username/status/123)
  * @returns The extracted username or an empty string if not found.
  */
 function parseUsernameFromTweetUrl(url: string): string {
@@ -789,37 +614,161 @@ function parseUsernameFromTweetUrl(url: string): string {
 }
 
 /**
+ * Process raw entry content according to platform-specific rules,
+ * clean up HTML/entities, apply hacks, move URL if needed,
+ * handle replies/retweets/quotes, and return structured result.
+ * @param entryContent - Raw HTML embed or content string
+ * @param entryTitle - Fallback text title
+ * @param feedTitle - Feed author/title string
+ * @param entryImageUrl - First image URL from the entry
+ * @returns Object with processed content and metadata
+ */
+function processContent(entryContent: any, entryTitle: string, feedTitle: string, entryImageUrl: string) {
+  const platform = SETTINGS.POST_FROM;
+  // Select platform configuration or fallback to RSS defaults
+  const config = platformConfigs[platform] || platformConfigs['RSS'];
+  const trimmedTitle = (entryTitle || '').trim();
+  const trimmedFeedTitle = (feedTitle || '').trim();
+  // Initialize variables for result and author information
+  let resultContent = '';
+  let resultFeedAuthor = '';
+  let feedAuthorUserName = '';
+  let userNameToSkip = '';
+  // --- Author attribution logic ---
+  if (platform === 'BS') {
+    // For Bluesky: split feedTitle into username and real name
+    const sep = trimmedFeedTitle.indexOf(" - ");
+    feedAuthorUserName = sep !== -1 ? trimmedFeedTitle.substring(0, sep) : trimmedFeedTitle;
+    const realName = sep !== -1 ? trimmedFeedTitle.substring(sep + 3) : trimmedFeedTitle;
+    resultFeedAuthor = SETTINGS.SHOULD_PREFER_REAL_NAME ? realName : feedAuthorUserName;
+    userNameToSkip = feedAuthorUserName;
+  } else if (platform === 'TW') {
+    // For Twitter: parse real name from embed code or fall back to username
+    feedAuthorUserName = trimmedFeedTitle;
+    const realName = parseRealNameFromEntryContent(entryContent) || feedAuthorUserName;
+    resultFeedAuthor = SETTINGS.SHOULD_PREFER_REAL_NAME ? realName : feedAuthorUserName;
+    userNameToSkip = feedAuthorUserName;
+  } else { userNameToSkip = "(none)"; } // Default: no username to skip
+  // --- Content selection ---
+  if (config.useParsedText) { resultContent = parseTextFromEntryContent(entryContent) || trimmedTitle; // Extract text from HTML embed if configured
+  } else if (config.useGetContent) { resultContent = getContent(entryContent, trimmedTitle); // Use generic getContent helper
+  } else { resultContent = trimmedTitle; } // Fallback to title only
+  // --- Cleaning and normalizing ---
+  resultContent = replaceAllSpecialCharactersAndHtml(resultContent);
+  resultContent = replaceAmpersands(resultContent);
+  resultContent = contentHack(resultContent);
+  // Move first URL to end if configured
+  if (config.applyMoveUrlToEnd) { resultContent = moveUrlToEnd(resultContent); }
+  // --- Special handling for replies, retweets, quotes ---
+  if (config.handleReplies) { resultContent = replaceResponseTo(resultContent); }
+  if (config.handleRetweets && isRepost(trimmedTitle)) {
+    const repostedUser = findRepostUser(trimmedTitle);
+    resultContent = replaceReposted(resultContent, resultFeedAuthor, repostedUser);
+  }
+  if (config.handleQuotes && isQuoteInPost(resultContent, entryImageUrl, platform)) { resultContent = replaceQuoted(resultContent, resultFeedAuthor, feedAuthorUserName, platform, entryImageUrl); }
+  return { resultContent, resultFeedAuthor, feedAuthorUserName, userNameToSkip };
+}
+
+/**
+ * Processes and formats status content for a post, including platform-specific logic,
+ * content trimming, and selection of the appropriate URL to display.
+ * @param resultContent - The main content to process.
+ * @param entryUrl - The canonical URL of the entry.
+ * @param entryImageUrl - The image URL associated with the entry.
+ * @param entryTitle - The title of the entry.
+ * @param entryAuthor - The author of the entry.
+ * @returns An object containing the trimmed content, ellipsis flag, and selected URL.
+ */
+function processStatus(resultContent: string, entryUrl: string, entryImageUrl: string, entryTitle: string, entryAuthor: string): { trimmedContent: string;needsEllipsis: boolean;urlToShow: string } {
+  // Determine which platform the post is coming from, defaulting to RSS if missing
+  const platform = SETTINGS.POST_FROM;
+  const config = platformConfigs[platform] || platformConfigs['RSS'];
+  // 1. Preprocess content for platform-specific quirks
+  if (platform === 'TW') { resultContent = resultContent.replace(REGEX_PATTERNS.TCO_URL, ''); } // For Twitter, strip out any t.co links before trimming
+  // 2. Trim content to comply with length limits and detect if ellipsis is needed
+  const trimmed = trimContent(resultContent);
+  let trimmedContent = trimmed.content;
+  let needsEllipsis = trimmed.needsEllipsis;
+  // 3. Decide whether we should show the original post URL
+  let shouldShowUrl = SETTINGS.SHOW_ORIGIN_POSTURL_PERM || needsEllipsis; // Always show if forced by settings or if content was truncated
+  // Platform-specific exceptions
+  if (platform === 'BS') { shouldShowUrl = shouldShowUrl || isQuoteInPost(resultContent, '', 'BS'); } // For Bluesky, also show URL if the post is a quote
+  if (platform === 'TW') { // For Twitter, handle media pages, reposts, and external reposts
+    const isMediaPage = typeof entryImageUrl === 'string' && (entryImageUrl.endsWith('/photo/1') || entryImageUrl.endsWith('/video/1'));
+    const isExternalRepost = isRepost(entryTitle) && !isRepostOwn(entryTitle, entryAuthor) && SETTINGS.REPOST_ALLOWED;
+    const repostUrl = findRepostUrl(resultContent);
+    const hasRepostUrl = repostUrl !== null;
+    if (!isUrlIncluded(resultContent) && !isMediaPage) { shouldShowUrl = true; } // If no URL remains after stripping and it's not a media page, force URL display
+    shouldShowUrl = shouldShowUrl || hasRepostUrl || isExternalRepost || isMediaPage; // Show URL if any special Twitter condition is met
+  }
+  // 4. Select which URL to display and apply any source→target replacements
+  let urlToShow = '';
+  if (platform === 'TW') { // For Twitter, check if cleaned content still contains any URLs
+    const contentHasUrl = isUrlIncluded(trimmedContent);
+    const postHasImage = isImageInPost(entryImageUrl);
+    // Show URL if forced, truncated, or if content itself contains a URL
+    if (shouldShowUrl || contentHasUrl) {
+      if (contentHasUrl) { urlToShow = postHasImage ? entryImageUrl : entryUrl; // If the content still has a URL, prefer image URL if present, else entry URL
+      } else { urlToShow = postHasImage ? entryImageUrl : shouldShowUrl ? entryUrl : ''; } // Otherwise, use image URL if present, else entry URL if forced
+      // Replace source pattern with target in the URL if configured
+      if (urlToShow && urlToShow !== '(none)') {
+        if (typeof urlToShow === 'string') {
+          const sourcePattern = SETTINGS.POST_SOURCE ? escapeRegExp(SETTINGS.POST_SOURCE) : '';
+          if (sourcePattern) { urlToShow = urlToShow.replace(getCachedRegex(sourcePattern, 'gi'), SETTINGS.POST_TARGET); }
+        } else { urlToShow = ''; }
+      } else { urlToShow = SETTINGS.SHOW_FEEDURL_INSTD_POSTURL ? feedUrl : ''; } // Fallback to feed URL if no valid URL is found
+    } else { urlToShow = ''; }
+  } else {
+    // Other platforms (RSS, BS, YT, etc.)
+    const hasValidEntryUrl = typeof entryUrl === 'string' && entryUrl !== '(none)'; // Always display entryUrl if it's a valid string
+    if (shouldShowUrl && hasValidEntryUrl) { urlToShow = entryUrl; /// Only include the primary entry URL
+    } else { urlToShow = ''; } // No valid URL to show
+  }
+  return { trimmedContent, needsEllipsis, urlToShow }; // Return trimmed content, ellipsis flag, and the selected URL string
+}
+
+/**
  * Normalizes a string by removing most HTML tags, converting line breaks,
  * replacing special character entities/codes, and normalizing whitespace.
- * @param str - The input string (often containing HTML).
  * @returns The normalized string.
  */
 function replaceAllSpecialCharactersAndHtml(str: string): string {
-  if (!str) return ''; // Handle null/undefined input
+  if (!str) return ''; // Handle null/undefined
   // 1. Remove all HTML tags except <br>, <br/>, <p>
   str = str.replace(REGEX_PATTERNS.HTML_TAG, '');
-  // 2. Replace <br>, <br/>, <p> with newline characters
+  // 2. Replace <br>, <br/>, <p> with newline
   str = str.replace(REGEX_PATTERNS.HTML_LINE_BREAKS, '\n');
-  // 3. Temporarily replace newlines to protect them during character replacement
-  const tempNewline = 'TEMP_NEWLINE_MARKER';
+  // 3. Protect newlines
+  var tempNewline = 'TEMP_NEWLINE_MARKER';
   str = str.replace(/\r?\n/g, tempNewline);
-  // 4. Replace special character entities/codes using the characterMap
-  for (const [pattern, replacement] of Object.entries(characterMap)) {
-    try {
-      const regex = getCachedRegex(pattern, 'g');
-      str = str.replace(regex, replacement);
-    } catch (e) {
-      MakerWebhooks.makeWebRequest.skip(`Character replacement failed - Pattern: ${pattern}, Replacement: ${replacement}`); 
-      continue;
-    }
+  // 4. Hardcode ellipsis-in-brackets replacement before other characterMap processing
+  str = str.replace(/\[(?:ꝸ#8230;|&(?:amp;)?#8230;|&(?:amp;)?hellip;|&(?:amp;)?mldr;|&(?:amp;)?#x2026;)\]/g, '…' ); // This ensures that any [&#8230;], [&hellip;], [ꝸ#8230;], etc. become a single '…'
+  // 5. Build token list and regex without flatMap/includes
+  var rawKeys = Object.keys(characterMap); // string[]
+  var tokens: string[] = [];
+  for (var i = 0; i < rawKeys.length; i++) {
+    var parts = rawKeys[i].split('|'); // string[]
+    for (var j = 0; j < parts.length; j++) { tokens.push(escapeRegExp(parts[j])); }
   }
-  // 5. Replace multiple spaces with a single space (after completion of all replacements)
-  str = str.replace(REGEX_PATTERNS.MULTIPLE_SPACES, ' ');
-  // 6. Restore newline characters (po dokončení všech replacements)
+  var combinedPattern = tokens.join('|');
+  var combinedRegex = getCachedRegex('(' + combinedPattern + ')', 'g');
+  // 6. Single-pass replace
+  str = str.replace(combinedRegex, function(match: string): string {
+    for (var k = 0; k < rawKeys.length; k++) {
+      var candidate = rawKeys[k].split('|'); // find which rawKey contains this token
+      if (candidate.indexOf(match) !== -1) { return characterMap[rawKeys[k]]; } // replace includes() with indexOf
+    }
+    return match;
+  });
+  // 7. Restore newlines
   str = str.replace(getCachedRegex(tempNewline, 'g'), '\n');
-  // 7. Limit consecutive newline characters to a maximum of two
-  str = str.replace(REGEX_PATTERNS.MULTIPLE_EOL, '\n\n');
-  return str.trim(); // Final trim after all operations
+  // 8. Whitespace cleanup
+  str = str.replace(REGEX_PATTERNS.WHITESPACE_CLEANUP, function(match: string, eolGroup: string): string {
+    if (eolGroup) return '\n\n';
+    return ' ';
+  });
+  // 9. Final trim
+  return str.trim();
 }
 
 /**
@@ -828,15 +777,14 @@ function replaceAllSpecialCharactersAndHtml(str: string): string {
  * URLs in SETTINGS.EXCLUDED_URLS are only URL-encoded.
  * Other URLs are trimmed (query string removed) and then URL-encoded.
  * Ampersands in non-URL parts are replaced with SETTINGS.AMPERSAND_REPLACEMENT.
- * @param str - The input string.
  * @returns The string with ampersands processed.
  */
 function replaceAmpersands(str: string): string {
   if (!str) return ''; // Return empty string if input is null or undefined
-  return str.replace(/\S+/g, (word) => {
+  return str.replace(/https?:\/\/\S+|\S+/g, (word) => {
     if (isUrlIncluded(word)) { // Check if the current word contains a URL (starts with http:// or https://)
       const isExcluded = SETTINGS.EXCLUDED_URLS.some(excludedUrl => word.toLowerCase().indexOf(excludedUrl.toLowerCase()) !== -1); // Check if the URL matches any domain in the EXCLUDED_URLS list (case-insensitive)
-      return encodeURI(isExcluded ? word : trimUrl(word)); // Encode the URL using encodeURI; if not excluded, trim query parameters first
+      return isExcluded ? word.replace(/&/g, '%26') : encodeURI(trimUrl(word)); // Encode the URL using encodeURI; if not excluded, trim query parameters first
     }
     return word; // Return non-URL parts unchanged as ampersand replacement is handled in replaceAllSpecialCharactersAndHtml
   });
@@ -861,22 +809,16 @@ function replaceQuoted(str: string, resultFeedAuthor: string, entryAuthor: strin
     return cleanedContent ? `${resultFeedAuthor}${SETTINGS.QUOTE_SENTENCE}${authorToDisplay}:\n${cleanedContent}` : str;
   }
   // For TW quotes, extract QUOTED author username from URL, prepend '@', and add the prefix
-  if (postFrom === 'TW' && typeof entryFirstLinkUrl === 'string' &&
-    /^https?:\/\/(twitter\.com|x\.com)\/[^\/]+\/status\/\d+/i.test(entryFirstLinkUrl)) {
+  if (postFrom === 'TW' && typeof entryFirstLinkUrl === 'string' && /^https?:\/\/(twitter\.com|x\.com)\/[^\/]+\/status\/\d+/i.test(entryFirstLinkUrl)) {
     const quotedAuthorUsername = parseUsernameFromTweetUrl(entryFirstLinkUrl); // Extract username of QUOTED author
     const quotedAuthorMention = quotedAuthorUsername ? `@${quotedAuthorUsername}` : ""; // Add '@' if username exists
-    // Use the mention (@username) of the quoted author
-    return `${resultFeedAuthor}${SETTINGS.QUOTE_SENTENCE}${quotedAuthorMention}:\n${str}`;
+    return `${resultFeedAuthor}${SETTINGS.QUOTE_SENTENCE}${quotedAuthorMention}:\n${str}`; // Use the mention (@username) of the quoted author
   }
-  // Otherwise, return unchanged
-  return str;
+  return str; // Otherwise, return unchanged
 }
 
 /**
  * Formats a retweet string by replacing the "RT @username: " prefix with custom attribution.
- * @param str - The input string (tweet content starting with RT).
- * @param resultFeedAuthor - The user performing the retweet (not currently used in replacement string).
- * @param entryAuthor - The original author being retweeted (extracted by findRepostUser).
  * @returns The formatted retweet string.
  */
 function replaceReposted(str: string, resultFeedAuthor: string, entryAuthor: string): string {
@@ -885,7 +827,6 @@ function replaceReposted(str: string, resultFeedAuthor: string, entryAuthor: str
 
 /**
  * Removes the "R to @username: " prefix if present at the beginning of a string.
- * @param str - The input string.
  * @returns The string with the prefix removed, or the original string if not found.
  */
 function replaceResponseTo(str: string): string { return str.replace(REGEX_PATTERNS.RESPONSE_PREFIX, ""); }
@@ -903,17 +844,16 @@ function replaceResponseTo(str: string): string { return str.replace(REGEX_PATTE
 function replaceUserNames(str: string, skipName: string, postFrom: string): string {
   if (!str) return ""; // Handle null/undefined input
   // Get the formatting configuration for the current platform, falling back to DEFAULT or "none".
-  const platformFormat = SETTINGS.MENTION_FORMATTING[postFrom] ||
-    SETTINGS.MENTION_FORMATTING["DEFAULT"] || { type: "none", value: "" };
+  const platformFormat = SETTINGS.MENTION_FORMATTING[postFrom] || SETTINGS.MENTION_FORMATTING["DEFAULT"] || { type: "none", value: "" };
   // If no formatting action is defined for this platform, return the original string immediately.
   if (platformFormat.type === "none" || !platformFormat.value) { return str; } // Also check if value is empty
   // Prepare the username to skip. Remove leading '@' if present, as the regex captures the name without it. Also handle potential null/undefined skipName.
   const skipNameClean = skipName ? (skipName.startsWith('@') ? skipName.substring(1) : skipName) : "";
   // Regex to find "@username".
-  let regexPattern = `(?<![a-zA-Z0-9@])@`; // (?<![a-zA-Z0-9@]) - Lookbehind: Ensure '@' is not preceded by alphanumeric or another '@' (prevents matching emails or partial handles). Adjusted to include '@'.
+  let regexPattern = `(?<![a-zA-Z0-9@])@`; // Lookbehind: Ensure '@' is not preceded by alphanumeric or another '@' (prevents matching emails or partial handles). Adjusted to include '@'.
   if (skipNameClean) {
     const escapedSkipName = escapeRegExp(skipNameClean); // Escape the name to skip
-    regexPattern += `(?!(?:${escapedSkipName})\\b)`; // (?!(?:${escapedSkipName})\b) - Negative Lookahead: Ensure the captured username IS NOT the skipped username (whole word match). Only apply if skipNameClean is not empty.
+    regexPattern += `(?!(?:${escapedSkipName})\\b)`; // Negative Lookahead: Ensure the captured username IS NOT the skipped username (whole word match). Only apply if skipNameClean is not empty.
   }
   regexPattern += `([a-zA-Z0-9_.]+)\\b`; // ([a-zA-Z0-9_.]+) - Capture Group 1: The username itself (letters, numbers, underscore, period).
   try {
@@ -930,7 +870,7 @@ function replaceUserNames(str: string, skipName: string, postFrom: string): stri
       }
     });
   } catch (e) {
-    MakerWebhooks.makeWebRequest.skip(`User names replacement failed - Pattern: ${regexPattern}`); 
+    MakerWebhooks.makeWebRequest.skip(`User names replacement failed - Pattern: ${regexPattern}`);
     return str; // Return original string if regex fails
   }
 }
@@ -948,9 +888,7 @@ function shouldSkipPost(): { shouldSkip: boolean, reason: string } {
   // 3. Skip if content, title or URLs contain banned commercial phrases.
   if (isCommercialInPost(entryTitle) || isCommercialInPost(entryContent) || isCommercialInPost(entryUrl) || isCommercialInPost(entryImageUrl)) { return { shouldSkip: true, reason: 'Contains banned commercial phrases' }; }
   // 4. Skip if mandatory keywords are defined BUT none are found in title or content.
-  if (SETTINGS.MANDATORY_KEYWORDS && SETTINGS.MANDATORY_KEYWORDS.length > 0 &&
-      !mustContainKeywords(entryTitle, SETTINGS.MANDATORY_KEYWORDS) &&
-      !mustContainKeywords(entryContent, SETTINGS.MANDATORY_KEYWORDS)) { return { shouldSkip: true, reason: 'Missing mandatory keywords' }; }
+  if (SETTINGS.MANDATORY_KEYWORDS && SETTINGS.MANDATORY_KEYWORDS.length > 0 && !mustContainKeywords(entryTitle, SETTINGS.MANDATORY_KEYWORDS) && !mustContainKeywords(entryContent, SETTINGS.MANDATORY_KEYWORDS)) { return { shouldSkip: true, reason: 'Missing mandatory keywords' }; }
   // 5. Skip if content or title starts with @username (reply)
   if (isReply(entryTitle) || isReply(entryContent)) { return { shouldSkip: true, reason: 'Reply post (starts with @username)' }; }
   return { shouldSkip: false, reason: '' }; // If none of the skip conditions are met, don't skip.
@@ -962,7 +900,6 @@ function shouldSkipPost(): { shouldSkip: boolean, reason: string } {
  * - Identifies appropriate terminators (punctuation, emoji, URLs, hashtags, mentions)
  * - Intelligently adds ellipsis for long texts
  * - Trim content at word boundaries when possible
- * @param str - Input string to process
  * @returns Object { content: string, needsEllipsis: boolean } with modified content and flag to add ellipsis
  */
 function trimContent(str: string): { content: string, needsEllipsis: boolean } {
@@ -979,11 +916,7 @@ function trimContent(str: string): { content: string, needsEllipsis: boolean } {
     str = str.replace(/\s+(https?:\/\/)/g, '$1'); // Remove leading spaces before URLs to ensure correct terminator detection
     const TRUNCATE_THRESHOLD = Math.min(257, SETTINGS.POST_LENGTH - 30); // Dynamic threshold for shortening activation
     // Termination check priority: URL > Emoji/Punctuation > Mentions/Hashtags
-    const hasTerminator =
-      REGEX_PATTERNS.URL_HASHTAG_MENTION.test(str) ||
-      REGEX_PATTERNS.EMOJI.test(str.slice(-4)) ||
-      /[.!?;:)"'\]}…]$/.test(str) ||
-      /\s>>$/.test(str);
+    const hasTerminator = REGEX_PATTERNS.URL_HASHTAG_MENTION.test(str) || REGEX_PATTERNS.EMOJI.test(str.slice(-4)) || /[.!?;:)"'\]}…]$/.test(str) || /\s>>$/.test(str);
     // Condition 1: Content needs truncation but lacks terminators - only for TW
     if (str.length > TRUNCATE_THRESHOLD && str.length <= SETTINGS.POST_LENGTH && !hasTerminator) {
       str += '…';
@@ -1003,22 +936,19 @@ function trimContent(str: string): { content: string, needsEllipsis: boolean } {
       } else {
         // If no period, fallback to word strategy - slice without additional trimming
         const lastSpaceIndex = str.slice(0, SETTINGS.POST_LENGTH - 1).lastIndexOf(' ');
-        if (lastSpaceIndex > 0) { str = str.slice(0, lastSpaceIndex); } 
-        else { str = str.slice(0, SETTINGS.POST_LENGTH - 1); }
+        if (lastSpaceIndex > 0) { str = str.slice(0, lastSpaceIndex); } else { str = str.slice(0, SETTINGS.POST_LENGTH - 1); }
         needsEllipsis = true;
       }
     } else {
       // Word strategy - slice without additional trimming since input is already normalized
       const lastSpaceIndex = str.slice(0, SETTINGS.POST_LENGTH - 1).lastIndexOf(' ');
-      if (lastSpaceIndex > 0) { str = str.slice(0, lastSpaceIndex); } 
-      else { str = str.slice(0, SETTINGS.POST_LENGTH - 1); }
+      if (lastSpaceIndex > 0) { str = str.slice(0, lastSpaceIndex); } else { str = str.slice(0, SETTINGS.POST_LENGTH - 1); }
       needsEllipsis = true;
     }
   }
   // Condition for all platforms: The content has exactly the maximum length and has no terminator
   if (SETTINGS.POST_FROM !== 'TW' && str.length === SETTINGS.POST_LENGTH) {
-    // Simple terminator check for non-TW platforms
-    const hasSimpleTerminator = /[.!?;:)"'\]}…]$/.test(str);
+    const hasSimpleTerminator = /[.!?;:)"'\]}…]$/.test(str); // Simple terminator check for non-TW platforms
     if (!hasSimpleTerminator && !needsEllipsis) {
       str += '…';
       needsEllipsis = true;
@@ -1030,7 +960,6 @@ function trimContent(str: string): { content: string, needsEllipsis: boolean } {
 /**
  * Trims query parameters from URLs by removing everything after the '?' character.
  * Returns the URL without the query string, or the original string if '?' is not found.
- * @param str - The input URL string.
  * @returns The URL without the query string.
  */
 function trimUrl(str: string): string {
@@ -1041,7 +970,7 @@ function trimUrl(str: string): string {
 
 // --- Main Execution Logic ---
 // Check if the post should be skipped based on the defined rules. 
-const skipResult = shouldSkipPost();  
+const skipResult = shouldSkipPost();
 if (skipResult.shouldSkip) {
   MakerWebhooks.makeWebRequest.skip(`Skipped due to filter rules: ${skipResult.reason}`); // If skip conditions are met, instruct IFTTT to skip this run.
 } else {
