@@ -37,7 +37,7 @@ interface AppSettings {
 
 // Application settings configuration
 const SETTINGS: AppSettings = {
-  AMPERSAND_REPLACEMENT: `ꝸ`, // Replacement for & char to prevent encoding issues in URLs or text.
+  AMPERSAND_REPLACEMENT: `⅋`, // Replacement for & char to prevent encoding issues in URLs or text.
   BANNED_COMMERCIAL_PHRASES: [], // E.g., ["advertisement", "discount", "sale"]. Leave empty to disable this filter.
   CONTENT_HACK_PATTERNS: [], // E.g.: { pattern: "what", replacement: "by_what", flags: "gi", literal: false }, // Replaces pattern "what" by replacement "by_what" with flags.
   EXCLUDED_URLS: ["youtu.be", "youtube.com"], // E.g., ["youtu.be", "youtube.com", "example.com"]. URLs in this list are excluded from trimming but still encoded.
@@ -89,7 +89,7 @@ const feedTitle = Youtube.newPublicVideoFromSubscriptions.Title || '';
 const feedUrl = '';
 
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter v2.0.0 - World Emoji day, 2025 rev
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v2.0.1 - July 21, 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Processes and filters posts from various platforms (Twitter, Bluesky, RSS, YouTube)
@@ -221,7 +221,8 @@ const characterMap: Record < string, string > = {
    '&#9001;|&#x2329;': '〈', // Left-pointing angle bracket
    '&#9002;|&#x232A;|&#x232a;': '〉', // Right-pointing angle bracket
    // --- Spaces, hyphens, quotes and ampersand map for normalization. ---
-   // '\\[ꝸ#8230;\\]|\\[&(?:amp;)?#8230;\\]|\\[&(?:amp;)?hellip;\\]|\\[&(?:amp;)?mldr;\\]|\\[&(?:amp;)?#x2026;\\]': '…', // Simplification of the elipse in brackets
+   '[&#8230;]|[&amp;#8230;]|[&hellip;]|[&amp;hellip;]|[&mldr;]|[&amp;mldr;]|[&#x2026;]|[&amp;#x2026;]': '…', // Simplification of the elipse in brackets - [ꝸ#8230;]
+   '&#8230;|&amp;#8230;|&hellip;|&amp;hellip;|&mldr;|&amp;mldr;|&#x2026;|&amp;#x2026;': '…', // Simplification of the elipse without brackets - ꝸ#8230;
    '&#09;|&#009|&#10;|&#010|&#13;|&#013|&#32;|&#032|&#160;|&nbsp;|&#8192;|&#8193;|&#8194;|&#8195;|&#8196;|&#8197;|&#8198;|&#8199;|&#8200;|&#8201;|&#8202;|&#8203;|&#8204;|&#8205;|&#8206;|&#8207;|&#xA0;': ' ', // Grouped spaces (Note: \s+ is solved later by replace REGEX_PATTERNS.MULTIPLE_SPACES function)
    '&#173;|&shy;|&#8208;|&#x2010;|&#8209;|&#x2011;|&#8210;|&#x2012;|&#8211;|&ndash;|&#x2013;|&#8212;|&mdash;|&#x2014;|&#8213;|&#x2015;|&#8722;|&minus;|&#x2212;': '-', // Grouped hyphens/dashes
    '&#39;|&#039;|&apos;|&#x27;|&#8216;|&lsquo;|&#x2018;|&#8217;|&rsquo;|&#x2019;|&#8218;|&sbquo;|&#x201A;|&#x201a;|&#8219;|&#x201B;|&#x201b;': "'", // Grouped single quotes
@@ -257,12 +258,9 @@ function composeResultContent(entryTitle: string, entryAuthor: string, feedTitle
   // Trim inputs
   const trimmedTitle = (entryTitle || '').trim();
   const trimmedFeed = (feedTitle || '').trim();
-  // Skip entirely empty posts
-  if (isEffectivelyEmpty(entryContent) && isEffectivelyEmpty(trimmedTitle)) { return ""; }
-  // Process core content
-  const { resultContent, userNameToSkip } = processContent(entryContent, trimmedTitle, trimmedFeed, entryImageUrl);
-  // Apply common username formatting for Bluesky/Twitter
-  if (userNameToSkip) { return replaceUserNames(resultContent, userNameToSkip, SETTINGS.POST_FROM); }
+  if (isEffectivelyEmpty(entryContent) && isEffectivelyEmpty(trimmedTitle)) { return ""; } // Skip entirely empty posts
+  const { resultContent, userNameToSkip } = processContent(entryContent, trimmedTitle, trimmedFeed, entryImageUrl); // Process core content
+  if (userNameToSkip) { return replaceUserNames(resultContent, userNameToSkip, SETTINGS.POST_FROM); } // Apply common username formatting for Bluesky/Twitter
   return resultContent;
 }
 
@@ -307,7 +305,7 @@ function contentHack(str: string): string {
   let result = str.replace(/\+/g, "\uFE63"); // Replace the "+" character with its unicode equivalent "﹢"
   const domainFixPatterns = createDomainFixPatterns(SETTINGS.URL_DOMAIN_FIXES || []);
   // Early-return if no domain fix patterns defined
-  if (!domainFixPatterns.length) return result;
+  if (!domainFixPatterns.length && (!SETTINGS.CONTENT_HACK_PATTERNS || !SETTINGS.CONTENT_HACK_PATTERNS.length)) { return result; }
   // Processing domain fixes
   result = domainFixPatterns.reduce(function(acc, domainPattern) {
     try {
@@ -741,9 +739,7 @@ function replaceAllSpecialCharactersAndHtml(str: string): string {
   // 3. Protect newlines
   var tempNewline = 'TEMP_NEWLINE_MARKER';
   str = str.replace(/\r?\n/g, tempNewline);
-  // 4. Hardcode ellipsis-in-brackets replacement before other characterMap processing
-  str = str.replace(/\[(?:ꝸ#8230;|&(?:amp;)?#8230;|&(?:amp;)?hellip;|&(?:amp;)?mldr;|&(?:amp;)?#x2026;)\]/g, '…' ); // This ensures that any [&#8230;], [&hellip;], [ꝸ#8230;], etc. become a single '…'
-  // 5. Build token list and regex without flatMap/includes
+  // 4. Build token list and regex without flatMap/includes
   var rawKeys = Object.keys(characterMap); // string[]
   var tokens: string[] = [];
   for (var i = 0; i < rawKeys.length; i++) {
@@ -752,7 +748,7 @@ function replaceAllSpecialCharactersAndHtml(str: string): string {
   }
   var combinedPattern = tokens.join('|');
   var combinedRegex = getCachedRegex('(' + combinedPattern + ')', 'g');
-  // 6. Single-pass replace
+  // 5. Single-pass replace
   str = str.replace(combinedRegex, function(match: string): string {
     for (var k = 0; k < rawKeys.length; k++) {
       var candidate = rawKeys[k].split('|'); // find which rawKey contains this token
@@ -760,14 +756,14 @@ function replaceAllSpecialCharactersAndHtml(str: string): string {
     }
     return match;
   });
-  // 7. Restore newlines
+  // 6. Restore newlines
   str = str.replace(getCachedRegex(tempNewline, 'g'), '\n');
-  // 8. Whitespace cleanup
+  // 7. Whitespace cleanup
   str = str.replace(REGEX_PATTERNS.WHITESPACE_CLEANUP, function(match: string, eolGroup: string): string {
     if (eolGroup) return '\n\n';
     return ' ';
   });
-  // 9. Final trim
+  // 8. Final trim
   return str.trim();
 }
 
