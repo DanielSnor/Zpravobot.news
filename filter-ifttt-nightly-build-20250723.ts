@@ -89,7 +89,7 @@ const feedTitle = Twitter.newTweetFromSearch.UserName || '';
 const feedUrl = "https://twitter.com/" + (Twitter.newTweetFromSearch.UserName || '');
 
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter v2.0.1 - Nightly Build 20250719 20:55
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v2.0.2 - Nightly Build 20250723 15:00
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Processes and filters posts from various platforms (Twitter, Bluesky, RSS, YouTube)
@@ -287,10 +287,10 @@ function composeResultStatus(resultContent: string, entryUrl: string, entryImage
   //   urlToShow: the URL to append (if any) based on repost and external checks
   const { trimmedContent, needsEllipsis, urlToShow } = processStatus(resultContent, entryUrl, entryImageUrl, entryTitle, entryAuthor);
   // --- Image URL handling ---
-  const resultImageUrl: string = typeof entryImageUrl === 'string' ? replaceAmpersands(entryImageUrl) : ''; // Clean the image URL by replacing ampersands if it's a valid string
+  const resultImageUrl: string = typeof entryImageUrl === 'string' ? processUrl(entryImageUrl) : ''; // Clean the image URL by replacing ampersands if it's a valid string
   const imageStatus: string = (isImageInPost(entryImageUrl) && SETTINGS.SHOW_IMAGEURL) ? `${SETTINGS.STATUS_IMAGEURL_SENTENCE}${resultImageUrl}` : ''; // Build the image status fragment if an image should be shown
   // --- URL handling ---
-  const finalUrl: string = (urlToShow && typeof urlToShow === 'string') ? `${SETTINGS.STATUS_URL_SENTENCE}${replaceAmpersands(urlToShow)}` : ''; // Build the final URL fragment if a URL is determined to be shown
+  const finalUrl: string = (urlToShow && typeof urlToShow === 'string') ? `${SETTINGS.STATUS_URL_SENTENCE}${processUrl(urlToShow)}` : ''; // Build the final URL fragment if a URL is determined to be shown
   // --- Compose and return the full status string ---
   return `${trimmedContent}${imageStatus}${finalUrl}`; // Concatenate trimmed content, image fragment, and URL fragment
 }
@@ -415,8 +415,7 @@ function getContent(entryContent: any, entryTitle: any): string {
 function getCachedRegex(pattern: string, flags: string): RegExp {
   const key = [pattern, flags].join('|'); // Unique key for each pattern + flags combination
   if (regexCache.hasOwnProperty(key)) { return regexCache[key]; } // If the regex is already cached, return it
-  // Compile a new RegExp object and cache it
-  const regex = new RegExp(pattern, flags);
+  const regex = new RegExp(pattern, flags); // Compile a new RegExp object and cache it
   regexCache[key] = regex;
   fifoRegexQueue.push(key);
   // If the cache exceeds the maximum size, remove the oldest entry (FIFO)
@@ -467,8 +466,7 @@ function isEffectivelyEmpty(str: string): boolean {
 function isImageInPost(str: string): boolean {
   if (!str || str === "(none)" || str === "https://ifttt.com/images/no_image_card.png") { return false; } // Check for null, undefined, empty string, or known invalid values first.
   if (str.endsWith('/photo/1') || str.endsWith('/video/1')) { return false; } // Exclude specific Twitter/X media page links which aren't direct image files.
-  // Basic check if it looks like a URL.
-  return REGEX_PATTERNS.URL.test(str);
+  return REGEX_PATTERNS.URL.test(str); // Basic check if it looks like a URL.
 }
 
 /**
@@ -696,33 +694,50 @@ function processStatus(resultContent: string, entryUrl: string, entryImageUrl: s
     const isExternalRepost = isRepost(entryTitle) && !isRepostOwn(entryTitle, entryAuthor) && SETTINGS.REPOST_ALLOWED;
     const repostUrl = findRepostUrl(resultContent);
     const hasRepostUrl = repostUrl !== null;
-    if (!isUrlIncluded(resultContent) && !isMediaPage) { shouldShowUrl = true; } // If no URL remains after stripping and it's not a media page, force URL display
+    if (!isUrlIncluded(resultContent) && !isMediaPage) { shouldShowUrl = true; } // Force URL display if no URL remains after stripping and not a media page
     shouldShowUrl = shouldShowUrl || hasRepostUrl || isExternalRepost || isMediaPage; // Show URL if any special Twitter condition is met
   }
-  // 4. Select which URL to display and apply any source→target replacements
+  // 4. Select which URL to display and apply centralized processing
   let urlToShow = '';
   if (platform === 'TW') { // For Twitter, check if cleaned content still contains any URLs
     const contentHasUrl = isUrlIncluded(trimmedContent);
     const postHasImage = isImageInPost(entryImageUrl);
     // Show URL if forced, truncated, or if content itself contains a URL
     if (shouldShowUrl || contentHasUrl) {
-      if (contentHasUrl) { urlToShow = postHasImage ? entryImageUrl : entryUrl; // If the content still has a URL, prefer image URL if present, else entry URL
-      } else { urlToShow = postHasImage ? entryImageUrl : shouldShowUrl ? entryUrl : ''; } // Otherwise, use image URL if present, else entry URL if forced
-      // Replace source pattern with target in the URL if configured
-      if (urlToShow && urlToShow !== '(none)') {
-        if (typeof urlToShow === 'string') {
-          const sourcePattern = SETTINGS.POST_SOURCE ? escapeRegExp(SETTINGS.POST_SOURCE) : '';
-          if (sourcePattern) { urlToShow = urlToShow.replace(getCachedRegex(sourcePattern, 'gi'), SETTINGS.POST_TARGET); }
-        } else { urlToShow = ''; }
-      } else { urlToShow = SETTINGS.SHOW_FEEDURL_INSTD_POSTURL ? feedUrl : ''; } // Fallback to feed URL if no valid URL is found
+      if (contentHasUrl) { urlToShow = postHasImage ? entryImageUrl : entryUrl; // If the content still contains a URL, prefer image URL if present, else primary URL
+      } else { urlToShow = postHasImage ? entryImageUrl : entryUrl; } // Otherwise, use image URL if present, else entry URL if forced
+      urlToShow = processUrl(urlToShow); // Apply centralized URL processing (domain replace, trim, encode, ampersands)
+      if (!urlToShow) { urlToShow = SETTINGS.SHOW_FEEDURL_INSTD_POSTURL ? feedUrl : ''; } // Fallback to feed URL if processing yielded empty string
     } else { urlToShow = ''; }
   } else {
     // Other platforms (RSS, BS, YT, etc.)
-    const hasValidEntryUrl = typeof entryUrl === 'string' && entryUrl !== '(none)'; // Always display entryUrl if it's a valid string
-    if (shouldShowUrl && hasValidEntryUrl) { urlToShow = entryUrl; /// Only include the primary entry URL
+    const hasValidEntryUrl = typeof entryUrl === 'string' && entryUrl !== '(none)'; // Always apply centralized processing on the primary URL
+    if (shouldShowUrl && hasValidEntryUrl) { urlToShow = processUrl(entryUrl); // Only include the primary entry URL
     } else { urlToShow = ''; } // No valid URL to show
   }
   return { trimmedContent, needsEllipsis, urlToShow }; // Return trimmed content, ellipsis flag, and the selected URL string
+}
+
+/**
+ * Centralized URL processing utility for IFTTT filter script v2.0.1
+ * 1) Replace POST_SOURCE → POST_TARGET (e.g. x.com → twitter.com)
+ * 2) Trim query string from the URL (everything after '?')
+ * 3) Encode the URL safely (preserve path, encode special characters)
+ * 4) Replace any remaining ampersands using replaceAmpersands()
+ * @returns {string} - The fully processed URL, or an empty string if invalid.
+ */
+function processUrl(url: string): string {
+  if (!url || typeof url !== 'string' || url === '(none)') { return ''; } // Return empty string for invalid inputs
+  // 1) Apply domain replacement based on SETTINGS.POST_SOURCE → SETTINGS.POST_TARGET
+  var sourcePattern = SETTINGS.POST_SOURCE ? escapeRegExp(SETTINGS.POST_SOURCE) : '';
+  if (sourcePattern) { url = url.replace( getCachedRegex(sourcePattern, 'gi'), SETTINGS.POST_TARGET); }
+  // 2) Remove the query string portion (everything after '?')
+  url = trimUrl(url);
+  // 3) Encode the URL safely (encodeURI preserves path and slashes)
+  try { url = encodeURI(url); } catch (e) { } // If encoding fails, keep the trimmed URL
+  // 4) Replace any leftover '&' characters (and re-encode URLs within the string)
+  url = replaceAmpersands(url);
+  return url;
 }
 
 /**
