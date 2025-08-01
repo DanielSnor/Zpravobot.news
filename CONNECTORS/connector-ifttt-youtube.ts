@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// connector for IFTTT 📺 webhook - World Emoji day, 2025 rev
+// connector for IFTTT 📺 webhook - Velcro Day, Aug 2nd, 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // This connector processes data from various sources (e.g., RSS, Twitter, Bluesky)
@@ -9,16 +9,16 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 // Main text content from the source. For YouTube, this is the video description.
-const entryContent = Youtube.newPublicVideoFromSubscriptions.Description || '';
+const entryContent = Youtube.newPublicVideoFromSubscriptions.Description || "";
 // Title from the source. For YouTube, this is the video title.
-const entryTitle = Youtube.newPublicVideoFromSubscriptions.Title || '';
+const entryTitle = Youtube.newPublicVideoFromSubscriptions.Title || "";
 // URL of the specific post/item. For YouTube, this is the direct link to the video.
-const entryUrl = Youtube.newPublicVideoFromSubscriptions.Url || '';
+const entryUrl = Youtube.newPublicVideoFromSubscriptions.Url || "";
 // URL of the first image/media link found in the post. For YouTube, this is the empty string.
-const entryImageUrl = '';
+const entryImageUrl = "";
 // Username of the post author. For YouTube, this is the AuthorName field (channel name).
-const entryAuthor = Youtube.newPublicVideoFromSubscriptions.AuthorName || '';
+const entryAuthor = Youtube.newPublicVideoFromSubscriptions.AuthorName || "";
 // Title of the feed (can be username, feed name, etc.). For YouTube, this is the AuthorName (channel name).
-const feedTitle = Youtube.newPublicVideoFromSubscriptions.Title || '';
+const feedTitle = Youtube.newPublicVideoFromSubscriptions.Title || "";
 // URL of the source feed/profile. For YouTube, this is the empty string.
-const feedUrl = '';
+const feedUrl = "";
