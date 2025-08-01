@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// settings for IFTTT 𝕏 webhook filter - World Emoji day, 2025 rev
+// settings for IFTTT 𝕏 webhook filter - Velcro Day, Aug 2nd, 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Configuration settings for the IFTTT webhook filter.
@@ -37,7 +37,7 @@ interface AppSettings {
 
 // Application settings configuration
 const SETTINGS: AppSettings = {
-  AMPERSAND_REPLACEMENT: `ꝸ`, // Replacement for & char to prevent encoding issues in URLs or text.
+  AMPERSAND_REPLACEMENT: `⅋`, // Replacement for & char to prevent encoding issues in URLs or text.
   BANNED_COMMERCIAL_PHRASES: [], // E.g., ["advertisement", "discount", "sale"]. Leave empty to disable this filter.
   CONTENT_HACK_PATTERNS: [], // E.g.: { pattern: "what", replacement: "by_what", flags: "gi", literal: false }, // Replaces pattern "what" by replacement "by_what" with flags.
   EXCLUDED_URLS: ["youtu.be", "youtube.com"], // E.g., ["youtu.be", "youtube.com", "example.com"]. URLs in this list are excluded from trimming but still encoded.
