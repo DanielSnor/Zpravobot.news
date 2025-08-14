@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// settings for IFTTT 𝕏 webhook filter - Velcro Day, Aug 2nd, 2025 rev
+// settings for IFTTT 𝕏 webhook filter - Nightly Build 20250814 19:00
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Configuration settings for the IFTTT webhook filter.
@@ -10,10 +10,10 @@
 // Application settings definition
 interface AppSettings {
   AMPERSAND_REPLACEMENT: string; // Character used to replace ampersands (&) in text to avoid encoding issues.
-  BANNED_COMMERCIAL_PHRASES: string[]; // List of phrases that indicate commercial or banned content. Posts containing these will be skipped.
+  BANNED_PHRASES: (string | FilterRule)[]; // List of phrases that indicate commercial or banned content. Posts containing these will be skipped.
   CONTENT_HACK_PATTERNS: { pattern: string;replacement: string;flags ? : string;literal ? : boolean } []; // Array of regex patterns and replacements for manipulating post content (e.g., fixing URLs or removing unwanted text).
   EXCLUDED_URLS: string[]; // URLs that should NOT be trimmed by trimUrl, but should still be URL-encoded in replaceAmpersands.
-  MANDATORY_KEYWORDS: string[]; // List of keywords that must appear in the post content or title for it to be published.
+  MANDATORY_KEYWORDS: (string | FilterRule)[]; // List of keywords that must appear in the post content or title for it to be published.
   MENTION_FORMATTING: { [platform: string]: { type: "prefix" | "suffix" | "none";value: string; } }; // Defines how @mentions are formatted per platform (e.g., add suffix, prefix, or do nothing).
   POST_FROM: "BS" | "RSS" | "TW" | "YT"; // Identifier for the source platform of the post (e.g., Bluesky, RSS feed, Twitter, YouTube).
   POST_LENGTH: number; // Maximum post length (0-500 chars) after processing.
@@ -38,7 +38,7 @@ interface AppSettings {
 // Application settings configuration
 const SETTINGS: AppSettings = {
   AMPERSAND_REPLACEMENT: `⅋`, // Replacement for & char to prevent encoding issues in URLs or text.
-  BANNED_COMMERCIAL_PHRASES: [], // E.g., ["advertisement", "discount", "sale"]. Leave empty to disable this filter.
+  BANNED_PHRASES: [], // E.g., ["advertisement", "discount", "sale"]. Leave empty to disable this filter.
   CONTENT_HACK_PATTERNS: [], // E.g.: { pattern: "what", replacement: "by_what", flags: "gi", literal: false }, // Replaces pattern "what" by replacement "by_what" with flags.
   EXCLUDED_URLS: ["youtu.be", "youtube.com"], // E.g., ["youtu.be", "youtube.com", "example.com"]. URLs in this list are excluded from trimming but still encoded.
   MANDATORY_KEYWORDS: [], // E.g., ["news", "updates", "important"]. Leave empty to disable mandatory keyword filtering.
@@ -89,7 +89,7 @@ const feedTitle = Twitter.newTweetFromSearch.UserName || "";
 const feedUrl = "https://twitter.com/" + (Twitter.newTweetFromSearch.UserName || "");
 
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter v2.0.2 - Nightly Build 20250731 00:15
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v2.0.3 - Nightly Build 20250814 20:00
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Processes and filters posts from various platforms (Twitter, Bluesky, RSS, YouTube)
@@ -98,12 +98,19 @@ const feedUrl = "https://twitter.com/" + (Twitter.newTweetFromSearch.UserName ||
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-// Type definitions for string manipulation (standard augmentation)
-interface String { startsWith(searchString: string, position ? : number): boolean; endsWith(searchString: string, endPosition ? : number): boolean; }
+// Type definitions for Mandatory Keyword Rule configurations
+interface FilterRule {
+  type: "literal" | "regex" | "and" | "or";
+  pattern?: string;         // Used for "literal" and "regex"
+  keywords?: string[];      // Used with "and" and "or"
+  flags?: string;           // Regex flags
+}
 // Type definitions for Object.entries (standard augmentation)
 interface ObjectConstructor { entries < T > (o: { [s: string]: T } | ArrayLike < T > ): [string, T][]; }
 // Type definitions for Platform configurations
 interface PlatformConfig { useParsedText?: boolean; useFeedTitleAuthor?: boolean; applyMoveUrlToEnd?: boolean; handleReplies?: boolean; handleRetweets?: boolean; handleQuotes?: boolean; useGetContent?: boolean; }
+// Type definitions for string manipulation (standard augmentation)
+interface String { startsWith(searchString: string, position ? : number): boolean; endsWith(searchString: string, endPosition ? : number): boolean; }
 
 // Define platform specific content cleaning.
 const platformConfigs: { [key: string]: PlatformConfig } = {
@@ -427,24 +434,51 @@ function getCachedRegex(pattern: string, flags: string): RegExp {
 }
 
 /**
- * Checks if the input string contains any banned commercial phrases from settings.
- * Uses escapeRegExp to treat banned phrases literally. Case-insensitive.
- * @returns True if a banned phrase is found, false otherwise.
+ * Enhanced function to check if the input string contains any banned content or matches complex rules.
+ * Supports simple literals, regex patterns, AND/OR logical combinations.
+ * Uses the same logic as mustContainKeywords but for blocking content.
+ * @param str - The input string to check (case insensitive)
+ * @returns True if banned content is found, false otherwise
  */
-function isCommercialInPost(str: string): boolean {
-  if (!str || !SETTINGS.BANNED_COMMERCIAL_PHRASES || SETTINGS.BANNED_COMMERCIAL_PHRASES.length === 0) { return false; }
+function isBannedContent(str: string): boolean {
+  if (!str || !SETTINGS.BANNED_PHRASES || SETTINGS.BANNED_PHRASES.length === 0) { return false; }
   const lowerCaseStr = str.toLowerCase();
-  for (const phrase of SETTINGS.BANNED_COMMERCIAL_PHRASES) {
-    if (!phrase) continue; // Skip empty phrases in the settings array
-    try {
-      const regex = getCachedRegex(escapeRegExp(phrase), "i"); // Escape the phrase to treat it literally in the regex
-      if (regex.test(lowerCaseStr)) { return true; }
-    } catch (e) {
-      MakerWebhooks.makeWebRequest.skip(`Commercial phrase check failed - Phrase: ${phrase}`);
-      continue; // Skip this phrase and continue checking others
+  for (var i = 0; i < SETTINGS.BANNED_PHRASES.length; i++) {
+    var rule = SETTINGS.BANNED_PHRASES[i];
+    if (!rule) continue; // Skip invalid or empty rules
+    if (typeof rule === "string") {
+      // Simple literal phrase - check if it exists as substring (case insensitive)
+      if (lowerCaseStr.indexOf(rule.toLowerCase()) !== -1) { return true; }
+    } else if (typeof rule === "object") {
+      switch (rule.type) {
+        case "literal": // Literal string pattern - check if substring exists in input (case insensitive)
+          if (!rule.pattern) break;
+          if (lowerCaseStr.indexOf(rule.pattern.toLowerCase()) !== -1) { return true; }
+          break;
+        case "regex":
+          if (!rule.pattern) break;
+          try {
+            var regex = new RegExp(rule.pattern, rule.flags || "i");  // Create regex with optional flags, defaulting to case insensitive
+            if (regex.test(str)) { return true; } // Test regex on original input string (preserves case sensitivity as per flags)
+          } catch (e) { 
+            MakerWebhooks.makeWebRequest.skip(`Banned phrase regex failed - Pattern: ${rule.pattern}`);
+            continue; // Ignore invalid regex patterns and continue checking other rules
+          }
+          break;
+        case "and": // For AND type, all keywords must be present (case insensitive)
+          if (!rule.keywords || rule.keywords.length === 0) break;
+          var allFound = true;
+          for (var j = 0; j < rule.keywords.length; j++) { if (lowerCaseStr.indexOf(rule.keywords[j].toLowerCase()) === -1) { allFound = false; break; } }
+          if (allFound) { return true; }
+          break;
+        case "or": // For OR type, presence of any keyword is enough
+          if (!rule.keywords || rule.keywords.length === 0) break;
+          for (var j = 0; j < rule.keywords.length; j++) { if (lowerCaseStr.indexOf(rule.keywords[j].toLowerCase()) !== -1) { return true; } }
+          break;
+      }
     }
   }
-  return false;
+  return false; // If no banned phrase or rule matched, return false
 }
 
 /**
@@ -552,21 +586,48 @@ function moveUrlToEnd(entryContent: string): string {
 }
 
 /**
- * Checks if the input string contains at least one of the mandatory keywords (case-insensitive).
- * @param str - The input string (content or title).
- * @param keywords - An array of mandatory keywords from SETTINGS.
- * @returns True if at least one keyword is found or if no keywords are defined, false otherwise.
+ * Checks if the input string contains any of the mandatory keywords or matches complex rules.
+ * Supports simple literals, regex patterns, AND/OR logical combinations.
+ * @param str - The input string to check (case insensitive)
+ * @param keywords - An array of keyword rules or plain string literals
+ * @returns True if any rule matches, otherwise false
  */
-function mustContainKeywords(str: string, keywords: string[]): boolean {
-  if (!keywords || keywords.length === 0) { return true; } // If no keywords are mandatory, the condition is always met.
-  if (!str) return false; // If the string is empty/null, it cannot contain keywords.
+function mustContainKeywords(str: string, keywords: (string | FilterRule)[]): boolean {
+  if (!keywords || keywords.length === 0) { return true; } // If no mandatory keywords are defined, automatically pass
+  if (!str) { return false; } // Empty or null string cannot match any keyword
   const lowerCaseStr = str.toLowerCase();
-  for (const keyword of keywords) { // Use for...of for better readability
-    if (!keyword) continue; // Skip empty keywords in the settings array
-    // Use indexOf !== -1 instead of includes
-    if (lowerCaseStr.indexOf(keyword.toLowerCase()) !== -1) { return true; } // Found at least one keyword.
+  for (var i = 0; i < keywords.length; i++) {
+    var rule = keywords[i];
+    if (!rule) continue; // Skip invalid or empty rules
+    if (typeof rule === "string") { // Simple literal keyword - check if it exists as substring (case insensitive)
+      if (lowerCaseStr.indexOf(rule.toLowerCase()) !== -1) { return true; } // Found a match, return true immediately
+    } else if (typeof rule === "object") {
+      switch (rule.type) {
+        case "literal": // Literal string pattern - check if substring exists in input (case insensitive)
+          if (!rule.pattern) break;
+          if (lowerCaseStr.indexOf(rule.pattern.toLowerCase()) !== -1) { return true; }
+          break;
+        case "regex":
+          if (!rule.pattern) break;
+          try {
+            var regex = new RegExp(rule.pattern, rule.flags || "i");  // Create regex with optional flags, defaulting to case insensitive
+            if (regex.test(str)) { return true; } // Test regex on original input string (preserves case sensitivity as per flags)
+          } catch (e) { continue; } // Ignore invalid regex patterns and continue checking other rules
+          break;
+        case "and": // For AND type, all keywords must be present (case insensitive)
+          if (!rule.keywords || rule.keywords.length === 0) break;
+          var allFound = true;
+          for (var j = 0; j < rule.keywords.length; j++) { if (lowerCaseStr.indexOf(rule.keywords[j].toLowerCase()) === -1) { allFound = false; break; } }
+          if (allFound) { return true; }
+          break;
+        case "or": // For OR type, presence of any keyword is enough
+          if (!rule.keywords || rule.keywords.length === 0) break;
+          for (var j = 0; j < rule.keywords.length; j++) { if (lowerCaseStr.indexOf(rule.keywords[j].toLowerCase()) !== -1) { return true; } }
+          break;
+      }
+    }
   }
-  return false; // No mandatory keywords were found.
+  return false; // If no keyword or rule matched, return false
 }
 
 /**
@@ -889,7 +950,7 @@ function shouldSkipPost(): { shouldSkip: boolean, reason: string } {
   // 2. Skip if it's an external repost and reposts are disallowed.
   if (isRepost(entryTitle) && !isRepostOwn(entryTitle, entryAuthor) && !SETTINGS.REPOST_ALLOWED) { return { shouldSkip: true, reason: "External repost not allowed" }; }
   // 3. Skip if content, title or URLs contain banned commercial phrases.
-  if (isCommercialInPost(entryTitle) || isCommercialInPost(entryContent) || isCommercialInPost(entryUrl) || isCommercialInPost(entryImageUrl)) { return { shouldSkip: true, reason: "Contains banned commercial phrases" }; }
+  if (isBannedContent(entryTitle) || isBannedContent(entryContent) || isBannedContent(entryUrl) || isBannedContent(entryImageUrl)) { return { shouldSkip: true, reason: "Contains banned phrases" }; }
   // 4. Skip if mandatory keywords are defined BUT none are found in title or content.
   if (SETTINGS.MANDATORY_KEYWORDS && SETTINGS.MANDATORY_KEYWORDS.length > 0 && !mustContainKeywords(entryTitle, SETTINGS.MANDATORY_KEYWORDS) && !mustContainKeywords(entryContent, SETTINGS.MANDATORY_KEYWORDS)) { return { shouldSkip: true, reason: "Missing mandatory keywords" }; }
   // 5. Skip if content or title starts with @username (reply)
