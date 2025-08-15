@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// settings for IFTTT 𝕏 webhook filter - Nightly Build 20250814 19:00
+// settings for IFTTT 𝕏 webhook filter - Nightly Build 20250815 10:15
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Configuration settings for the IFTTT webhook filter.
@@ -13,6 +13,8 @@ interface AppSettings {
   BANNED_PHRASES: (string | FilterRule)[]; // List of phrases that indicate commercial or banned content. Posts containing these will be skipped.
   CONTENT_HACK_PATTERNS: { pattern: string;replacement: string;flags ? : string;literal ? : boolean } []; // Array of regex patterns and replacements for manipulating post content (e.g., fixing URLs or removing unwanted text).
   EXCLUDED_URLS: string[]; // URLs that should NOT be trimmed by trimUrl, but should still be URL-encoded in replaceAmpersands.
+  FORCE_SHOW_ENTRYURL: boolean; // If true, always show the entry's URL regardless of other conditions. Overrides all URL visibility logic.
+  FORCE_SHOW_FEEDURL: boolean; // If true, show the feed's URL instead of the specific post's URL as a fallback.
   MANDATORY_KEYWORDS: (string | FilterRule)[]; // List of keywords that must appear in the post content or title for it to be published.
   MENTION_FORMATTING: { [platform: string]: { type: "prefix" | "suffix" | "none";value: string; } }; // Defines how @mentions are formatted per platform (e.g., add suffix, prefix, or do nothing).
   POST_FROM: "BS" | "RSS" | "TW" | "YT"; // Identifier for the source platform of the post (e.g., Bluesky, RSS feed, Twitter, YouTube).
@@ -26,7 +28,6 @@ interface AppSettings {
   RSS_INPUT_LIMIT: number; // Maximum input length for RSS feeds before processing (0 = no limit).
   RSS_INPUT_TRUNCATION_STRATEGY: "simple" | "preserve_content"; // Strategy for truncation: simple cut or attempt to preserve meaningful content.
   SHOULD_PREFER_REAL_NAME: boolean; // If true, use the author's real name (if available) instead of their username in certain contexts (e.g., reposts).
-  SHOW_FEEDURL_INSTD_POSTURL: boolean; // If true, show the feed's URL instead of the specific post's URL as a fallback.
   SHOW_IMAGEURL: boolean; // If true, include image URLs in the post output (using STATUS_IMAGEURL_SENTENCE).
   SHOW_ORIGIN_POSTURL_PERM: boolean; // If true, always include the original post URL in the output, regardless of other conditions. This might be overridden dynamically.
   SHOW_TITLE_AS_CONTENT: boolean; // If true, prioritize entryTitle over entryContent as the main post content.
@@ -41,6 +42,8 @@ const SETTINGS: AppSettings = {
   BANNED_PHRASES: [], // E.g., ["advertisement", "discount", "sale"]. Leave empty to disable this filter.
   CONTENT_HACK_PATTERNS: [], // E.g.: { pattern: "what", replacement: "by_what", flags: "gi", literal: false }, // Replaces pattern "what" by replacement "by_what" with flags.
   EXCLUDED_URLS: ["youtu.be", "youtube.com"], // E.g., ["youtu.be", "youtube.com", "example.com"]. URLs in this list are excluded from trimming but still encoded.
+  FORCE_SHOW_ENTRYURL: false, // true | false.  Always show entryUrl for this specific applet, ignoring all other URL display conditions.
+  FORCE_SHOW_FEEDURL: false, // true | false. Use feed URL as fallback instead of post-specific URL.
   MANDATORY_KEYWORDS: [], // E.g., ["news", "updates", "important"]. Leave empty to disable mandatory keyword filtering.
   MENTION_FORMATTING: { "TW": { type: "suffix", value: "@twitter.com" }, }, // Suffix added to Twitter mentions for clarity or linking.
   POST_FROM: "TW", // "BS" | "RSS" | "TW" | "YT". Set this based on the IFTTT trigger used for the applet.
@@ -54,7 +57,6 @@ const SETTINGS: AppSettings = {
   RSS_INPUT_LIMIT: 1000, // Limit input to 1000 characters for RSS before HTML processing.
   RSS_INPUT_TRUNCATION_STRATEGY: "preserve_content", // "simple" | "preserve_content" // Try to preserve meaningful content during truncation.
   SHOULD_PREFER_REAL_NAME: true, // true | false. Prefer real name over username if available.
-  SHOW_FEEDURL_INSTD_POSTURL: false, // true | false. Use feed URL as fallback instead of post-specific URL.
   SHOW_IMAGEURL: false, // true | false. Include image URLs in output if available.
   SHOW_ORIGIN_POSTURL_PERM: false, // true | false. Always show original post URL (can be overridden dynamically).
   SHOW_TITLE_AS_CONTENT: false, // true | false. Use title as content if set to true.
@@ -89,7 +91,7 @@ const feedTitle = Twitter.newTweetFromSearch.UserName || "";
 const feedUrl = "https://twitter.com/" + (Twitter.newTweetFromSearch.UserName || "");
 
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter v2.0.3 - Nightly Build 20250814 20:00
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v2.0.3 - Nightly Build 20250815 10:15
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Processes and filters posts from various platforms (Twitter, Bluesky, RSS, YouTube)
@@ -747,7 +749,7 @@ function processStatus(resultContent: string, entryUrl: string, entryImageUrl: s
   let trimmedContent = trimmed.content;
   let needsEllipsis = trimmed.needsEllipsis;
   // 3. Decide whether we should show the original post URL
-  let shouldShowUrl = SETTINGS.SHOW_ORIGIN_POSTURL_PERM || needsEllipsis; // Always show if forced by settings or if content was truncated
+  let shouldShowUrl = SETTINGS.SHOW_ORIGIN_POSTURL_PERM || SETTINGS.FORCE_SHOW_ENTRYURL || needsEllipsis; // Always show if forced by settings or if content was truncated
   // Platform-specific exceptions
   if (platform === "BS") { shouldShowUrl = shouldShowUrl || isQuoteInPost(resultContent, "", "BS"); } // For Bluesky, also show URL if the post is a quote
   if (platform === "TW") { // For Twitter, handle media pages, reposts, and external reposts
@@ -768,7 +770,7 @@ function processStatus(resultContent: string, entryUrl: string, entryImageUrl: s
       if (contentHasUrl) { urlToShow = postHasImage ? entryImageUrl : entryUrl; // If the content still contains a URL, prefer image URL if present, else primary URL
       } else { urlToShow = postHasImage ? entryImageUrl : entryUrl; } // Otherwise, use image URL if present, else entry URL if forced
       urlToShow = processUrl(urlToShow); // Apply centralized URL processing (domain replace, trim, encode, ampersands)
-      if (!urlToShow) { urlToShow = SETTINGS.SHOW_FEEDURL_INSTD_POSTURL ? feedUrl : ""; } // Fallback to feed URL if processing yielded empty string
+      if (!urlToShow) { urlToShow = SETTINGS.FORCE_SHOW_FEEDURL ? feedUrl : ""; } // Fallback to feed URL if processing yielded empty string
     } else { urlToShow = ""; }
   } else {
     // Other platforms (RSS, BS, YT, etc.)
