@@ -26,9 +26,12 @@ Note: Filter scripts in IFTTT run as “scripts in scripts over scripts,” so s
 
 - **Advanced filtering system**: Support for literal strings, regex patterns, and logical combinations (AND/OR) via `FilterRule` objects
 - **Smart trim strategy**: New intelligent content trimming with configurable tolerance for preserving sentence boundaries
+- **Self-reference handling**: New PREFIX_SELF_REFERENCE setting for self-quotes and self-reposts (e.g., "vlastní post")
+- **Improved quote detection**: Self-quotes are now properly detected and formatted (no longer skipped)
 - **Performance optimizations**: Lazy character map application, unified caching system, and early exit conditions
 - **Enhanced type safety**: Full TypeScript 2.9.2 compatibility with proper type definitions
 - **Improved URL handling**: Automatic protocol fixes for specified domains via `URL_DOMAIN_FIXES`
+- **RSS truncation tracking**: Proper ellipsis handling when RSS content is pre-truncated at input stage
 
 ---
 
@@ -72,6 +75,7 @@ const SETTINGS: AppSettings = {
   PREFIX_QUOTE: " 𝕏📝💬 ",
   PREFIX_IMAGE_URL: "",
   PREFIX_POST_URL: "\n",
+  PREFIX_SELF_REFERENCE: "vlastní post",
   MENTION_FORMATTING: { "TW": { type: "suffix", value: "@twitter.com" } },
 
   ///////////////////////////////////////////////////////////////////////////
@@ -85,7 +89,6 @@ const SETTINGS: AppSettings = {
   // RSS-SPECIFIC SETTINGS
   ///////////////////////////////////////////////////////////////////////////
   RSS_MAX_INPUT_CHARS: 1000,
-  RSS_INPUT_TRUNCATION_STRATEGY: "preserve_content",
 };
 ```
 
@@ -141,12 +144,12 @@ PHRASES_REQUIRED: [
 ```
 
 #### REPOST_ALLOWED - boolean
-Determines whether reposts (retweets) are processed or skipped.
+Determines whether reposts (retweets) are processed or skipped. Only affects external reposts; self-reposts are always allowed and formatted with `PREFIX_SELF_REFERENCE`.
 
 **Example:**
 ```javascript
-REPOST_ALLOWED: true  // Allow reposts
-REPOST_ALLOWED: false // Skip all reposts
+REPOST_ALLOWED: true  // Allow external reposts
+REPOST_ALLOWED: false // Skip external reposts (self-reposts still allowed)
 ```
 
 ---
@@ -168,16 +171,16 @@ Array of regex patterns and replacements for content manipulation. Replaces the 
 ```javascript
 CONTENT_REPLACEMENTS: [
   { 
-	pattern: "what", 
-	replacement: "by_what", 
-	flags: "gi", 
-	literal: false 
+    pattern: "what", 
+    replacement: "by_what", 
+    flags: "gi", 
+    literal: false 
   },
   {
-	pattern: "example.com",
-	replacement: "https://example.com",
-	flags: "g",
-	literal: true  // Treat pattern as literal string, not regex
+    pattern: "example.com",
+    replacement: "https://example.com",
+    flags: "g",
+    literal: true  // Treat pattern as literal string, not regex
   }
 ]
 ```
@@ -289,9 +292,9 @@ Prefix for repost (retweet) formatting. Formerly `REPOST_SENTENCE`.
 
 **Example:**
 ```javascript
-PREFIX_REPOST: " ð•ðŸ"¤ "
+PREFIX_REPOST: " 𝕏📤 "
 
-// Output: "Daniel Šnor ð•ðŸ"¤ @zpravobot@twitter.com: ..."
+// Output: "Daniel Šnor 𝕏📤 @zpravobot@twitter.com: ..."
 ```
 
 #### PREFIX_QUOTE - string
@@ -299,9 +302,9 @@ Prefix for quote post formatting. Formerly `QUOTE_SENTENCE`.
 
 **Example:**
 ```javascript
-PREFIX_QUOTE: " ð•ðŸ"ðŸ'¬ "
+PREFIX_QUOTE: " 𝕏📝💬 "
 
-// Output: "Daniel Šnor ð•ðŸ"ðŸ'¬ @otheruser@twitter.com: ..."
+// Output: "Daniel Šnor 𝕏📝💬 @otheruser@twitter.com: ..."
 ```
 
 #### PREFIX_IMAGE_URL - string
@@ -309,9 +312,9 @@ Prefix added before image URLs when `SHOW_IMAGEURL` is true. Formerly `STATUS_IM
 
 **Example:**
 ```javascript
-PREFIX_IMAGE_URL: "ðŸ–¼ï¸ "
+PREFIX_IMAGE_URL: "🖼️ "
 
-// Output: "ðŸ–¼ï¸ https://example.com/image.jpg"
+// Output: "🖼️ https://example.com/image.jpg"
 ```
 
 #### PREFIX_POST_URL - string
@@ -320,9 +323,24 @@ Prefix/formatting added before the final post URL. Formerly `STATUS_URL_SENTENCE
 **Example:**
 ```javascript
 PREFIX_POST_URL: "\n"          // Simple newline
-PREFIX_POST_URL: "\n\nð• "     // Newline with X emoji
-PREFIX_POST_URL: "\nðŸ"— "      // Newline with link emoji
+PREFIX_POST_URL: "\n\n𝕏 "     // Newline with X emoji
+PREFIX_POST_URL: "\n🔗 "      // Newline with link emoji
 ```
+
+
+#### PREFIX_SELF_REFERENCE - string
+New in v3.0. Text displayed for self-quotes and self-reposts instead of showing the user's own @username. Provides cleaner, more natural formatting when users quote or repost their own content.
+
+**Example:**
+```javascript
+PREFIX_SELF_REFERENCE: "vlastní post"  // Czech: "own post"
+PREFIX_SELF_REFERENCE: "own post"      // English
+PREFIX_SELF_REFERENCE: "mi post"       // Spanish
+
+// Self-quote output: "Daniel Šnor 𝕏📝💬 vlastní post: ..."
+// Self-repost output: "Daniel Šnor 𝕏📤 vlastní post: ..."
+```
+
 
 #### MENTION_FORMATTING - object
 Platform-specific formatting for @mentions. Supports `prefix`, `suffix`, or `none`.
@@ -359,7 +377,7 @@ Use author's real name instead of username. Formerly `SHOULD_PREFER_REAL_NAME`.
 ```javascript
 SHOW_REAL_NAME: true
 
-// Output: "Daniel Šnor ð•ðŸ"¤ ..." (instead of "@danielsnor ð•ðŸ"¤ ...")
+// Output: "Daniel Šnor 𝕏📤 ..." (instead of "@danielsnor 𝕏📤 ...")
 ```
 
 #### SHOW_TITLE_AS_CONTENT - boolean
@@ -375,23 +393,11 @@ SHOW_TITLE_AS_CONTENT: false
 ### RSS-SPECIFIC SETTINGS
 
 #### RSS_MAX_INPUT_CHARS - number
-Maximum input length for RSS feeds before processing (0 = no limit). Formerly `RSS_INPUT_LIMIT`.
+Maximum input length for RSS feeds before processing (0 = no limit). Formerly `RSS_INPUT_LIMIT`. When content is truncated at this stage, the script automatically tracks this and ensures proper ellipsis handling in the final output.
 
 **Example:**
 ```javascript
 RSS_MAX_INPUT_CHARS: 1000
-```
-
-#### RSS_INPUT_TRUNCATION_STRATEGY - string
-Strategy for RSS input truncation.
-
-**Options:**
-- `"simple"` - Basic cut
-- `"preserve_content"` - Attempt to preserve meaningful content
-
-**Example:**
-```javascript
-RSS_INPUT_TRUNCATION_STRATEGY: "preserve_content"
 ```
 
 ---
@@ -421,6 +427,7 @@ RSS_INPUT_TRUNCATION_STRATEGY: "preserve_content"
 
 ### New Settings in v3.0
 
+- `PREFIX_SELF_REFERENCE` - Text for self-quotes and self-reposts
 - `SMART_TOLERANCE_PERCENT` - For smart trim strategy
 - `URL_DOMAIN_FIXES` - Automatic protocol addition
 - New trim strategy: `"smart"` for `POST_LENGTH_TRIM_STRATEGY`
@@ -429,6 +436,13 @@ RSS_INPUT_TRUNCATION_STRATEGY: "preserve_content"
 
 - `PHRASES_BANNED` and `PHRASES_REQUIRED` now support `FilterRule` objects with regex, AND, and OR logic
 - `CONTENT_REPLACEMENTS` now supports `literal` flag for non-regex patterns
+
+### Behavior Changes
+
+- Self-quotes are now detected and formatted: In v2.0, self-quotes were excluded. In v3.0, they are properly detected and formatted with `PREFIX_SELF_REFERENCE` instead of the user's @username.
+- Self-reposts always allowed: The `REPOST_ALLOWED` setting now only affects external reposts. Self-reposts are always processed and formatted with `PREFIX_SELF_REFERENCE`.
+- Improved quote tweet URL selection: Quote tweets now prefer `entryUrl` (the user's own tweet) over `imageUrl` (the quoted tweet) for the final URL.
+- RSS truncation tracking: When RSS content is truncated at input stage (`RSS_MAX_INPUT_CHARS`), this is now tracked throughout processing to ensure proper ellipsis handling.
 
 ---
 
@@ -468,8 +482,9 @@ URL_REPLACE_TO: "https://twitter.com/",
 MENTION_FORMATTING: {
   "TW": { type: "suffix", value: "@twitter.com" }
 },
-PREFIX_REPOST: " ð•ðŸ"¤ ",
-PREFIX_QUOTE: " ð•ðŸ"ðŸ'¬ ",
+PREFIX_REPOST: " 𝕏📤 ",
+PREFIX_QUOTE: " 𝕏📝💬 ",
+PREFIX_SELF_REFERENCE: "vlastní post",
 
 // For Bluesky bot
 POST_FROM: "BS",
@@ -477,8 +492,26 @@ SHOW_REAL_NAME: true,
 MENTION_FORMATTING: {
   "BS": { type: "none", value: "" }
 },
-PREFIX_REPOST: " ðŸ¦‹ðŸ"¤ ",
-PREFIX_QUOTE: " ðŸ¦‹ðŸ"ðŸ'¬ "
+PREFIX_REPOST: " 🦋📤 ",
+PREFIX_QUOTE: " 🦋📝💬 ",
+PREFIX_SELF_REFERENCE: "own post"
+```
+
+### Self-Reference Examples
+```javascript
+// Czech configuration
+PREFIX_SELF_REFERENCE: "vlastní post"
+// Output for self-quote: "Daniel Šnor 𝕏📝💬 vlastní post: Content here..."
+// Output for self-repost: "Daniel Šnor 𝕏📤 vlastní post: Content here..."
+
+// English configuration
+PREFIX_SELF_REFERENCE: "own post"
+// Output for self-quote: "Daniel Šnor 𝕏📝💬 own post: Content here..."
+// Output for self-repost: "Daniel Šnor 𝕏📤 own post: Content here..."
+
+// Minimal configuration (just emoji)
+PREFIX_SELF_REFERENCE: "↩️"
+// Output for self-quote: "Daniel Šnor 𝕏📝💬 ↩️: Content here..."
 ```
 
 ---
@@ -491,6 +524,7 @@ v3.0 includes significant performance optimizations:
 - **Unified caching**: Regex patterns and escaped strings share a FIFO cache (max 500 entries)
 - **Early exits**: Filter checks return immediately when conditions are met
 - **Pre-compilation**: `URL_DOMAIN_FIXES` patterns are compiled at initialization
+- **Optimized skip checks**: Reduced redundant checks with early returns
 
 ---
 
@@ -508,6 +542,15 @@ The script automatically adapts its behavior based on `POST_FROM`:
 - **BS**: Handles quote markers, moves URLs to end
 - **RSS**: Uses content selection logic, applies RSS-specific limits
 - **YT**: Minimal processing, content-focused
+
+### Self-Quote and Self-Repost Handling
+**New in v3.0**: The script now properly detects and formats self-quotes and self-reposts:
+
+Self-quotes are detected by comparing the quoted user's username with the current author
+Self-reposts are detected by checking if the RT @username matches the current author
+Both use `PREFIX_SELF_REFERENCE` instead of displaying the user's @username
+This provides cleaner, more natural output (e.g., "vlastní post" instead of "@username")
+The comparison uses `authorUsername` (not display name) to work correctly with `SHOW_REAL_NAME`
 
 ---
 
