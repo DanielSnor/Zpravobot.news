@@ -1,91 +1,205 @@
 # Zpravobot.news
 
+[![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](https://unlicense.org)
+[![Mastodon](https://img.shields.io/badge/Mastodon-Instance-6364FF?logo=mastodon&logoColor=white)](https://zpravobot.news)
 
 ![Zpravobot.news mascot](https://zpravobot.news/system/site_uploads/files/000/000/002/@2x/49c4aa7df6b81d4a.png 'Zpravobot.news mascot')
 
-[Zprávobot.news](https://zpravobot.news) 📰🤖 (means Newsbot.news in Czech) is run by Daniel Šnor as a public utility 🖥️⌨️, which🪞popular and majority 🇨🇿 X/🐦 accounts bringing to 🐘 otherwise missing 📰, ⚽️🏒🏎️, information about 📱⌚️💻📡, 🎞️🎶🎭, and sometimes 🤣🤪.
+**Zprávobot.news** 📰🤖 (Newsbot.news in Czech) is run by Daniel Šnor as a public utility 🖥️⌨️ that mirrors 🪞 popular primarily Czech 🇨🇿 and Slovak 🇸🇰 X/Twitter 🐦 accounts, bringing to Mastodon 🐘 otherwise missing news 📰, sports ⚽️🏒🏎️, tech info 📱⌚️💻📡, entertainment 🎞️🎶🎭, and sometimes humor 🤣🤪.
 
-The Czech **Mastodon** is not very big and is often ignored by newspaper publishers and individual information sources. The server **Zprávobot.news** was created to allow users of this social network to get the latest news and information.
+**🌉 BlueSky Bridge**: Since September 2025, most bots are also available on BlueSky via [Brid.gy](https://fed.brid.gy/), expanding the reach of Czech content across federated platforms.
 
-The technical solution was inspired by the **Press.coop** server initially mirrored the **X/Twitter** accounts on the **Mastodon** social network. Like them, I used a running **Mastodon** server as a front end, but instead of programming my back end to handle **tweets**, **RSS** feeds and **BlueSky** posts, I decided to use the existing **IFTTT** (If This Then That) service.
+## Table of Contents
 
-After the initial implementation, I discovered the possibility of adding a filter script to the **IFTTT** applets (if you have a PRO+ subscription) that further processes the input data. I decided to use this option for unified output processing for **Zpravobot.news**.
+- [About](#about)
+- [The Mission](#the-mission)
+- [Technical Architecture](#technical-architecture)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Setting Up BlueSky Bots](#setting-up-bluesky-bots)
+  - [Setting Up RSS Bots](#setting-up-rss-bots)
+  - [Setting Up Twitter/X Bots](#setting-up-twitterx-bots)
+  - [Setting Up YouTube Bots](#setting-up-youtube-bots)
+- [Configuration](#configuration)
+- [Contributing](#contributing)
+- [Support](#support)
+- [Acknowledgments](#acknowledgments)
 
-This was the beginning of this open-source project, which was released under the [Unlicense license](https://unlicense.org) you have in front of you.
+## About
 
-## The mission
-This project is focused on developing the **IFTTT** applet filter script, which is used on the **IFTTT** server for bots (applets) and fulfils content for standard Mastodon server users.
+The Czech Mastodon community is relatively small and often overlooked by newspaper publishers and other information sources. **Zpravobot.news** was created to bridge this gap by providing Czech Mastodon users with timely access to news and information from various platforms.
 
-The server used is a standard Mastodon server with several hundred users. The bot farm at **IFTTT** fulfils users, where every bot (custom **IFTTT** applet) has its filter script, which manages the source of information, the process, and the final state of posts published on the Mastodon server.
+The project is run by [Daniel Šnor](https://zpravobot.news) and operates as a public utility, mirroring content from popular Czech sources across multiple platforms including Twitter/X, RSS feeds, BlueSky, and YouTube.
 
-The original target was to have the only script for the following sources:
-- **BlueSky**
-- ~~Nitter~~
-- **RSS**
-- **X/Twitter**
-- **YouTube**
+### Multi-Platform Availability
 
-**X/Twitter** limited **Nitter**'s activities, an open and privacy-oriented front end, by cancelling the hosting accounts it relied on in January 2024, leading to its complete shutdown in February 2024. After this, code parts related to **Nitter/IFTTT** cooperation were removed and remained focused on the other four services.
+Since **September 2025**, the majority of Zpravobot bots have been bridged to **BlueSky** using [Brid.gy](https://fed.brid.gy/), a service that connects Mastodon accounts with the BlueSky network. This means Czech content is now accessible to both Mastodon and BlueSky users, significantly expanding the reach of news and information across the fediverse and AT Protocol networks.
 
-## Why is it split?
-Due to limitations on the **IFTTT** side, you cannot have **YouTube** or **RSS** connectors in the **X/Twitter** applet (and Vice Versa), but the filter code should be the same for all sources, so I divided this script into several parts.
+## The Mission
 
-The final filter script for applying it in filter code in the **IFTTT** applet is composed of three parts:
-- settings
-- connector
-- **IFTTT** applet filter script
+This open-source project focuses on developing and maintaining IFTTT applet filter scripts that automate content aggregation and posting to Mastodon. The goal is to create a unified, efficient system for content mirroring that serves the Czech Mastodon community.
 
-Even if the filter is written as universal, you still have to choose the proper settings and connector based on the type of source, so if you want to use it for the **BlueSky** applet, you have to compose it from settings for **Bluesky**, a connector for **BlueSky** and universal filter. The final code is then pasted to your **IFTTT** applet into the filter.
+### Supported Platforms
 
-## Folders
-- **./CONNECTORS** contains connectors. A special connector is used for **X/Twitter** and **YouTube**, and an **RSS** connector is used for **BlueSky** and **RSS**.
-- **./SETTINGS** - contains "default" settings for all supported applet types.
-- **./EXAMPLES** - contains complete **IFTTT** filter script examples for every supported service.
-- **./DOCS** - contains documentation for the appropriate setting of all **IFTTT** applet filter script possibilities.
+**Content Sources:**
+- ✅ **BlueSky** - Social media posts
+- ✅ **RSS** - Various news feeds and blogs
+- ✅ **Twitter/X** - Tweets and threads
+- ✅ **YouTube** - Video updates from subscriptions
+- ❌ **Nitter** - Discontinued (service shutdown in February 2024)
+
+**Distribution Networks:**
+- 🐘 **Mastodon** - Primary platform via Zpravobot.news instance
+- 🦋 **BlueSky** - Available since September 2025 via Brid.gy federation
+
+## Technical Architecture
+
+The solution uses a standard Mastodon server as the frontend, combined with IFTTT (If This Then That) as the backend automation layer. This approach was inspired by the **Press.coop** server but adapted to use IFTTT's infrastructure instead of custom backend code.
+
+### Key Components
+
+1. **Mastodon Server** - Standard installation hosting bot accounts
+2. **IFTTT Applets** - Individual bots that monitor various sources
+3. **Filter Scripts** - PRO+ subscription feature that processes and formats content
+4. **Unified Output** - Consistent formatting across all content sources
+
+### Why Multiple Scripts?
+
+Due to IFTTT limitations, different connectors (YouTube, RSS, Twitter) cannot be mixed in a single applet. However, the core filtering logic should remain consistent. This led to a modular architecture where filter scripts are composed of three parts:
+
+1. **Settings** - Source-specific configuration
+2. **Connector** - Platform-specific data handling
+3. **Universal Filter** - Common processing logic
+
+For example, a BlueSky bot would use: BlueSky settings + RSS connector + universal filter script.
+
+## Project Structure
+
+```
+.
+├── CONNECTORS/     # Platform-specific connectors
+│   ├── connector-ifttt-bluesky-rss.ts (for BlueSky and RSS feeds)
+│   ├── connector-ifttt-x-twitter.ts
+│   └── connector-ifttt-youtube.ts
+├── DOCS/           # Detailed documentation for configuration options
+├── EXAMPLES/       # Complete working examples for each service
+│   ├── example-ifttt-filter-bluesky-3.0.0.ts
+│   ├── example-ifttt-filter-fb-ig-via-rss.app-3.0.0.ts (for FB and IG via RSS.app)
+│   ├── example-ifttt-filter-rss-3.0.0.ts
+│   ├── example-ifttt-filter-x-twitter-3.0.0.ts
+│   ├── example-ifttt-filter-x-twitter-via-rss.app-3.0.0.ts (for X/TW via RSS.app)
+│   └── example-ifttt-filter-youtube-3.0.0.ts
+├── SETTINGS/       # Default configurations for each platform
+│   ├── settings-ifttt-bluesky.ts
+│   ├── settings-ifttt-rss.ts
+│   ├── settings-ifttt-x-twitter.ts
+│   └── settings-ifttt-youtube.ts
+└── TESTS/          # Automated testing scripts
+```
+
+## Getting Started
+
+### Prerequisites
+
+- A Mastodon server account for your bot
+- An IFTTT PRO+ subscription (required for filter scripts)
+- Access to the platform you want to mirror (Twitter, YouTube subscription, etc.)
+
+### Setting Up BlueSky Bots
+
+1. Navigate to IFTTT and click **Create** at **My Applets**
+2. Select **RSS Feed** service
+3. Choose **New feed item** trigger
+4. Enter the BlueSky user feed URL:
+   ```
+   https://bsky.app/profile/username.bsky.social/rss
+   ```
+5. Add the corresponding filter script from the EXAMPLES folder
+
+### Setting Up RSS Bots
+
+1. Create new IFTTT applet
+2. Select **RSS Feed** service
+3. Choose **New feed item** trigger
+4. Enter your RSS feed URL:
+   ```
+   https://example.com/rss
+   ```
+5. Apply the RSS filter script
+
+### Setting Up Twitter/X Bots
+
+1. Create new IFTTT applet
+2. Select **Twitter** service
+3. Choose **New tweet from search** trigger
+4. Configure search query based on your needs:
+
+   **Basic (excludes replies to others):**
+   ```
+   from:twitterUsername -is:reply OR from:twitterUsername to:twitterUsername
+   ```
+
+   **Exclude retweets and quotes:**
+   ```
+   from:twitterUsername -is:reply -is:retweet -is:quote OR from:twitterUsername to:twitterUsername
+   ```
+
+   **Hashtag tracking:**
+   ```
+   #specifichashtag -is:reply -is:retweet
+   ```
+5. Apply the Twitter filter script
+
+### Setting Up YouTube Bots
+
+1. Create new IFTTT applet
+2. Select **YouTube** service
+3. Choose **New public video from subscriptions** trigger
+4. Select the desired YouTube subscription
+5. Apply the YouTube filter script
 
 ## Configuration
 
-### Mastodon vs IFTTT communication
-For more information about settings on the Mastodon user side, please look at https://hyperborea.org/journal/2017/12/mastodon-iftt/.
+### Mastodon Integration
 
-### IFTTT applets
-The applet uses specific settings for **BlueSky**, **RSS**, **X/Twitter** and **YouTube**.
+For detailed information about configuring the Mastodon side of the integration, refer to the comprehensive guide at:
+https://hyperborea.org/journal/2017/12/mastodon-iftt/
 
-In **IFTTT**, at **My Applets** screen, click **Create** and... 
+### Customizing Filter Scripts
 
-#### BlueSky
-- Select **RSS Feed** service and "**New feed item**" trigger.
-- For **BlueSky** use user feed, e.g. "**https://bsky.app/profile/username.bsky.social/rss**".
+Each filter script can be customized by adjusting the settings component. See the `/DOCS` folder for detailed documentation on all available configuration options.
 
-#### RSS
-- Select **RSS Feed** service and "**New feed item**" trigger.
-- For **RSS**, enter their usual RSS feed address, e.g. "**https://example.com/rss**".
+## Contributing
 
-#### X/Twitter
-- Select **Twitter** service and use the "**New tweet from search**" trigger.
-- As a "Search for" phrase, use "**from:twitterUsername -is:reply OR from:twitterUsername to:twitterUsername**" (this will filter replies to other **Twitter** users).
-- If you want to filter also retweets and quotes, use "**from:twitterUsername -is:reply -is:retweet -is:quote OR from:twitterUsername to:twitterUsername**".
-- You can also search for some specific hashtag - use "**#specifichashtag -is:reply -is:retweet**".
+Contributions are welcome! This project is released under the [Unlicense license](https://unlicense.org), making it truly public domain.
 
-#### YouTube
-- Select YouTube service and use the "**New public video from subscriptions**" trigger.
-- In "**Which subscription?**" select the appropriate **YT** subscription.
+If you have improvements, bug fixes, or new features to suggest, please feel free to submit a pull request or open an issue.
 
-## Thank you
-The whole project could not have been made without the support of my beloved wife [Greticzka](https://mastodon.social/@greticzka) and our daughters. Thank you.
+## Support
 
-Many thanks also to [Marvoqs](https://github.com/marvoqs) and [Lawondyss](https://github.com/Lawondyss). **Marvoqs** coded the basics of the script, and **Lawondyss** developed it and added many more features. Thanks, guys.
+If you find Zprávobot.news useful and would like to support its continued operation, you can contribute through:
 
-## That's all!
-Suppose you like [Zprávobot.news](https://zpravobot.news) or this repo and want to support me in my activities related to **Zpravobot.news**, you can do that via the following ways:
+- 🏦 **Bank Transfer**: IBAN CZ8830300000001001612070
+- 💳 **Revolut**: [revolut.me/zpravobot](https://revolut.me/zpravobot)
+- ☕ **Ko-fi**: [ko-fi.com/zpravobot](https://ko-fi.com/zpravobot)
+- 🖥️ **Forendors**: [forendors.cz/zpravobot](https://forendors.cz/zpravobot)
 
-* 🏦 IBAN: CZ8830300000001001612070
-* 🖥️ [https://forendors.cz/zpravobot](https://forendors.cz/zpravobot)
-* ☕️ [https://ko-fi.com/zpravobot](https://ko-fi.com/zpravobot)
-* 💳 [https://revolut.me/zpravobot](https://revolut.me/zpravobot)
+![QR code for bank transfer](https://zpravobot.news/system/media_attachments/files/113/069/699/996/938/723/original/824504de17667be7.jpeg 'QR Code for Bank Transfer')
 
-![QR code for bank transfer](https://zpravobot.news/system/media_attachments/files/113/069/699/996/938/723/original/824504de17667be7.jpeg 'QR Kód')
+Your support helps keep this public utility running and accessible to the Czech Mastodon community.
 
-Thank you for being so supportive.
+## Acknowledgments
 
-(Prague, Mar 14, 2025)
+This project wouldn't exist without:
+
+- **My Family** - My beloved wife [Greticzka](https://mastodon.social/@greticzka) and our daughters for their unwavering support
+- **[Marvoqs](https://github.com/marvoqs)** - For coding the foundational script architecture
+- **[Lawondyss](https://github.com/Lawondyss)** - For extensive development and feature additions
+- **The Czech Mastodon Community** - For making this all worthwhile
+
+---
+
+**Maintained by Daniel Šnor** | Prague, Czech Republic | [zpravobot.news](https://zpravobot.news)
+
+*Last updated: October 10, 2025*
