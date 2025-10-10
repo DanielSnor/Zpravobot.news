@@ -32,6 +32,8 @@ Note: Filter scripts in IFTTT run as “scripts in scripts over scripts,” so s
 - **Enhanced type safety**: Full TypeScript 2.9.2 compatibility with proper type definitions
 - **Improved URL handling**: Automatic protocol fixes for specified domains via `URL_DOMAIN_FIXES`
 - **RSS truncation tracking**: Proper ellipsis handling when RSS content is pre-truncated at input stage
+- **Self-reference handling**: New `PREFIX_SELF_REFERENCE` setting for self-quotes and self-reposts
+- **Improved self-quote detection**: Self-quotes are now properly detected and formatted (no longer skipped)
 
 ---
 
@@ -538,7 +540,7 @@ The script is fully compatible with TypeScript 2.9.2 (IFTTT's JavaScript environ
 
 ### Platform Detection
 The script automatically adapts its behavior based on `POST_FROM`:
-- **TW**: Handles replies, retweets, quotes, t.co URL removal
+- **TW**: Handles replies, retweets, quotes, self-quotes, self-reposts, t.co URL removal
 - **BS**: Handles quote markers, moves URLs to end
 - **RSS**: Uses content selection logic, applies RSS-specific limits
 - **YT**: Minimal processing, content-focused
