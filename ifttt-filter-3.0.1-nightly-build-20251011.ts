@@ -137,7 +137,7 @@ const feedTitle = Twitter.newTweetFromSearch.UserName || "";
 const feedUrl = "https://twitter.com/" + (Twitter.newTweetFromSearch.UserName || "");
 
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.0 - Nightly Build 20251007 15:30
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.0.1 - Nightly Build 20251011 14:30
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Processes and filters posts from various platforms (Twitter, Bluesky, RSS, YouTube)
@@ -171,12 +171,7 @@ const feedUrl = "https://twitter.com/" + (Twitter.newTweetFromSearch.UserName ||
 })();
 
 // Filter rule definition for advanced filtering logic
-interface FilterRule {
-  type: "literal" | "regex" | "and" | "or";
-  pattern ? : string;
-  keywords ? : string[];
-  flags ? : string;
-}
+interface FilterRule { type: "literal" | "regex" | "and" | "or"; pattern ? : string; keywords ? : string[]; flags ? : string; }
 
 // Type definitions for Object.entries (standard augmentation)
 interface ObjectConstructor { entries < T > (o: { [s: string]: T } | ArrayLike < T > ): [string, T][]; }
@@ -351,6 +346,7 @@ const CHAR_MAP: { [key: string]: string } = {
   "&amp;": SETTINGS.AMPERSAND_SAFE_CHAR,
   "&": SETTINGS.AMPERSAND_SAFE_CHAR
 };
+
 /**
  * Configuration object for precompiled regular expression patterns used in content processing.
  * Grouped into a single object for better organization and maintainability.
@@ -1088,11 +1084,8 @@ function composeStatus(content: string, entryUrl: string, imageUrl: string, titl
   const status = processStatus(content, entryUrl, imageUrl, title, author, wasRssTruncated);
 
   const resultImageUrl = typeof imageUrl === "string" ? processUrl(imageUrl) : "";
-  const imageStatus = (isValidImageUrl(imageUrl) && SETTINGS.SHOW_IMAGEURL) ?
-  SETTINGS.PREFIX_IMAGE_URL + resultImageUrl : "";
-
-  const finalUrl = (status.urlToShow && typeof status.urlToShow === "string") ?
-  SETTINGS.PREFIX_POST_URL + processUrl(status.urlToShow) : "";
+  const imageStatus = (isValidImageUrl(imageUrl) && SETTINGS.SHOW_IMAGEURL) ? SETTINGS.PREFIX_IMAGE_URL + resultImageUrl : "";
+  const finalUrl = (status.urlToShow && typeof status.urlToShow === "string") ? SETTINGS.PREFIX_POST_URL + processUrl(status.urlToShow) : "";
 
   return status.trimmedContent + imageStatus + finalUrl;
 }
@@ -1256,6 +1249,9 @@ function processStatus(content: string, entryUrl: string, imageUrl: string, titl
 function processUrl(url: string): string {
   url = safeString(url);
   if (!url || url === "(none)") return "";
+  
+  // Remove white characters from the beginning and end of the URL
+  url = url.trim();
 
   if (SETTINGS.URL_REPLACE_FROM) {
     const pattern = escapeRegExp(SETTINGS.URL_REPLACE_FROM);
