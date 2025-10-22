@@ -84,12 +84,12 @@ For example, a BlueSky bot would use: BlueSky settings + RSS connector + univers
 │   └── connector-ifttt-youtube.ts
 ├── DOCS/           # Detailed documentation for configuration options
 ├── EXAMPLES/       # Complete working examples for each service
-│   ├── example-ifttt-filter-bluesky-3.0.0.ts
-│   ├── example-ifttt-filter-fb-ig-via-rss.app-3.0.0.ts (for FB and IG via RSS.app)
-│   ├── example-ifttt-filter-rss-3.0.0.ts
-│   ├── example-ifttt-filter-x-twitter-3.0.0.ts
-│   ├── example-ifttt-filter-x-twitter-via-rss.app-3.0.0.ts (for X/TW via RSS.app)
-│   └── example-ifttt-filter-youtube-3.0.0.ts
+│   ├── example-ifttt-filter-bluesky-3.0.1.ts
+│   ├── example-ifttt-filter-fb-ig-via-rss.app-3.0.1.ts (for FB and IG via RSS.app)
+│   ├── example-ifttt-filter-rss-3.0.1.ts
+│   ├── example-ifttt-filter-x-twitter-3.0.1.ts
+│   ├── example-ifttt-filter-x-twitter-via-rss.app-3.0.1.ts (for X/TW via RSS.app)
+│   └── example-ifttt-filter-youtube-3.0.1.ts
 ├── SETTINGS/       # Default configurations for each platform
 │   ├── settings-ifttt-bluesky.ts
 │   ├── settings-ifttt-rss.ts
