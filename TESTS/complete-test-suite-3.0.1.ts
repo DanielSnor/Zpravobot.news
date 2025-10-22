@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
-// COMPLETE Test Suite for IFTTT Webhook Filter v3.0
-// Build 20251007 - COMPREHENSIVE COVERAGE
-// Total: 97 tests (49 original + 48 new tests)
+// COMPLETE Test Suite for IFTTT Webhook Filter v3.0.1
+// Build 20251013 - COMPREHENSIVE COVERAGE WITH URL WHITESPACE TESTS
+// Total: 104 tests (49 original + 55 new tests)
 ///////////////////////////////////////////////////////////////////////////////
 
 interface TestCase {
@@ -1698,6 +1698,143 @@ const testCases: TestCase[] = [
 	},
 
 	// =========================================================================
+	// MP-2.5: URL Whitespace Handling (7 tests - MEDIUM priority)
+	// =========================================================================
+	
+	{
+		id: "mp-url-ws-001",
+		category: "URL Whitespace Handling",
+		priority: "MEDIUM",
+		description: "Leading whitespace in LinkToTweet (postUrl)",
+		input: {
+			TweetEmbedCode: '<blockquote class="twitter-tweet"><p lang="cs" dir="ltr">Tweet s whitespace před URL</p>&mdash; Test User (@testuser) <a href="https://twitter.com/testuser/status/123500">Oct 13, 2025</a></blockquote>',
+			Text: "Tweet s whitespace před URL",
+			LinkToTweet: "   https://twitter.com/testuser/status/123500",
+			FirstLinkUrl: "(none)",
+			UserName: "testuser"
+		},
+		expected: {
+			output: "status=Tweet s whitespace před URL\nhttps://twitter.com/testuser/status/123500",
+			shouldSkip: false
+		},
+		settings: TWITTER_SETTINGS
+	},
+	
+	{
+		id: "mp-url-ws-002",
+		category: "URL Whitespace Handling",
+		priority: "MEDIUM",
+		description: "Trailing whitespace in LinkToTweet (postUrl)",
+		input: {
+			TweetEmbedCode: '<blockquote class="twitter-tweet"><p lang="cs" dir="ltr">Tweet s whitespace za URL</p>&mdash; Test User (@testuser) <a href="https://twitter.com/testuser/status/123501">Oct 13, 2025</a></blockquote>',
+			Text: "Tweet s whitespace za URL",
+			LinkToTweet: "https://twitter.com/testuser/status/123501   ",
+			FirstLinkUrl: "(none)",
+			UserName: "testuser"
+		},
+		expected: {
+			output: "status=Tweet s whitespace za URL\nhttps://twitter.com/testuser/status/123501",
+			shouldSkip: false
+		},
+		settings: TWITTER_SETTINGS
+	},
+	
+	{
+		id: "mp-url-ws-003",
+		category: "URL Whitespace Handling",
+		priority: "MEDIUM",
+		description: "Leading and trailing whitespace in LinkToTweet (postUrl)",
+		input: {
+			TweetEmbedCode: '<blockquote class="twitter-tweet"><p lang="cs" dir="ltr">Tweet s whitespace před i za URL</p>&mdash; Test User (@testuser) <a href="https://twitter.com/testuser/status/123502">Oct 13, 2025</a></blockquote>',
+			Text: "Tweet s whitespace před i za URL",
+			LinkToTweet: "  https://twitter.com/testuser/status/123502  ",
+			FirstLinkUrl: "(none)",
+			UserName: "testuser"
+		},
+		expected: {
+			output: "status=Tweet s whitespace před i za URL\nhttps://twitter.com/testuser/status/123502",
+			shouldSkip: false
+		},
+		settings: TWITTER_SETTINGS
+	},
+	
+	{
+		id: "mp-url-ws-004",
+		category: "URL Whitespace Handling",
+		priority: "MEDIUM",
+		description: "Leading whitespace in FirstLinkUrl (imageUrl)",
+		input: {
+			TweetEmbedCode: '<blockquote class="twitter-tweet"><p lang="cs" dir="ltr">Tweet s obrázkem - leading whitespace v imageUrl</p>&mdash; Test User (@testuser) <a href="https://twitter.com/testuser/status/123503">Oct 13, 2025</a></blockquote>',
+			Text: "Tweet s obrázkem - leading whitespace v imageUrl",
+			LinkToTweet: "https://twitter.com/testuser/status/123503",
+			FirstLinkUrl: "   https://pbs.twimg.com/media/example-ws-001.jpg",
+			UserName: "testuser"
+		},
+		expected: {
+			output: "status=Tweet s obrázkem - leading whitespace v imageUrl\nhttps://pbs.twimg.com/media/example-ws-001.jpg",
+			shouldSkip: false
+		},
+		settings: TWITTER_SETTINGS
+	},
+	
+	{
+		id: "mp-url-ws-005",
+		category: "URL Whitespace Handling",
+		priority: "MEDIUM",
+		description: "Trailing whitespace in FirstLinkUrl (imageUrl)",
+		input: {
+			TweetEmbedCode: '<blockquote class="twitter-tweet"><p lang="cs" dir="ltr">Tweet s obrázkem - trailing whitespace v imageUrl</p>&mdash; Test User (@testuser) <a href="https://twitter.com/testuser/status/123504">Oct 13, 2025</a></blockquote>',
+			Text: "Tweet s obrázkem - trailing whitespace v imageUrl",
+			LinkToTweet: "https://twitter.com/testuser/status/123504",
+			FirstLinkUrl: "https://pbs.twimg.com/media/example-ws-002.jpg   ",
+			UserName: "testuser"
+		},
+		expected: {
+			output: "status=Tweet s obrázkem - trailing whitespace v imageUrl\nhttps://pbs.twimg.com/media/example-ws-002.jpg",
+			shouldSkip: false
+		},
+		settings: TWITTER_SETTINGS
+	},
+	
+	{
+		id: "mp-url-ws-006",
+		category: "URL Whitespace Handling",
+		priority: "MEDIUM",
+		description: "Leading and trailing whitespace in FirstLinkUrl (imageUrl)",
+		input: {
+			TweetEmbedCode: '<blockquote class="twitter-tweet"><p lang="cs" dir="ltr">Tweet s obrázkem - whitespace před i za imageUrl</p>&mdash; Test User (@testuser) <a href="https://twitter.com/testuser/status/123505">Oct 13, 2025</a></blockquote>',
+			Text: "Tweet s obrázkem - whitespace před i za imageUrl",
+			LinkToTweet: "https://twitter.com/testuser/status/123505",
+			FirstLinkUrl: "  https://pbs.twimg.com/media/example-ws-003.jpg  ",
+			UserName: "testuser"
+		},
+		expected: {
+			output: "status=Tweet s obrázkem - whitespace před i za imageUrl\nhttps://pbs.twimg.com/media/example-ws-003.jpg",
+			shouldSkip: false
+		},
+		settings: TWITTER_SETTINGS
+	},
+	
+	{
+		id: "mp-url-ws-007",
+		category: "URL Whitespace Handling",
+		priority: "MEDIUM",
+		description: "Whitespace in both LinkToTweet and FirstLinkUrl simultaneously",
+		input: {
+			TweetEmbedCode: '<blockquote class="twitter-tweet"><p lang="cs" dir="ltr">Tweet s whitespace v obou URL současně</p>&mdash; Test User (@testuser) <a href="https://twitter.com/testuser/status/123506">Oct 13, 2025</a></blockquote>',
+			Text: "Tweet s whitespace v obou URL současně",
+			LinkToTweet: "  https://twitter.com/testuser/status/123506  ",
+			FirstLinkUrl: "  https://pbs.twimg.com/media/example-ws-004.jpg  ",
+			UserName: "testuser"
+		},
+		expected: {
+			output: "status=Tweet s whitespace v obou URL současně\nhttps://pbs.twimg.com/media/example-ws-004.jpg",
+			shouldSkip: false
+		},
+		settings: TWITTER_SETTINGS
+	},
+
+	// =========================================================================
 	// MP-3: SHOW_IMAGEURL Feature (3 tests)
 	// =========================================================================
 
@@ -2257,10 +2394,10 @@ const testCases: TestCase[] = [
 
 const testSuiteMetadata = {
 	version: "3.0",
-	buildDate: "2025-10-07",
+	buildDate: "2025-10-13",
 	totalTests: testCases.length,
 	originalTests: 49,
-	newTests: 48,
+n	ewTests: 55,
 	breakdown: {
 		highPriority: testCases.filter(t => t.priority === "HIGH").length,
 		mediumPriority: testCases.filter(t => t.priority === "MEDIUM").length,
@@ -2287,6 +2424,7 @@ const testSuiteMetadata = {
 		"URL Domain Fixes": 3,
 		"Reply Detection Variations": 3,
 		"URL Processing Edge Cases": 5,
+		"URL Whitespace Handling": 7,
 		"SHOW_IMAGEURL Feature": 3,
 		"FORCE_SHOW_FEEDURL": 2,
 		"Czech Characters & Entities": 4,
@@ -2332,13 +2470,13 @@ if (typeof module !== 'undefined' && module.exports) {
 
 /*
 ═══════════════════════════════════════════════════════════════════════════
-COMPLETE TEST SUITE v3.0 - COMPREHENSIVE COVERAGE
+COMPLETE TEST SUITE v3.0.1 - COMPREHENSIVE COVERAGE
 ═══════════════════════════════════════════════════════════════════════════
 
-TOTAL: 97 TESTS
+TOTAL: 104 TESTS
 - Original: 49 tests (fully working baseline)
 - High Priority: 15 tests (critical functionality gaps)
-- Medium Priority: 21 tests (recommended for production)
+- Medium Priority: 28 tests (recommended for production)
 - Low Priority: 12 tests (nice to have, comprehensive coverage)
 
 TESTING APPROACH:
