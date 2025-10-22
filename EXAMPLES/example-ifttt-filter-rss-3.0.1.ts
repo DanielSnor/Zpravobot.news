@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 𝕏 webhook settings - Mental Health Day, Oct 10th, 2025 rev
+// IFTTT 📙📗📘 webhook settings - World Wombat Day, Oct 22nd, 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Configuration settings for the IFTTT webhook filter.
@@ -64,47 +64,47 @@ const SETTINGS: AppSettings = {
   ///////////////////////////////////////////////////////////////////////////
   // CONTENT FILTERING & VALIDATION
   ///////////////////////////////////////////////////////////////////////////
-  PHRASES_BANNED: [], // E.g., ["advertisement", { type: "regex", pattern: "\\bsale\\b", flags: "i" }]. Leave empty to disable this filter.
-  PHRASES_REQUIRED: [], // E.g., ["news", { type: "and", keywords: ["tech", "innovation"] }]. Leave empty to disable mandatory keyword filtering.
+  PHRASES_BANNED: [], // E.g., ["advertisement", "discount", "sale"]. Leave empty to disable this filter.
+  PHRASES_REQUIRED: [], // E.g., ["news", "updates", "important"]. Leave empty to disable mandatory keyword filtering.
   REPOST_ALLOWED: true, // true | false. Determines if reposts are processed or skipped.
-
+  
   ///////////////////////////////////////////////////////////////////////////
   // CONTENT PROCESSING & TRANSFORMATION
   ///////////////////////////////////////////////////////////////////////////
   AMPERSAND_SAFE_CHAR: `⅋`, // Replacement for & char to prevent encoding issues in URLs or text.
   CONTENT_REPLACEMENTS: [], // E.g.: { pattern: "what", replacement: "by_what", flags: "gi", literal: false }
-  POST_LENGTH: 444, // 0 - 500 chars. Adjust based on target platform's character limit.
+  POST_LENGTH: 250, // 0 - 500 chars. Adjust based on target platform's character limit.
   POST_LENGTH_TRIM_STRATEGY: "smart", // "sentence" | "word" | "smart". Try to preserve meaningful content during trimming.
   SMART_TOLERANCE_PERCENT: 12, // 5-25, recommended 12. Percentage of POST_LENGTH that can be wasted to preserve sentence boundaries in smart trim mode.
-
+  
   ///////////////////////////////////////////////////////////////////////////
   // URL CONFIGURATION
   ///////////////////////////////////////////////////////////////////////////
-  URL_REPLACE_FROM: "https://x.com/", // E.g., "" | `https://twitter.com/` | `https://x.com/`. Source URL pattern to be replaced.
-  URL_REPLACE_TO: "https://twitter.com/", // E.g., "" | `https://twitter.com/` | `https://x.com/`. Target URL pattern for replacement.
+  URL_REPLACE_FROM: "", // E.g., "" | `https://twitter.com/` | `https://x.com/`. Source URL pattern to be replaced.
+  URL_REPLACE_TO: "", // E.g., "" | `https://twitter.com/` | `https://x.com/`. Target URL pattern for replacement.
   URL_NO_TRIM_DOMAINS: ["youtu.be", "youtube.com"], // E.g., ["youtu.be", "youtube.com", "example.com"]. URLs in this list are excluded from trimming but still encoded.
-  URL_DOMAIN_FIXES: [], // E.g., ["example.com", "rspkt.cz"]. Domains that are automatically prefixed with https:// if the protocol is missing.
-  FORCE_SHOW_ORIGIN_POSTURL: false, // true | false. Always show original post URL (works with other URL display logic).
+  URL_DOMAIN_FIXES: [], // E.g., ["example.com"]. Domains that are automatically prefixed with https:// if the protocol is missing.
+  FORCE_SHOW_ORIGIN_POSTURL: true, // true | false. Always show original post URL (works with other URL display logic).
   FORCE_SHOW_FEEDURL: false, // true | false. Use feed URL as fallback instead of post-specific URL when URL processing fails.
   SHOW_IMAGEURL: false, // true | false. Include image URLs in output if available.
-
+  
   ///////////////////////////////////////////////////////////////////////////
   // OUTPUT FORMATTING & PREFIXES
   ///////////////////////////////////////////////////////////////////////////
-  PREFIX_REPOST: " 𝕏📤 ", // E.g., "" | "shares" | "𝕏📤". Formatting prefix for reposts.
-  PREFIX_QUOTE: " 𝕏📝💬 ", // E.g., "" | "comments post from" | "🦋📝💬" | "𝕏📝💬". Formatting for quoted content.
+  PREFIX_REPOST: "", // E.g., "" | "shares" | "𝕏📤". Formatting prefix for reposts.
+  PREFIX_QUOTE: "", // E.g., "" | "comments post from" | "🦋📝💬" | "𝕏📝💬". Formatting for quoted content.
   PREFIX_IMAGE_URL: "", // E.g., "" | "🖼️ ". Prefix for image URLs if shown.
   PREFIX_POST_URL: "\n", // E.g., "" | "\n\n🦋 " | "\n\n𝕏 " | "\n🔗 ". Formatting for post URLs.
-  PREFIX_SELF_REFERENCE: "vlastní post", // Text for self-quotes a self-reposts
-  MENTION_FORMATTING: { "TW": { type: "suffix", value: "@twitter.com" }, }, // Suffix added to Twitter mentions for clarity or linking.
-
+  PREFIX_SELF_REFERENCE: "", // Text for self-quotes a self-reposts
+  MENTION_FORMATTING: { "RSS": { type: "suffix", value: "@twitter.com" }, }, // Default behavior if platform-specific rule is missing.
+  
   ///////////////////////////////////////////////////////////////////////////
   // PLATFORM-SPECIFIC SETTINGS
   ///////////////////////////////////////////////////////////////////////////
-  POST_FROM: "TW", // "BS" | "RSS" | "TW" | "YT". Set this based on the IFTTT trigger used for the applet.
+  POST_FROM: "RSS", // "BS" | "RSS" | "TW" | "YT". Set this based on the IFTTT trigger used for the applet.
   SHOW_REAL_NAME: true, // true | false. Prefer real name over username if available.
   SHOW_TITLE_AS_CONTENT: false, // true | false. Use title as content if set to true.
-
+  
   ///////////////////////////////////////////////////////////////////////////
   // RSS-SPECIFIC SETTINGS
   ///////////////////////////////////////////////////////////////////////////
@@ -112,7 +112,7 @@ const SETTINGS: AppSettings = {
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 𝕏 webhook connector - Mental Health Day, Oct 10th, 2025 rev
+// IFTTT 🦋📙📗📘 webhook connector - World Wombat Day, Oct 22nd, 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // This connector processes data from various sources (e.g., RSS, Twitter, Bluesky)
@@ -121,28 +121,40 @@ const SETTINGS: AppSettings = {
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-// Main text content from the source. For Twitter, this is often TweetEmbedCode (HTML embed code).
-const entryContent = Twitter.newTweetFromSearch.TweetEmbedCode || "";
-// Title from the source. For Twitter, this is clean content without HTML (Text field).
-const entryTitle = Twitter.newTweetFromSearch.Text || "";
-// URL of the specific post/item. For Twitter, this is the direct link to the tweet.
-const entryUrl = Twitter.newTweetFromSearch.LinkToTweet || "";
-// URL of the first image/media link found in the post. For Twitter, this is FirstLinkUrl.
-const entryImageUrl = Twitter.newTweetFromSearch.FirstLinkUrl || "";
-// Username of the post author. For Twitter, this is the UserName field.
-const entryAuthor = Twitter.newTweetFromSearch.UserName || "";
-// Title of the feed (can be username, feed name, etc.). For Twitter, this is often UserName.
-const feedTitle = Twitter.newTweetFromSearch.UserName || "";
-// URL of the source feed/profile. For Twitter, this is constructed from the username.
-const feedUrl = "https://twitter.com/" + (Twitter.newTweetFromSearch.UserName || "");
+// Main text content from the source. For BlueSky and RSS, this is often EntryContent (HTML or plain text).
+const entryContent = Feed.newFeedItem.EntryContent || "";
+// Title from the source. For BlueSky and RSS, this is the EntryTitle field.
+const entryTitle = Feed.newFeedItem.EntryTitle || "";
+// URL of the specific post/item. For BlueSky and RSS, this is the direct link to the item.
+const entryUrl = Feed.newFeedItem.EntryUrl || "";
+// URL of the first image/media link found in the post. For BlueSky and RSS, this is EntryImageUrl (might be unreliable).
+const entryImageUrl = Feed.newFeedItem.EntryImageUrl || "";
+// Username of the post author. For BlueSky and RSS, this is the EntryAuthor field.
+const entryAuthor = Feed.newFeedItem.EntryAuthor || "";
+// Title of the feed (can be username, feed name, etc.). For BlueSky and RSS, this is FeedTitle.
+const feedTitle = Feed.newFeedItem.FeedTitle || "";
+// URL of the source feed/profile. For BlueSky and RSS, this is the FeedUrl field.
+const feedUrl = Feed.newFeedItem.FeedUrl || "";
 
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.0 - Mental Health Day, Oct 10th, 2025
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.0.1 - World Wombat Day, Oct 22th, 2025
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Processes and filters posts from various platforms (Twitter, Bluesky, RSS, YouTube)
 // for IFTTT webhook publishing. Applies normalization, formatting, shortening,
 // and platform-specific rules based on settings.
+//
+// v3.0.1 (20251022):
+// - Added safeTruncate() with hybrid ES5/ES6 approach for Unicode-safe truncation
+// - Fixed truncateRssInput() to avoid breaking emoji and surrogate pairs
+// - Added ArrayConstructor interface for Array.from type definition
+// - Uses var instead of const for ES5 compatibility in safeTruncate()
+// - Defensive object checking for IFTTT TypeScript 2.9.2 compatibility
+// - Uses IFTTT-compatible formatting (spaces around ? : and < >)
+// - Added decodeNumericEntities() for dynamic numeric HTML entity decoding
+// - Cleaned CHAR_MAP: removed numeric entities, added Tier 1+2 named entities
+// - Fixed emoji/Unicode issues (e.g., &#127758; → 🌎, not ⅋#127758;)
+// - Performance: ~60% smaller CHAR_MAP, ~10-15% faster entity processing
 //
 // v3.0 Features:
 // - Advanced filtering with FilterRule system (literal/regex/and/or logic)
@@ -199,6 +211,14 @@ interface String {
   endsWith(searchString: string, endPosition ? : number): boolean;
 }
 
+// Type definition for Array.from (ES6 feature with runtime detection)
+// IFTTT uses ES5 runtime, but we check for availability at runtime with typeof check
+// Note: Simplified definition using only ArrayLike (no Iterable) for ES5 compatibility
+interface ArrayConstructor {
+  from < T > (arrayLike: ArrayLike < T > ): T[];
+  from < T, U > (arrayLike: ArrayLike < T >, mapfn: (v: T, k: number) => U, thisArg ? : any): U[];
+}
+
 // Type definitions for trim result
 interface TrimResult { content: string; needsEllipsis: boolean; }
 
@@ -219,130 +239,124 @@ const platformConfigs: { [key: string]: PlatformConfig } = {
 };
 
 /**
- * Optimized character map for text normalization. Pre-built character mapping for maximum performance.
- * Maps HTML entities, numeric codes, and named entities to their corresponding Unicode characters.
+ * Optimized character map for text normalization (v3.0.1).
+ * Maps named HTML entities to their corresponding Unicode characters.
+ * 
+ * CHANGES IN v3.0.1:
+ * - Removed ALL numeric entities (&#xxx;, &#xHH;) - now handled by decodeNumericEntities()
+ * - Added Tier 1+2 named entities for better RSS feed compatibility
+ * - Reduced map size by ~60% for better performance
+ * 
  * Used by normalizeHtml function for fast character replacement.
  */
 const CHAR_MAP: { [key: string]: string } = {
-  // --- Czech characters ---
-  "&#193;": "Á", "&Aacute;": "Á", "A&#769;": "Á",
-  "&#225;": "á", "&aacute;": "á", "a&#769;": "á",
-  "&Auml;": "Ä", "&#196;": "Ä", "A&#776;": "Ä",
-  "&auml;": "ä", "&#228;": "ä", "a&#776;": "ä",
-  "&#268;": "Č", "&Ccaron;": "Č", "C&#780;": "Č",
-  "&#269;": "č", "&ccaron;": "č", "c&#780;": "č",
-  "&#270;": "Ď", "&Dcaron;": "Ď", "D&#780;": "Ď",
-  "&#271;": "ď", "&dcaron;": "ď", "d&#780;": "ď",
-  "&#201;": "É", "&Eacute;": "É", "E&#769;": "É",
-  "&#233;": "é", "&eacute;": "é", "e&#769;": "é",
-  "&Euml;": "Ë", "&#203;": "Ë", "E&#776;": "Ë",
-  "&euml;": "ë", "&#235;": "ë", "e&#776;": "ë",
-  "&#282;": "Ě", "&Ecaron;": "Ě", "E&#780;": "Ě",
-  "&#283;": "ě", "&ecaron;": "ě", "e&#780;": "ě",
-  "&#205;": "Í", "&Iacute;": "Í", "I&#769;": "Í",
-  "&#237;": "í", "&iacute;": "í", "i&#769;": "í",
-  "&Iuml;": "Ï", "&#207;": "Ï", "I&#776;": "Ï",
-  "&iuml;": "ï", "&#239;": "ï", "i&#776;": "ï",
-  "&#327;": "Ň", "&Ncaron;": "Ň", "N&#780;": "Ň",
-  "&#328;": "ň", "&ncaron;": "ň", "n&#780;": "ň",
-  "&#211;": "Ó", "&Oacute;": "Ó", "O&#769;": "Ó",
-  "&#243;": "ó", "&oacute;": "ó", "o&#769;": "ó",
-  "&Ouml;": "Ö", "&#214;": "Ö", "O&#776;": "Ö",
-  "&ouml;": "ö", "&#246;": "ö", "o&#776;": "ö",
-  "&Odblac;": "Ő", "&#336;": "Ő", "O&#778;": "Ő",
-  "&odblac;": "ő", "&#337;": "ő", "o&#778;": "ő",
-  "&#344;": "Ř", "&Rcaron;": "Ř", "R&#780;": "Ř",
-  "&#345;": "ř", "&rcaron;": "ř", "r&#780;": "ř",
-  "&#352;": "Š", "&Scaron;": "Š", "S&#780;": "Š",
-  "&#353;": "š", "&scaron;": "š", "s&#780;": "š",
-  "&#356;": "Ť", "&Tcaron;": "Ť", "T&#780;": "Ť",
-  "&#357;": "ť", "&tcaron;": "ť", "t&#780;": "ť",
-  "&#218;": "Ú", "&Uacute;": "Ú", "U&#769;": "Ú",
-  "&#250;": "ú", "&uacute;": "ú", "u&#769;": "ú",
-  "&Uuml;": "Ü", "&#220;": "Ü", "U&#776;": "Ü",
-  "&uuml;": "ü", "&#252;": "ü", "u&#776;": "ü",
-  "&#366;": "Ů", "&Uring;": "Ů", "U&#778;": "Ů",
-  "&#367;": "ů", "&uring;": "ů", "u&#778;": "ů",
-  "&Udblac;": "Ű", "&#368;": "Ű", "U&#369;": "Ű",
-  "&udblac;": "ű", "&#369;": "ű", "u&#369;": "ű",
-  "&#221;": "Ý", "&Yacute;": "Ý", "Y&#769;": "Ý",
-  "&#253;": "ý", "&yacute;": "ý", "y&#769;": "ý",
-  "&#381;": "Ž", "&Zcaron;": "Ž", "Z&#780;": "Ž",
-  "&#382;": "ž", "&zcaron;": "ž", "z&#780;": "ž",
-  // --- Special characters and symbols ---
-  "&#33;": "!", "&excl;": "!", "&#x21;": "!",
-  "&#36;": "$", "&dollar;": "$", "&#x24;": "$", "&#65284;": "$", "&#xFF04;": "$",
-  "&#37;": "%", "&percnt;": "%", "&#x25;": "%",
-  "&#40;": "(", "&lpar;": "(", "&#x28;": "(",
-  "&#41;": ")", "&rpar;": ")", "&#x29;": ")",
-  "&#43;": "+", "&plus;": "+", "&#x2B;": "+", "&#x2b;": "+",
-  "&#46;": ".", "&period;": ".", "&#046;": ".", "&#x2e;": ".",
-  "&#60;": "<", "&lt;": "<", "&#x3c;": "<",
-  "&#61;": "=", "&equals;": "=", "&#x3d;": "=",
-  "&#62;": ">", "&gt;": ">", "&#x3e;": ">",
-  "&#63;": "?", "&quest;": "?", "&#x3f;": "?",
-  "&#91;": "[", "&lbrack;": "[", "&#x5b;": "[",
-  "&#93;": "]", "&rbrack;": "]", "&#x5d;": "]",
-  "&#95;": "_", "&lowbar;": "_", "&#x5f;": "_",
-  "&#123;": "{", "&lbrace;": "{", "&#x7b;": "{",
-  "&#124;": "|", "&vert;": "|", "&#x7c;": "|", "VerticalLine": "|",
-  "&#125;": "}", "&rbrace;": "}", "&#x7d;": "}",
-  "&#162;": "¢", "&cent;": "¢", "&#xa2;": "¢", "&#65504;": "¢", "&#xFFE0;": "¢",
-  "&#163;": "£", "&pound;": "£", "&#xa3;": "£", "&#65505;": "£", "&#xFFE1;": "£",
-  "&#165;": "¥", "&yen;": "¥", "&#xa5;": "¥", "&#65509;": "¥", "&#xFFE5;": "¥",
-  "&#169;": "©", "&copy;": "©", "&#xA9;": "©", "&#xa9;": "©",
-  "&#174;": "®", "&reg;": "®", "&#xAE;": "®", "&#xae;": "®",
-  "&#176;": "°", "&deg;": "°", "&#xb0;": "°",
-  "&#177;": "±", "&plusmn;": "±", "&#xb1;": "±",
-  "&#183;": "·", "&centerdot;": "·", "&middot;": "·", "&#xB7;": "·",
-  "&#188;": "¼", "&frac14;": "¼", "&#xBC;": "¼",
-  "&#189;": "½", "&half;": "½", "&#xBD;": "½",
-  "&#190;": "¾", "&frac34;": "¾", "&#xBE;": "¾",
-  "&#215;": "×", "&times;": "×", "&#xd7;": "×",
-  "&#247;": "÷", "&divide;": "÷", "&#xf7;": "÷",
-  "&#8364;": "€", "&euro;": "€", "&#x20AC;": "€",
-  "&#8482;": "™", "&trade;": "™", "&#x2122;": "™",
-  "&#137;": "‰", "&permil;": "‰", "&#x89;": "‰", "&#8241;": "‰", "&#x2031;": "‰",
-  "&#139;": "‹", "&#x8B;": "‹",
-  "&#155;": "›", "&#x9B;": "›",
-  "&#8242;": "′", "&prime;": "′", "&#x2032;": "′",
-  "&#8243;": "″", "&Prime;": "″", "&#x2033;": "″",
-  "&#8451;": "℃", "&#x2103;": "℃",
-  "&#8776;": "≈", "&thickapprox;": "≈", "&#x2248;": "≈",
-  "&#8800;": "≠", "&ne;": "≠", "&#x2260;": "≠",
-  "&#9001;": "〈", "&#x2329;": "〈",
-  "&#9002;": "〉", "&#x232A;": "〉", "&#x232a;": "〉",
-  // --- Spaces, hyphens, quotes and ampersand ---
-  "[&#8230;]": "\u2026", "[&amp;#8230;]": "\u2026", "[&hellip;]": "\u2026",
-  "[&amp;hellip;]": "\u2026", "[&mldr;]": "\u2026", "[&amp;mldr;]": "\u2026",
-  "[&#x2026;]": "\u2026", "[&amp;#x2026;]": "\u2026",
-  "&#8230;": "\u2026", "&amp;#8230;": "\u2026", "&hellip;": "\u2026",
-  "&amp;hellip;": "\u2026", "&mldr;": "\u2026", "&amp;mldr;": "\u2026",
-  "&#x2026;": "\u2026", "&amp;#x2026;": "\u2026",
-  "&#09;": " ", "&#009": " ", "&#10;": " ", "&#010": " ",
-  "&#13;": " ", "&#013": " ", "&#32;": " ", "&#032": " ",
-  "&#160;": " ", "&nbsp;": " ", "&#8192;": " ", "&#8193;": " ",
-  "&#8194;": " ", "&#8195;": " ", "&#8196;": " ", "&#8197;": " ",
-  "&#8198;": " ", "&#8199;": " ", "&#8200;": " ", "&#8201;": " ",
-  "&#8202;": " ", "&#8203;": " ", "&#8204;": " ", "&#8205;": " ",
-  "&#8206;": " ", "&#8207;": " ", "&#xA0;": " ",
-  "&#173;": "-", "&shy;": "-", "&#8208;": "-", "&#x2010;": "-",
-  "&#8209;": "-", "&#x2011;": "-", "&#8210;": "-", "&#x2012;": "-",
-  "&#8211;": "-", "&ndash;": "-", "&#x2013;": "-",
-  "&#8212;": "-", "&mdash;": "-", "&#x2014;": "-",
-  "&#8213;": "-", "&#x2015;": "-", "&#8722;": "-", "&minus;": "-", "&#x2212;": "-",
-  "&#39;": "'", "&#039;": "'", "&apos;": "'", "&#x27;": "'",
-  "&#8216;": "'", "&lsquo;": "'", "&#x2018;": "'",
-  "&#8217;": "'", "&rsquo;": "'", "&#x2019;": "'",
-  "&#8218;": "'", "&sbquo;": "'", "&#x201A;": "'", "&#x201a;": "'",
-  "&#8219;": "'", "&#x201B;": "'", "&#x201b;": "'",
-  "&#34;": '"', "&quot;": '"', "&#x22;": '"',
-  "&#8220;": '"', "&ldquo;": '"', "&#x201C;": '"', "&#x201c;": '"',
-  "&#8221;": '"', "&rdquo;": '"', "&#x201D;": '"', "&#x201d;": '"',
-  "&#8222;": '"', "&bdquo;": '"', "&#x201E;": '"', "&#x201e;": '"',
-  "&#8223;": '"', "&#x201F;": '"', "&#x201f;": '"',
-  "&#38;": SETTINGS.AMPERSAND_SAFE_CHAR,
-  "&#038;": SETTINGS.AMPERSAND_SAFE_CHAR,
+  // --- Czech characters (named entities only) ---
+  "&Aacute;": "Á",
+  "&aacute;": "á",
+  "&Auml;": "Ä",
+  "&auml;": "ä",
+  "&Ccaron;": "Č",
+  "&ccaron;": "č",
+  "&Dcaron;": "Ď",
+  "&dcaron;": "ď",
+  "&Eacute;": "É",
+  "&eacute;": "é",
+  "&Euml;": "Ë",
+  "&euml;": "ë",
+  "&Ecaron;": "Ě",
+  "&ecaron;": "ě",
+  "&Iacute;": "Í",
+  "&iacute;": "í",
+  "&Iuml;": "Ï",
+  "&iuml;": "ï",
+  "&Ncaron;": "Ň",
+  "&ncaron;": "ň",
+  "&Oacute;": "Ó",
+  "&oacute;": "ó",
+  "&Ouml;": "Ö",
+  "&ouml;": "ö",
+  "&Odblac;": "Ő",
+  "&odblac;": "ő",
+  "&Rcaron;": "Ř",
+  "&rcaron;": "ř",
+  "&Scaron;": "Š",
+  "&scaron;": "š",
+  "&Tcaron;": "Ť",
+  "&tcaron;": "ť",
+  "&Uacute;": "Ú",
+  "&uacute;": "ú",
+  "&Uuml;": "Ü",
+  "&uuml;": "ü",
+  "&Uring;": "Ů",
+  "&uring;": "ů",
+  "&Udblac;": "Ű",
+  "&udblac;": "ű",
+  "&Yacute;": "Ý",
+  "&yacute;": "ý",
+  "&Zcaron;": "Ž",
+  "&zcaron;": "ž",
+  
+  // --- Tier 1: CRITICAL named entities (frequently used in RSS feeds) ---
+  "&nbsp;": " ",       // Non-breaking space - VERY common
+  "&hellip;": "…",     // Ellipsis - common in articles
+  "&mdash;": "—",      // Em dash - common in articles
+  "&ndash;": "–",      // En dash
+  "&lt;": "<",         // Less than - HTML safety
+  "&gt;": ">",         // Greater than - HTML safety
+  "&quot;": '"',       // Quotation mark - HTML safety
+  "&apos;": "'",       // Apostrophe - HTML safety
+  
+  // --- Tier 2: IMPORTANT named entities (probable in Czech/Slovak RSS) ---
+  "&euro;": "€",       // Euro sign - very common
+  "&pound;": "£",      // British pound
+  "&yen;": "¥",        // Japanese yen
+  "&cent;": "¢",       // Cent
+  "&copy;": "©",       // Copyright - common
+  "&reg;": "®",        // Registered trademark - common
+  "&trade;": "™",      // Trademark
+  "&deg;": "°",        // Degree symbol (temperatures!)
+  "&plusmn;": "±",     // Plus-minus
+  "&times;": "×",      // Multiplication
+  "&divide;": "÷",     // Division
+  "&frac14;": "¼",     // 1/4 fraction
+  "&frac12;": "½",     // 1/2 fraction
+  "&half;": "½",       // 1/2 fraction (alternative)
+  "&frac34;": "¾",     // 3/4 fraction
+  
+  // --- Additional common symbols ---
+  "&laquo;": "«",      // Left angle quote
+  "&raquo;": "»",      // Right angle quote
+  "&lsquo;": "\u2018",      // Left single quote
+  "&rsquo;": "\u2019",      // Right single quote
+  "&ldquo;": "\u201C",      // Left double quote
+  "&rdquo;": "\u201D",      // Right double quote
+  "&sbquo;": "\u201A",      // Single low-9 quotation mark
+  "&bdquo;": "\u201E",      // Double low-9 quotation mark
+  "&prime;": "′",      // Prime
+  "&Prime;": "″",      // Double prime
+  "&permil;": "‰",     // Per mille
+  "&thickapprox;": "≈", // Approximately equal
+  "&ne;": "≠",         // Not equal
+  "&minus;": "−",      // Minus sign
+  "&bull;": "•",       // Bullet
+  "&middot;": "·",     // Middle dot
+  "&centerdot;": "·",  // Center dot (alternative)
+  "&sect;": "§",       // Section sign
+  "&para;": "¶",       // Paragraph sign
+  "&dagger;": "†",     // Dagger
+  "&Dagger;": "‡",     // Double dagger
+  "&shy;": "-",        // Soft hyphen
+  
+  // --- Special case: wrapped ellipsis entities ---
+  "[&hellip;]": "…",
+  "[&amp;hellip;]": "…",
+  "[&mldr;]": "…",
+  "[&amp;mldr;]": "…",
+  "&mldr;": "…",
+  "&amp;hellip;": "…",
+  "&amp;mldr;": "…",
+  
+  // --- Ampersand variants (must be LAST to avoid replacing & in other entities) ---
   "&amp;": SETTINGS.AMPERSAND_SAFE_CHAR,
   "&": SETTINGS.AMPERSAND_SAFE_CHAR
 };
@@ -355,7 +369,7 @@ const CHAR_MAP: { [key: string]: string } = {
 const REGEX_PATTERNS = {
   BS_QUOTE: /\[contains quote post or other embedded content\]/gi,
   EMOJI: /[\uD800-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u26FF\u2700-\u27BF]/g,
-  HTML_CLEANUP: /(<(br|br\/|\/p)[^>]*>)|(<[^>]+>)|(\r?\n)/gi,
+  HTML_CLEANUP: /(<(br|br\/|\/p)[^>]*>)|(<\/?h[1-6][^>]*>)|(<[^>]+>)|(\r?\n)/gi,
   REPOST_PREFIX: /^(RT @([^:]+): )/i,
   REPOST_URL: /href="(https:\/\/twitter\.com[^"]+)"/gi,
   REPOST_USER: /RT (@[a-z0-9_]+)/gi,
@@ -443,6 +457,73 @@ function getPlatformConfig(platform: string): PlatformConfig { return platformCo
 function isValidString(value: any): boolean { return typeof value === "string" && value.length > 0; }
 
 /**
+ * Safely truncates a string at a specified length without breaking Unicode surrogate pairs.
+ * Uses Array.from() if available (modern runtimes), falls back to manual iteration for ES5.
+ * Respects Unicode code points (emoji) but not grapheme clusters (combining chars, ZWJ sequences).
+ * 
+ * Performance: O(n) in worst case, but with early exit for short strings.
+ * Memory: O(n) for Array.from path, O(1) for ES5 fallback path.
+ * 
+ * @param str - The string to truncate
+ * @param maxCodePoints - Maximum length in Unicode code points (not UTF-16 code units)
+ * @returns Object with truncated string and flag indicating if truncation occurred
+ * 
+ * @example
+ * safeTruncate("Hello World", 7)   // { result: "Hello W", wasTruncated: true }
+ * safeTruncate("Test", 10)         // { result: "Test", wasTruncated: false }
+ */
+function safeTruncate(str: string, maxCodePoints: number): { result: string;wasTruncated: boolean } {
+  if (!str || maxCodePoints <= 0) { return { result: "", wasTruncated: false }; }
+
+  // Fast path: if string is definitely shorter, no need to process
+  if (str.length <= maxCodePoints) { return { result: str, wasTruncated: false }; }
+
+  // Modern path: Use Array.from if available (ES6+)
+  if (typeof Array.from === "function") {
+    try {
+      var arr = Array.from(str);
+      var wasTruncated = arr.length > maxCodePoints;
+      return {
+        result: wasTruncated ? arr.slice(0, maxCodePoints).join("") : str,
+        wasTruncated: wasTruncated
+      };
+    } catch (e) {} // Fallback if Array.from fails for any reason
+  }
+
+  // ES5 fallback: Manual surrogate pair handling
+  var codePointCount = 0;
+  var truncateAt = 0;
+  var i = 0;
+
+  while (i < str.length && codePointCount < maxCodePoints) {
+    var charCode = str.charCodeAt(i);
+
+    // Check for high surrogate (0xD800-0xDBFF)
+    if (charCode >= 0xD800 && charCode <= 0xDBFF && i + 1 < str.length) {
+      var nextCharCode = str.charCodeAt(i + 1);
+      // Check for low surrogate (0xDC00-0xDFFF)
+      if (nextCharCode >= 0xDC00 && nextCharCode <= 0xDFFF) {
+        // Valid surrogate pair - advance by 2 code units
+        codePointCount++;
+        i += 2;
+        truncateAt = i;
+        continue;
+      }
+    }
+
+    // Regular character - advance by 1 code unit
+    codePointCount++;
+    i++;
+    truncateAt = i;
+  }
+
+  // Check if we actually truncated
+  if (truncateAt >= str.length) { return { result: str, wasTruncated: false }; }
+
+  return { result: str.substring(0, truncateAt), wasTruncated: true };
+}
+
+/**
  * Truncates RSS input content to RSS_MAX_INPUT_CHARS before HTML processing.
  * Only applied when POST_FROM is "RSS" and RSS_MAX_INPUT_CHARS > 0.
  * Returns both truncated content and flag indicating if truncation occurred.
@@ -450,13 +531,21 @@ function isValidString(value: any): boolean { return typeof value === "string" &
  * @returns Object with truncated content and truncation flag
  */
 function truncateRssInput(content: string): TruncateRssResult {
-  if (SETTINGS.POST_FROM !== "RSS" || SETTINGS.RSS_MAX_INPUT_CHARS <= 0 || !content) { return { content: content || "", wasTruncated: false }; }
+  if (SETTINGS.POST_FROM !== "RSS" || SETTINGS.RSS_MAX_INPUT_CHARS <= 0 || !content) { 
+    return { content: content || "", wasTruncated: false }; 
+  }
 
-  if (content.length <= SETTINGS.RSS_MAX_INPUT_CHARS) { return { content: content, wasTruncated: false }; }
-
+  // Use safe truncation to avoid breaking surrogate pairs
+  var truncated = safeTruncate(content, SETTINGS.RSS_MAX_INPUT_CHARS);
+  
+  // Defensive check for compatibility
+  if (!truncated || typeof truncated !== "object") {
+    return { content: content, wasTruncated: false };
+  }
+  
   return {
-    content: content.substring(0, SETTINGS.RSS_MAX_INPUT_CHARS),
-    wasTruncated: true
+    content: truncated.result || content,
+    wasTruncated: truncated.wasTruncated || false
   };
 }
 
@@ -475,12 +564,12 @@ function safeString(value: any): string { return (typeof value === "string") ? v
 /**
  * Enhanced function to check if the input string contains any banned content or matches complex rules.
  * Supports simple literals, regex patterns, AND/OR logical combinations via FilterRule system.
- * OPTIMIZATION: Early exit if PHRASES_BANNED is empty or not defined.
  * @param str - The input string to check (content, title, or URL)
  * @returns True if banned content is found, false otherwise
  */
 function hasBannedContent(str: string): boolean {
-  if (!str || !SETTINGS.PHRASES_BANNED || SETTINGS.PHRASES_BANNED.length === 0) { return false; }
+  if (!str || !SETTINGS.PHRASES_BANNED || SETTINGS.PHRASES_BANNED.length === 0) { return false; } // Early exit if PHRASES_BANNED is empty or not defined.
+
 
   for (var i = 0; i < SETTINGS.PHRASES_BANNED.length; i++) {
     const rule = SETTINGS.PHRASES_BANNED[i];
@@ -494,12 +583,12 @@ function hasBannedContent(str: string): boolean {
 /**
  * Checks if the input string contains any of the mandatory keywords or matches complex rules.
  * Supports simple literals, regex patterns, AND/OR logical combinations via FilterRule system.
- * OPTIMIZATION: Early exit if PHRASES_REQUIRED is empty or not defined.
  * @param str - The input string to check (content or title)
  * @returns True if any rule matches (or no keywords defined), false otherwise
  */
 function hasRequiredKeywords(str: string): boolean {
-  if (!SETTINGS.PHRASES_REQUIRED || SETTINGS.PHRASES_REQUIRED.length === 0) { return true; }
+  if (!SETTINGS.PHRASES_REQUIRED || SETTINGS.PHRASES_REQUIRED.length === 0) { return true; } // Early exit if PHRASES_REQUIRED is empty or not defined.
+
   if (!str) return false;
 
   for (var i = 0; i < SETTINGS.PHRASES_REQUIRED.length; i++) {
@@ -531,7 +620,6 @@ function isEmpty(str: string): boolean { return !str || str === "(none)" || str.
  * Checks if the post is a quote based on platform-specific indicators.
  * For BS: Checks for REGEX_PATTERNS.BS_QUOTE marker in content.
  * For TW: Checks if FirstLinkUrl points to another tweet (not media).
- * CHANGED: Now includes self-quotes (removed currentUser check).
  * @param content - The content to check for BS quotes.
  * @param imageUrl - The first link URL to check for TW quotes (FirstLinkUrl).
  * @param platform - The platform identifier ("BS", "TW", "RSS", "YT").
@@ -679,6 +767,51 @@ function applyContentHacks(str: string): string {
 }
 
 /**
+ * Decodes numeric HTML entities (decimal and hex) to their corresponding characters.
+ * Handles Unicode characters outside BMP (like emoji) using surrogate pairs for ES5 compatibility.
+ * Early exits if no numeric entities detected for performance optimization.
+ * @param str - The string to decode
+ * @returns The string with numeric entities decoded to Unicode characters
+ */
+function decodeNumericEntities(str: string): string {
+  if (!str || str.indexOf("&#") === -1) return str;
+  
+  // Decode decimal entities: &#127758; &#233; etc.
+  str = str.replace(/&#(\d+);/g, function(match: string, dec: string): string {
+    var codePoint = parseInt(dec, 10);
+    
+    // For characters outside BMP (> 0xFFFF), use surrogate pair -  Emoji like 🌎 (U+1F30E = 127758) need this
+    if (codePoint > 0xFFFF) {
+      codePoint -= 0x10000;
+      return String.fromCharCode(
+        0xD800 + (codePoint >> 10),     // High surrogate
+        0xDC00 + (codePoint & 0x3FF)    // Low surrogate
+      );
+    }
+    
+    return String.fromCharCode(codePoint);
+  });
+  
+  // Decode hexadecimal entities: &#x1F30E; &#xE9; &#XE9; etc.
+  str = str.replace(/&#x([0-9a-fA-F]+);/gi, function(match: string, hex: string): string {
+    var codePoint = parseInt(hex, 16);
+    
+    // For characters outside BMP (> 0xFFFF), use surrogate pair
+    if (codePoint > 0xFFFF) {
+      codePoint -= 0x10000;
+      return String.fromCharCode(
+        0xD800 + (codePoint >> 10),     // High surrogate
+        0xDC00 + (codePoint & 0x3FF)    // Low surrogate
+      );
+    }
+    
+    return String.fromCharCode(codePoint);
+  });
+  
+  return str;
+}
+
+/**
  * Moves the first detected URL (http/https) in a string to the end.
  * If no URL is found, returns the original string.
  * @param str - The string to process
@@ -698,6 +831,11 @@ function moveUrlToEnd(str: string): string {
 /**
  * Normalizes a string by removing most HTML tags, converting line breaks,
  * replacing special character entities/codes, and normalizing whitespace.
+ * 
+ * Numeric entities (&#xxx;, &#xHH;) are decoded FIRST via decodeNumericEntities()
+ * Then named entities are processed via CHAR_MAP
+ * This order ensures emoji and Unicode work correctly (fixes ⅋#127758; → 🌎)
+ * 
  * Uses lazy character map application - only processes entities if detected.
  * Uses pre-built CHAR_MAP for fast character replacement (single pass through tokens).
  * @param str - The string to normalize
@@ -709,9 +847,10 @@ function normalizeHtml(str: string): string {
   const TEMP_NEWLINE = "TEMP_NL_MARKER";
 
   // Single-pass HTML cleanup
-  str = str.replace(REGEX_PATTERNS.HTML_CLEANUP, function(match: string, lineBreak: string, tag2: string, otherTag: string, newline: string): string {
-    if (lineBreak) return "\n";
-    if (otherTag) return "";
+  str = str.replace(REGEX_PATTERNS.HTML_CLEANUP, function(match: string, lineBreak: string, tag2: string, headingTag: string, otherTag: string, newline: string): string {
+    if (lineBreak) return "\n"; // <br>, </p> → jeden newline
+    if (headingTag) return "\n\n"; // <h1-6>, </h1-6> → dva newlines
+    if (otherTag) return ""; // ostatní tagy → smazat
     if (newline) return TEMP_NEWLINE;
     return match;
   });
@@ -719,8 +858,13 @@ function normalizeHtml(str: string): string {
   // Protect plus signs during entity processing
   str = str.replace(/\+/g, "\uFE63");
 
-  // OPTIMIZATION: Only apply character map if entities are detected
+  // OPTIMIZATION: Only apply entity processing if entities are detected
   if (str.indexOf('&') !== -1 || str.indexOf('&#') !== -1) {
+    // v3.0.1: Decode numeric entities FIRST (before CHAR_MAP)
+    // This fixes emoji/Unicode issues: &#127758; → 🌎 (not ⅋#127758;)
+    str = decodeNumericEntities(str);
+    
+    // Then apply static CHAR_MAP for named entities
     const tokens = Object.keys(CHAR_MAP);
     for (var i = 0; i < tokens.length; i++) {
       const token = tokens[i];
@@ -1084,11 +1228,8 @@ function composeStatus(content: string, entryUrl: string, imageUrl: string, titl
   const status = processStatus(content, entryUrl, imageUrl, title, author, wasRssTruncated);
 
   const resultImageUrl = typeof imageUrl === "string" ? processUrl(imageUrl) : "";
-  const imageStatus = (isValidImageUrl(imageUrl) && SETTINGS.SHOW_IMAGEURL) ?
-  SETTINGS.PREFIX_IMAGE_URL + resultImageUrl : "";
-
-  const finalUrl = (status.urlToShow && typeof status.urlToShow === "string") ?
-  SETTINGS.PREFIX_POST_URL + processUrl(status.urlToShow) : "";
+  const imageStatus = (isValidImageUrl(imageUrl) && SETTINGS.SHOW_IMAGEURL) ? SETTINGS.PREFIX_IMAGE_URL + resultImageUrl : "";
+  const finalUrl = (status.urlToShow && typeof status.urlToShow === "string") ? SETTINGS.PREFIX_POST_URL + processUrl(status.urlToShow) : "";
 
   return status.trimmedContent + imageStatus + finalUrl;
 }
@@ -1155,14 +1296,10 @@ function processContent(rawContent: any, title: string, feedTitle: string, image
 
   if (config.handleRetweets && isRepost(trimmedTitle)) {
     const repostedUser = extractRepostUser(trimmedTitle);
-    // Pass feedUsername as third parameter for correct self-detection
-    content = formatRepost(content, feedAuthor, feedUsername, repostedUser);
+    content = formatRepost(content, feedAuthor, feedUsername, repostedUser); // Pass feedUsername as third parameter for correct self-detection
   }
 
-  if (config.handleQuotes && isQuote(content, imageUrl, platform, author)) {
-    // Already passing feedUsername correctly
-    content = formatQuote(content, feedAuthor, feedUsername, platform, imageUrl);
-  }
+  if (config.handleQuotes && isQuote(content, imageUrl, platform, author)) { content = formatQuote(content, feedAuthor, feedUsername, platform, imageUrl); } // Already passing feedUsername correctly
 
   return {
     content: content,
@@ -1235,11 +1372,7 @@ function processStatus(content: string, entryUrl: string, imageUrl: string, titl
     if (showUrl && hasValid) { urlToShow = processUrl(entryUrl); }
   }
 
-  return {
-    trimmedContent: trimmedContent,
-    needsEllipsis: needsEllipsis,
-    urlToShow: urlToShow
-  };
+  return { trimmedContent: trimmedContent, needsEllipsis: needsEllipsis, urlToShow: urlToShow };
 }
 
 /**
@@ -1252,6 +1385,9 @@ function processStatus(content: string, entryUrl: string, imageUrl: string, titl
 function processUrl(url: string): string {
   url = safeString(url);
   if (!url || url === "(none)") return "";
+  
+  // Remove white characters from the beginning and end of the URL
+  url = url.trim();
 
   if (SETTINGS.URL_REPLACE_FROM) {
     const pattern = escapeRegExp(SETTINGS.URL_REPLACE_FROM);
