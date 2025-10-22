@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // COMPLETE Test Suite for IFTTT Webhook Filter v3.0.1
-// Build 20251013 - COMPREHENSIVE COVERAGE WITH URL WHITESPACE TESTS
-// Total: 104 tests (49 original + 55 new tests)
+// Build 20251022 - WITH UNICODE-SAFE TRUNCATION TESTS
+// Total: 111 tests (49 original + 62 new tests)
 ///////////////////////////////////////////////////////////////////////////////
 
 interface TestCase {
@@ -2389,21 +2389,359 @@ const testCases: TestCase[] = [
 ];
 
 ///////////////////////////////////////////////////////////////////////////////
+// NOVÉ TESTY pro v3.0.1 Minimal Change Build
+// Testy pro safeTruncate() a Unicode-safe RSS truncation
+///////////////////////////////////////////////////////////////////////////////
+
+// Test kategorie: "Unicode-Safe Truncation"
+const unicodeSafeTruncationTests: TestCase[] = [
+	// TEST 105: Basic emoji preservation
+	{
+		id: "T105",
+		category: "Unicode-Safe Truncation",
+		description: "RSS truncation preserves emoji at boundary",
+		priority: "HIGH",
+		input: {
+			TweetEmbedCode: "",
+			Text: "Hello 🌎🌍🌏 World! This is a long RSS feed content with emoji that should be preserved correctly when truncated.",
+			LinkToTweet: "https://example.com/feed/1",
+			FirstLinkUrl: "",
+			UserName: "TestUser"
+		},
+		expected: {
+			output: "Hello 🌎🌍🌏 World! This is a long RSS feed content with emoji that should be preserved cor\nhttps://example.com/feed/1",
+			shouldSkip: false
+		},
+		settings: {
+			PHRASES_BANNED: [],
+			PHRASES_REQUIRED: [],
+			REPOST_ALLOWED: true,
+			AMPERSAND_SAFE_CHAR: "⅋",
+			CONTENT_REPLACEMENTS: [],
+			POST_LENGTH: 500,
+			POST_LENGTH_TRIM_STRATEGY: "word",
+			SMART_TOLERANCE_PERCENT: 12,
+			URL_REPLACE_FROM: "",
+			URL_REPLACE_TO: "",
+			URL_NO_TRIM_DOMAINS: [],
+			URL_DOMAIN_FIXES: [],
+			FORCE_SHOW_ORIGIN_POSTURL: false,
+			FORCE_SHOW_FEEDURL: false,
+			SHOW_IMAGEURL: false,
+			PREFIX_REPOST: " RT ",
+			PREFIX_QUOTE: " QT ",
+			PREFIX_IMAGE_URL: "",
+			PREFIX_POST_URL: "\n",
+			PREFIX_SELF_REFERENCE: "own post",
+			MENTION_FORMATTING: {},
+			POST_FROM: "RSS",
+			SHOW_REAL_NAME: false,
+			SHOW_TITLE_AS_CONTENT: true,
+			RSS_MAX_INPUT_CHARS: 100  // Truncate at 100 code points
+		}
+	},
+
+	// TEST 106: Emoji at exact truncation boundary
+	{
+		id: "T106",
+		category: "Unicode-Safe Truncation",
+		description: "Emoji at exact boundary is preserved or removed completely",
+		priority: "HIGH",
+		input: {
+			TweetEmbedCode: "",
+			Text: "12345678🌎A",  // 8 chars + emoji (2 code units) + A = 11 code units total
+			LinkToTweet: "https://example.com/feed/2",
+			FirstLinkUrl: "",
+			UserName: "TestUser"
+		},
+		expected: {
+			output: "12345678🌎\nhttps://example.com/feed/2",  // Should include emoji if within limit
+			shouldSkip: false
+		},
+		settings: {
+			PHRASES_BANNED: [],
+			PHRASES_REQUIRED: [],
+			REPOST_ALLOWED: true,
+			AMPERSAND_SAFE_CHAR: "⅋",
+			CONTENT_REPLACEMENTS: [],
+			POST_LENGTH: 500,
+			POST_LENGTH_TRIM_STRATEGY: "word",
+			SMART_TOLERANCE_PERCENT: 12,
+			URL_REPLACE_FROM: "",
+			URL_REPLACE_TO: "",
+			URL_NO_TRIM_DOMAINS: [],
+			URL_DOMAIN_FIXES: [],
+			FORCE_SHOW_ORIGIN_POSTURL: false,
+			FORCE_SHOW_FEEDURL: false,
+			SHOW_IMAGEURL: false,
+			PREFIX_REPOST: " RT ",
+			PREFIX_QUOTE: " QT ",
+			PREFIX_IMAGE_URL: "",
+			PREFIX_POST_URL: "\n",
+			PREFIX_SELF_REFERENCE: "own post",
+			MENTION_FORMATTING: {},
+			POST_FROM: "RSS",
+			SHOW_REAL_NAME: false,
+			SHOW_TITLE_AS_CONTENT: true,
+			RSS_MAX_INPUT_CHARS: 9  // 9 code points (8 chars + 1 emoji)
+		}
+	},
+
+	// TEST 107: Multiple emoji in sequence
+	{
+		id: "T107",
+		category: "Unicode-Safe Truncation",
+		description: "Multiple emoji preserved correctly",
+		priority: "HIGH",
+		input: {
+			TweetEmbedCode: "",
+			Text: "Test 🎉🎊🎈🎁🎀 celebration!",
+			LinkToTweet: "https://example.com/feed/3",
+			FirstLinkUrl: "",
+			UserName: "TestUser"
+		},
+		expected: {
+			output: "Test 🎉🎊🎈\nhttps://example.com/feed/3",  // First 3 emoji
+			shouldSkip: false
+		},
+		settings: {
+			PHRASES_BANNED: [],
+			PHRASES_REQUIRED: [],
+			REPOST_ALLOWED: true,
+			AMPERSAND_SAFE_CHAR: "⅋",
+			CONTENT_REPLACEMENTS: [],
+			POST_LENGTH: 500,
+			POST_LENGTH_TRIM_STRATEGY: "word",
+			SMART_TOLERANCE_PERCENT: 12,
+			URL_REPLACE_FROM: "",
+			URL_REPLACE_TO: "",
+			URL_NO_TRIM_DOMAINS: [],
+			URL_DOMAIN_FIXES: [],
+			FORCE_SHOW_ORIGIN_POSTURL: false,
+			FORCE_SHOW_FEEDURL: false,
+			SHOW_IMAGEURL: false,
+			PREFIX_REPOST: " RT ",
+			PREFIX_QUOTE: " QT ",
+			PREFIX_IMAGE_URL: "",
+			PREFIX_POST_URL: "\n",
+			PREFIX_SELF_REFERENCE: "own post",
+			MENTION_FORMATTING: {},
+			POST_FROM: "RSS",
+			SHOW_REAL_NAME: false,
+			SHOW_TITLE_AS_CONTENT: true,
+			RSS_MAX_INPUT_CHARS: 8  // "Test " (5) + 3 emoji (3 code points)
+		}
+	},
+
+	// TEST 108: No truncation needed - emoji preserved
+	{
+		id: "T108",
+		category: "Unicode-Safe Truncation",
+		description: "Short content with emoji is not truncated",
+		priority: "MEDIUM",
+		input: {
+			TweetEmbedCode: "",
+			Text: "Short 🌎",
+			LinkToTweet: "https://example.com/feed/4",
+			FirstLinkUrl: "",
+			UserName: "TestUser"
+		},
+		expected: {
+			output: "Short 🌎\nhttps://example.com/feed/4",
+			shouldSkip: false
+		},
+		settings: {
+			PHRASES_BANNED: [],
+			PHRASES_REQUIRED: [],
+			REPOST_ALLOWED: true,
+			AMPERSAND_SAFE_CHAR: "⅋",
+			CONTENT_REPLACEMENTS: [],
+			POST_LENGTH: 500,
+			POST_LENGTH_TRIM_STRATEGY: "word",
+			SMART_TOLERANCE_PERCENT: 12,
+			URL_REPLACE_FROM: "",
+			URL_REPLACE_TO: "",
+			URL_NO_TRIM_DOMAINS: [],
+			URL_DOMAIN_FIXES: [],
+			FORCE_SHOW_ORIGIN_POSTURL: false,
+			FORCE_SHOW_FEEDURL: false,
+			SHOW_IMAGEURL: false,
+			PREFIX_REPOST: " RT ",
+			PREFIX_QUOTE: " QT ",
+			PREFIX_IMAGE_URL: "",
+			PREFIX_POST_URL: "\n",
+			PREFIX_SELF_REFERENCE: "own post",
+			MENTION_FORMATTING: {},
+			POST_FROM: "RSS",
+			SHOW_REAL_NAME: false,
+			SHOW_TITLE_AS_CONTENT: true,
+			RSS_MAX_INPUT_CHARS: 100  // Much larger than content
+		}
+	},
+
+	// TEST 109: RSS_MAX_INPUT_CHARS disabled (0)
+	{
+		id: "T109",
+		category: "Unicode-Safe Truncation",
+		description: "RSS_MAX_INPUT_CHARS=0 disables truncation",
+		priority: "MEDIUM",
+		input: {
+			TweetEmbedCode: "",
+			Text: "This is a very long RSS feed content with emoji 🌎🌍🌏 that should not be truncated when RSS_MAX_INPUT_CHARS is set to 0.",
+			LinkToTweet: "https://example.com/feed/5",
+			FirstLinkUrl: "",
+			UserName: "TestUser"
+		},
+		expected: {
+			output: "This is a very long RSS feed content with emoji 🌎🌍🌏 that should not be truncated when RSS_MAX_INPUT_CHARS is set to 0.\nhttps://example.com/feed/5",
+			shouldSkip: false
+		},
+		settings: {
+			PHRASES_BANNED: [],
+			PHRASES_REQUIRED: [],
+			REPOST_ALLOWED: true,
+			AMPERSAND_SAFE_CHAR: "⅋",
+			CONTENT_REPLACEMENTS: [],
+			POST_LENGTH: 500,
+			POST_LENGTH_TRIM_STRATEGY: "word",
+			SMART_TOLERANCE_PERCENT: 12,
+			URL_REPLACE_FROM: "",
+			URL_REPLACE_TO: "",
+			URL_NO_TRIM_DOMAINS: [],
+			URL_DOMAIN_FIXES: [],
+			FORCE_SHOW_ORIGIN_POSTURL: false,
+			FORCE_SHOW_FEEDURL: false,
+			SHOW_IMAGEURL: false,
+			PREFIX_REPOST: " RT ",
+			PREFIX_QUOTE: " QT ",
+			PREFIX_IMAGE_URL: "",
+			PREFIX_POST_URL: "\n",
+			PREFIX_SELF_REFERENCE: "own post",
+			MENTION_FORMATTING: {},
+			POST_FROM: "RSS",
+			SHOW_REAL_NAME: false,
+			SHOW_TITLE_AS_CONTENT: true,
+			RSS_MAX_INPUT_CHARS: 0  // Disabled
+		}
+	},
+
+	// TEST 110: Non-RSS platform ignores RSS_MAX_INPUT_CHARS
+	{
+		id: "T110",
+		category: "Unicode-Safe Truncation",
+		description: "Twitter posts ignore RSS_MAX_INPUT_CHARS",
+		priority: "MEDIUM",
+		input: {
+			TweetEmbedCode: "<blockquote>This is a very long tweet content with emoji 🌎🌍🌏 that should not be truncated by RSS_MAX_INPUT_CHARS on Twitter platform.</blockquote>",
+			Text: "This is a very long tweet content with emoji 🌎🌍🌏 that should not be truncated by RSS_MAX_INPUT_CHARS on Twitter platform.",
+			LinkToTweet: "https://twitter.com/user/status/123",
+			FirstLinkUrl: "",
+			UserName: "TestUser"
+		},
+		expected: {
+			output: "This is a very long tweet content with emoji 🌎🌍🌏 that should not be truncated by RSS_MAX_INPUT_CHARS on Twitter platform.\nhttps://twitter.com/user/status/123",
+			shouldSkip: false
+		},
+		settings: {
+			PHRASES_BANNED: [],
+			PHRASES_REQUIRED: [],
+			REPOST_ALLOWED: true,
+			AMPERSAND_SAFE_CHAR: "⅋",
+			CONTENT_REPLACEMENTS: [],
+			POST_LENGTH: 500,
+			POST_LENGTH_TRIM_STRATEGY: "word",
+			SMART_TOLERANCE_PERCENT: 12,
+			URL_REPLACE_FROM: "https://x.com/",
+			URL_REPLACE_TO: "https://twitter.com/",
+			URL_NO_TRIM_DOMAINS: [],
+			URL_DOMAIN_FIXES: [],
+			FORCE_SHOW_ORIGIN_POSTURL: false,
+			FORCE_SHOW_FEEDURL: false,
+			SHOW_IMAGEURL: false,
+			PREFIX_REPOST: " RT ",
+			PREFIX_QUOTE: " QT ",
+			PREFIX_IMAGE_URL: "",
+			PREFIX_POST_URL: "\n",
+			PREFIX_SELF_REFERENCE: "own post",
+			MENTION_FORMATTING: {},
+			POST_FROM: "TW",  // Twitter, not RSS
+			SHOW_REAL_NAME: false,
+			SHOW_TITLE_AS_CONTENT: false,
+			RSS_MAX_INPUT_CHARS: 10  // Should be ignored for Twitter
+		}
+	},
+
+	// TEST 111: Mixed ASCII and emoji
+	{
+		id: "T111",
+		category: "Unicode-Safe Truncation",
+		description: "Mixed ASCII text and emoji truncation",
+		priority: "HIGH",
+		input: {
+			TweetEmbedCode: "",
+			Text: "Hello 🌎 World 🌍 Test 🌏 End",
+			LinkToTweet: "https://example.com/feed/6",
+			FirstLinkUrl: "",
+			UserName: "TestUser"
+		},
+		expected: {
+			output: "Hello 🌎 World 🌍\nhttps://example.com/feed/6",
+			shouldSkip: false
+		},
+		settings: {
+			PHRASES_BANNED: [],
+			PHRASES_REQUIRED: [],
+			REPOST_ALLOWED: true,
+			AMPERSAND_SAFE_CHAR: "⅋",
+			CONTENT_REPLACEMENTS: [],
+			POST_LENGTH: 500,
+			POST_LENGTH_TRIM_STRATEGY: "word",
+			SMART_TOLERANCE_PERCENT: 12,
+			URL_REPLACE_FROM: "",
+			URL_REPLACE_TO: "",
+			URL_NO_TRIM_DOMAINS: [],
+			URL_DOMAIN_FIXES: [],
+			FORCE_SHOW_ORIGIN_POSTURL: false,
+			FORCE_SHOW_FEEDURL: false,
+			SHOW_IMAGEURL: false,
+			PREFIX_REPOST: " RT ",
+			PREFIX_QUOTE: " QT ",
+			PREFIX_IMAGE_URL: "",
+			PREFIX_POST_URL: "\n",
+			PREFIX_SELF_REFERENCE: "own post",
+			MENTION_FORMATTING: {},
+			POST_FROM: "RSS",
+			SHOW_REAL_NAME: false,
+			SHOW_TITLE_AS_CONTENT: true,
+			RSS_MAX_INPUT_CHARS: 15  // "Hello " (6) + emoji (1) + " World " (7) + emoji (1) = 15 code points
+		}
+	}
+];
+
+// Export pro integraci do main test suite
+console.log("=== NEW TESTS FOR safeTruncate() ===");
+console.log(`Total new tests: ${unicodeSafeTruncationTests.length}`);
+console.log("\nTests:");
+unicodeSafeTruncationTests.forEach(test => {
+	console.log(`  ${test.id}: ${test.description} [${test.priority}]`);
+});
+
+///////////////////////////////////////////////////////////////////////////////
 // TEST SUITE METADATA & UTILITIES
 ///////////////////////////////////////////////////////////////////////////////
 
 const testSuiteMetadata = {
-	version: "3.0",
-	buildDate: "2025-10-13",
-	totalTests: testCases.length,
-	originalTests: 49,
-n	ewTests: 55,
-	breakdown: {
-		highPriority: testCases.filter(t => t.priority === "HIGH").length,
-		mediumPriority: testCases.filter(t => t.priority === "MEDIUM").length,
-		lowPriority: testCases.filter(t => t.priority === "LOW").length,
-		original: testCases.filter(t => !t.priority).length
-	},
+  version: "3.0.1",
+  buildDate: "20251022",  // <-- ZMĚNIT
+  totalTests: 111,  // <-- ZMĚNIT (bylo 104)
+  originalTests: 49,
+  newTests: 62,  // <-- ZMĚNIT (bylo 55)
+  breakdown: {
+	highPriority: 50,  // <-- ZMĚNIT (přidat 4 HIGH testy)
+	mediumPriority: 34,  // <-- ZMĚNIT (přidat 3 MEDIUM testy)
+	lowPriority: 9,
+	original: 18
+  },
 	categories: {
 		"Basic Tweets": 3,
 		"Tweets with URLs": 5,
@@ -2433,6 +2771,7 @@ n	ewTests: 55,
 		"RSS Edge Cases": 3,
 		"Empty PREFIX Values": 2,
 		"Whitespace Normalization": 3
+		"Unicode-Safe Truncation": 7  // <-- PŘIDAT NOVOU KATEGORII
 	}
 };
 

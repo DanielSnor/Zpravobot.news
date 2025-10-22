@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// Connector for IFTTT 𝕏 webhook - Mental Health Day, Oct 10th, 2025 rev
+// Connector for IFTTT 𝕏 webhook - World Wombat Day, Oct 22nd, 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // This connector processes data from various sources (e.g., RSS, Twitter, Bluesky)
