@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 𝕏 webhook settings - Mental Health Day, Oct 10th, 2025
+// IFTTT 𝕏 webhook settings - World Wombat Day, Oct 22nd, 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Configuration settings for the IFTTT webhook filter.
@@ -20,7 +20,7 @@ interface AppSettings {
   // CONTENT PROCESSING & TRANSFORMATION
   ///////////////////////////////////////////////////////////////////////////
   AMPERSAND_SAFE_CHAR: string; // Character used to replace ampersands (&) in text to avoid encoding issues.
-  CONTENT_REPLACEMENTS: { pattern: string; replacement: string; flags?: string; literal?: boolean }[]; // Array of regex patterns and replacements for manipulating post content (e.g., fixing URLs or removing unwanted text).
+  CONTENT_REPLACEMENTS: { pattern: string;replacement: string;flags ? : string;literal ? : boolean } []; // Array of regex patterns and replacements for manipulating post content (e.g., fixing URLs or removing unwanted text).
   POST_LENGTH: number; // Maximum post length (0-500 chars) after processing.
   POST_LENGTH_TRIM_STRATEGY: "sentence" | "word" | "smart"; // Strategy for truncation: word cut, sentence preservation, or smart hybrid approach with tolerance.
   SMART_TOLERANCE_PERCENT: number; // For smart trim strategy: percentage of POST_LENGTH that can be "wasted" to preserve sentence boundaries (5-25, recommended 12).
@@ -44,7 +44,7 @@ interface AppSettings {
   PREFIX_IMAGE_URL: string; // Prefix added before the image URL when included.
   PREFIX_POST_URL: string; // Prefix/suffix formatting added before/after the final post URL.
   PREFIX_SELF_REFERENCE: string; // Text pro self-quotes a self-reposts (např. "svůj příspěvek")
-  MENTION_FORMATTING: { [platform: string]: { type: "prefix" | "suffix" | "none"; value: string } }; // Defines how @mentions are formatted per platform (e.g., add suffix, prefix, or do nothing).
+  MENTION_FORMATTING: { [platform: string]: { type: "prefix" | "suffix" | "none";value: string } }; // Defines how @mentions are formatted per platform (e.g., add suffix, prefix, or do nothing).
 
   ///////////////////////////////////////////////////////////////////////////
   // PLATFORM-SPECIFIC SETTINGS
@@ -96,7 +96,7 @@ const SETTINGS: AppSettings = {
   PREFIX_IMAGE_URL: "", // E.g., "" | "🖼️ ". Prefix for image URLs if shown.
   PREFIX_POST_URL: "\n", // E.g., "" | "\n\n🦋 " | "\n\n𝕏 " | "\n🔗 ". Formatting for post URLs.
   PREFIX_SELF_REFERENCE: "vlastní post", // Text for self-quotes a self-reposts
-  MENTION_FORMATTING: { "TW": { type: "suffix", value: "@twitter.com" } }, // Suffix added to Twitter mentions for clarity or linking.
+  MENTION_FORMATTING: { "TW": { type: "suffix", value: "@twitter.com" }, }, // Suffix added to Twitter mentions for clarity or linking.
 
   ///////////////////////////////////////////////////////////////////////////
   // PLATFORM-SPECIFIC SETTINGS
@@ -108,11 +108,11 @@ const SETTINGS: AppSettings = {
   ///////////////////////////////////////////////////////////////////////////
   // RSS-SPECIFIC SETTINGS
   ///////////////////////////////////////////////////////////////////////////
-  RSS_MAX_INPUT_CHARS: 1000 // Limit input to 1000 characters for RSS before HTML processing.
+  RSS_MAX_INPUT_CHARS: 1000, // Limit input to 1000 characters for RSS before HTML processing.
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 𝕏 webhook connector - Mental Health Day, Oct 10th, 2025 rev
+// IFTTT 𝕏 webhook connector - World Wombat Day, Oct 22nd, 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // This connector processes data from various sources (e.g., RSS, Twitter, Bluesky)
@@ -137,12 +137,17 @@ const feedTitle = Twitter.newTweetFromSearch.UserName || "";
 const feedUrl = "https://twitter.com/" + (Twitter.newTweetFromSearch.UserName || "");
 
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.0.1 - Minimal Change Build 20251022
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.0.2 - Nightly Build 20251023
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Processes and filters posts from various platforms (Twitter, Bluesky, RSS, YouTube)
 // for IFTTT webhook publishing. Applies normalization, formatting, shortening,
 // and platform-specific rules based on settings.
+//
+// v3.0.2 Changes (Build 20251023):
+// - Added shouldTruncateRssInput() helper function to eliminate redundant truncation logic
+// - Refactored RSS truncation flag calculation to use single source of truth
+// - Improved code maintainability by removing DRY violation in wasRssTruncated computation
 //
 // v3.0.1 Minimal Change Build (20251022):
 // - Added safeTruncate() with hybrid ES5/ES6 approach for Unicode-safe truncation
@@ -186,9 +191,6 @@ const feedUrl = "https://twitter.com/" + (Twitter.newTweetFromSearch.UserName ||
 
 // Filter rule definition for advanced filtering logic
 interface FilterRule { type: "literal" | "regex" | "and" | "or"; pattern ? : string; keywords ? : string[]; flags ? : string; }
-
-// Type definitions for Object.entries (standard augmentation)
-interface ObjectConstructor { entries < T > (o: { [s: string]: T } | ArrayLike < T > ): [string, T][]; }
 
 // Type definitions for Platform configurations
 interface PlatformConfig {
@@ -523,6 +525,20 @@ function safeTruncate(str: string, maxCodePoints: number): { result: string;wasT
   if (truncateAt >= str.length) { return { result: str, wasTruncated: false }; }
 
   return { result: str.substring(0, truncateAt), wasTruncated: true };
+}
+
+/**
+ * Determines if RSS input should be truncated based on current settings.
+ * Checks if platform is RSS, truncation is enabled, and content exceeds limit.
+ * @param platform - Current platform (RSS, TW, BS, YT)
+ * @param content - Content to check for truncation need
+ * @returns True if content should be truncated, false otherwise
+ */
+function shouldTruncateRssInput(platform: string, content: string): boolean {
+  return platform === "RSS" && 
+         SETTINGS.RSS_MAX_INPUT_CHARS > 0 && 
+         !!content && 
+         content.length > SETTINGS.RSS_MAX_INPUT_CHARS;
 }
 
 /**
@@ -1193,11 +1209,10 @@ function composeContent(title: string, author: string, feedTitle: string, rawCon
   const platform = SETTINGS.POST_FROM;
 
   // Truncate RSS input if needed (before any processing)
-  var wasRssTruncated = false;
-  if (platform === "RSS") {
+  var wasRssTruncated = shouldTruncateRssInput(platform, rawContent);
+  if (wasRssTruncated) {
     const truncResult = truncateRssInput(rawContent);
     rawContent = truncResult.content;
-    wasRssTruncated = truncResult.wasTruncated;
   }
 
   const trimmedTitle = (title || "").trim();
@@ -1459,11 +1474,10 @@ if (skipCheck.skip) {
 } else {
   // If not skipped, proceed to compose the final content and status for the IFTTT webhook action
   const finalContent = composeContent(entryTitle, entryAuthor, feedTitle, entryContent, entryImageUrl);
-  // Pass RSS truncation flag through to composeStatus - note: this requires tracking it from composeContent
-  // For now, we recalculate it here as composeContent doesn't return it
+  // Pass RSS truncation flag through to composeStatus
+  // Recalculated here using shouldTruncateRssInput() helper as composeContent doesn't return it
   const platform = SETTINGS.POST_FROM;
-  var wasRssTruncated = false;
-  if (platform === "RSS" && SETTINGS.RSS_MAX_INPUT_CHARS > 0 && entryContent && entryContent.length > SETTINGS.RSS_MAX_INPUT_CHARS) { wasRssTruncated = true; }
+  var wasRssTruncated = shouldTruncateRssInput(platform, entryContent);
   const finalStatus = composeStatus(finalContent, entryUrl, entryImageUrl, entryTitle, entryAuthor, wasRssTruncated);
   MakerWebhooks.makeWebRequest.setBody("status=" + finalStatus);
 }
