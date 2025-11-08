@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// connector for IFTTT 📺 webhook - World Wombat Day, Oct 22nd, 2025 rev
+// connector for IFTTT 📺 webhook - Chaos Never Dies Day, Nov 9th, 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // This connector processes data from various sources (e.g., RSS, Twitter, Bluesky)
