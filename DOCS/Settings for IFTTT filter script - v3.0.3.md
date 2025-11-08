@@ -1,6 +1,6 @@
-# Settings for IFTTT filter script v3.0.0
+# Settings for IFTTT filter script v3.0.3
 
-This document explains all settings possibilities for the IFTTT filter script version 3.0.0 (Nightly Build 20251004), including default behaviors and examples of use. The script is designed to process posts from various platforms (e.g., Twitter, Bluesky, RSS, YouTube) and publish them via an IFTTT webhook.
+This document explains all settings possibilities for the IFTTT filter script version 3.0.3 (Chaos Never Dies Day, Nov 9th, 2025 rev), including default behaviors and examples of use. The script is designed to process posts from various platforms (e.g., Twitter, Bluesky, RSS, YouTube) and publish them via an IFTTT webhook.
 
 The output is composed of several parts:
 
@@ -18,7 +18,16 @@ These parts are combined in the output format, for example:
 > 
 > 🔗 https://example.com/post/link-to-post
 
-Note: Filter scripts in IFTTT run as “scripts in scripts over scripts,” so special care must be taken with special characters, often requiring escape sequences.
+Note: Filter scripts in IFTTT run as "scripts in scripts over scripts," so special care must be taken with special characters, often requiring escape sequences.
+
+---
+
+## What's New in v3.0.3
+
+- **Multiple domain replacement**: `URL_REPLACE_FROM` now supports array format to replace multiple source domains with a single target domain
+- **Example use case**: Replace both `twitter.com` AND `x.com` URLs with `xcancel.com` in one configuration
+- **Backward compatibility**: Single string format still works exactly as before
+- **Simplified configuration**: No need for complex regex patterns to handle multiple domains
 
 ---
 
@@ -32,8 +41,6 @@ Note: Filter scripts in IFTTT run as “scripts in scripts over scripts,” so s
 - **Enhanced type safety**: Full TypeScript 2.9.2 compatibility with proper type definitions
 - **Improved URL handling**: Automatic protocol fixes for specified domains via `URL_DOMAIN_FIXES`
 - **RSS truncation tracking**: Proper ellipsis handling when RSS content is pre-truncated at input stage
-- **Self-reference handling**: New `PREFIX_SELF_REFERENCE` setting for self-quotes and self-reposts
-- **Improved self-quote detection**: Self-quotes are now properly detected and formatted (no longer skipped)
 
 ---
 
@@ -62,8 +69,8 @@ const SETTINGS: AppSettings = {
   ///////////////////////////////////////////////////////////////////////////
   // URL CONFIGURATION
   ///////////////////////////////////////////////////////////////////////////
-  URL_REPLACE_FROM: "https://x.com/",
-  URL_REPLACE_TO: "https://twitter.com/",
+  URL_REPLACE_FROM: ["https://twitter.com/", "https://x.com/"],
+  URL_REPLACE_TO: "https://xcancel.com/",
   URL_NO_TRIM_DOMAINS: ["youtu.be", "youtube.com"],
   URL_DOMAIN_FIXES: [],
   FORCE_SHOW_ORIGIN_POSTURL: false,
@@ -73,8 +80,8 @@ const SETTINGS: AppSettings = {
   ///////////////////////////////////////////////////////////////////////////
   // OUTPUT FORMATTING & PREFIXES
   ///////////////////////////////////////////////////////////////////////////
-  PREFIX_REPOST: " 𝕏📤 ",
-  PREFIX_QUOTE: " 𝕏📝💬 ",
+  PREFIX_REPOST: " 𝕏🔤 ",
+  PREFIX_QUOTE: " 𝕏🔖💬 ",
   PREFIX_IMAGE_URL: "",
   PREFIX_POST_URL: "\n",
   PREFIX_SELF_REFERENCE: "vlastní post",
@@ -213,56 +220,69 @@ POST_LENGTH_TRIM_STRATEGY: "smart"
 
 **Example:**
 ```javascript
-SMART_TOLERANCE_PERCENT: 12  // Allow 12% tolerance (53 chars for POST_LENGTH=444)
+SMART_TOLERANCE_PERCENT: 12
 ```
-
-**How it works:**
-- With `POST_LENGTH: 444` and `SMART_TOLERANCE_PERCENT: 12`
-- Minimum acceptable length: 391 chars (444 - 12%)
-- If last sentence ends between 391-444 chars, preserve it
-- Otherwise, fall back to word boundary trimming
 
 ---
 
 ### URL CONFIGURATION
 
-#### URL_REPLACE_FROM - string
-Source URL pattern to be replaced. Formerly `POST_SOURCE`.
+#### URL_REPLACE_FROM - string | string[]
+**Updated in v3.0.3**: Now supports both single string and array of strings.
 
-**Example:**
+Original post URL base string(s) to be replaced. Can be:
+- **Single domain** (string): `"https://x.com/"`
+- **Multiple domains** (array): `["https://x.com/", "https://twitter.com/"]`
+
+When using array format, all specified domains will be replaced with `URL_REPLACE_TO`.
+
+**Examples:**
 ```javascript
+// Single domain (backward compatible)
 URL_REPLACE_FROM: "https://x.com/"
+
+// Multiple domains (NEW in v3.0.3)
+URL_REPLACE_FROM: ["https://x.com/", "https://twitter.com/"]
+
+// Replace both twitter.com and x.com with xcancel.com
+URL_REPLACE_FROM: ["https://twitter.com/", "https://x.com/"]
+URL_REPLACE_TO: "https://xcancel.com/"
 ```
 
+**Common use cases:**
+- Redirect both official Twitter domains to alternative frontend
+- Handle URL inconsistencies across different IFTTT triggers
+- Centralize domain replacement without complex regex patterns
+
 #### URL_REPLACE_TO - string
-Target URL pattern for replacement. Formerly `POST_TARGET`.
+Target post URL base string for replacement.
 
 **Example:**
 ```javascript
-URL_REPLACE_TO: "https://twitter.com/"
+URL_REPLACE_TO: "https://xcancel.com/"
 ```
 
 #### URL_NO_TRIM_DOMAINS - string[]
-Domains whose URLs should NOT have query strings trimmed, but will still be URL-encoded. Formerly `EXCLUDED_URLS`.
+URLs that should NOT be trimmed by `trimUrlQuery`, but should still be URL-encoded in `processAmpersands`.
 
 **Example:**
 ```javascript
-URL_NO_TRIM_DOMAINS: ["youtu.be", "youtube.com"]
+URL_NO_TRIM_DOMAINS: ["youtu.be", "youtube.com", "example.com"]
 ```
 
 #### URL_DOMAIN_FIXES - string[]
-**New in v3.0.** Domains to automatically prepend with `https://` if protocol is missing. Pre-processed into `CONTENT_REPLACEMENTS` at initialization.
+**New in v3.0.** A list of domains (e.g., "rspkt.cz", "example.com") to add the `https://` protocol to if missing.
 
 **Example:**
 ```javascript
 URL_DOMAIN_FIXES: ["rspkt.cz", "example.com"]
 
-// Input:  "Check out example.com/page"
-// Output: "Check out https://example.com/page"
+// Input:  "rspkt.cz/article"
+// Output: "https://rspkt.cz/article"
 ```
 
 #### FORCE_SHOW_ORIGIN_POSTURL - boolean
-Always include original post URL in output, regardless of other conditions. Formerly `SHOW_ORIGIN_POSTURL_PERM`.
+If true, always include the original post URL in the output, regardless of other conditions. Works in conjunction with other URL display logic.
 
 **Example:**
 ```javascript
@@ -270,7 +290,7 @@ FORCE_SHOW_ORIGIN_POSTURL: false
 ```
 
 #### FORCE_SHOW_FEEDURL - boolean
-Show feed URL instead of post-specific URL when URL processing yields empty string. Formerly `SHOW_FEEDURL_INSTD_POSTURL`.
+If true, show the feed's URL instead of the specific post's URL as a fallback when URL processing yields empty string.
 
 **Example:**
 ```javascript
@@ -278,7 +298,7 @@ FORCE_SHOW_FEEDURL: false
 ```
 
 #### SHOW_IMAGEURL - boolean
-Include image URLs in post output using `PREFIX_IMAGE_URL`.
+If true, include image URLs in the post output (using `PREFIX_IMAGE_URL`).
 
 **Example:**
 ```javascript
@@ -290,72 +310,71 @@ SHOW_IMAGEURL: false
 ### OUTPUT FORMATTING & PREFIXES
 
 #### PREFIX_REPOST - string
-Prefix for repost (retweet) formatting. Formerly `REPOST_SENTENCE`.
+Prefix used when formatting a repost (retweet).
 
 **Example:**
 ```javascript
-PREFIX_REPOST: " 𝕏📤 "
+PREFIX_REPOST: " 𝕏🔤 "
 
-// Output: "Daniel Šnor 𝕏📤 @zpravobot@twitter.com: ..."
+// Output: "Daniel Šnor 𝕏🔤 ..."
 ```
 
 #### PREFIX_QUOTE - string
-Prefix for quote post formatting. Formerly `QUOTE_SENTENCE`.
+Prefix used when formatting a quote post (mainly for Bluesky and Twitter).
 
 **Example:**
 ```javascript
-PREFIX_QUOTE: " 𝕏📝💬 "
+PREFIX_QUOTE: " 𝕏🔖💬 "
 
-// Output: "Daniel Šnor 𝕏📝💬 @otheruser@twitter.com: ..."
+// Output: "Daniel Šnor 𝕏🔖💬 ..."
 ```
 
 #### PREFIX_IMAGE_URL - string
-Prefix added before image URLs when `SHOW_IMAGEURL` is true. Formerly `STATUS_IMAGEURL_SENTENCE`.
+Prefix added before the image URL when included.
 
 **Example:**
 ```javascript
-PREFIX_IMAGE_URL: "🖼️ "
+PREFIX_IMAGE_URL: ""
 
-// Output: "🖼️ https://example.com/image.jpg"
+// Or with emoji:
+PREFIX_IMAGE_URL: "🖼️ "
 ```
 
 #### PREFIX_POST_URL - string
-Prefix/formatting added before the final post URL. Formerly `STATUS_URL_SENTENCE`.
+Prefix/suffix formatting added before/after the final post URL.
 
 **Example:**
 ```javascript
-PREFIX_POST_URL: "\n"          // Simple newline
-PREFIX_POST_URL: "\n\n𝕏 "     // Newline with X emoji
-PREFIX_POST_URL: "\n🔗 "      // Newline with link emoji
-```
+PREFIX_POST_URL: "\n"
 
+// Or with emoji:
+PREFIX_POST_URL: "\n🔗 "
+```
 
 #### PREFIX_SELF_REFERENCE - string
-New in v3.0. Text displayed for self-quotes and self-reposts instead of showing the user's own @username. Provides cleaner, more natural formatting when users quote or repost their own content.
+**New in v3.0.** Text for self-quotes and self-reposts (e.g., "vlastní post", "svůj příspěvek").
+
+Used when the author quotes or reposts their own content, providing cleaner output instead of showing "@username".
 
 **Example:**
 ```javascript
-PREFIX_SELF_REFERENCE: "vlastní post"  // Czech: "own post"
-PREFIX_SELF_REFERENCE: "own post"      // English
-PREFIX_SELF_REFERENCE: "mi post"       // Spanish
+PREFIX_SELF_REFERENCE: "vlastní post"
 
-// Self-quote output: "Daniel Šnor 𝕏📝💬 vlastní post: ..."
-// Self-repost output: "Daniel Šnor 𝕏📤 vlastní post: ..."
+// Output: "Daniel Šnor 𝕏🔤 vlastní post: ..."
+// Instead of: "Daniel Šnor 𝕏🔤 @danielsnor: ..."
 ```
 
-
 #### MENTION_FORMATTING - object
-Platform-specific formatting for @mentions. Supports `prefix`, `suffix`, or `none`.
+Defines how @mentions are formatted per platform (e.g., add suffix, prefix, or do nothing).
 
 **Example:**
 ```javascript
 MENTION_FORMATTING: {
-  "TW": { type: "suffix", value: "@twitter.com" },
-  "BS": { type: "prefix", value: "https://bsky.app/profile/" }
+  "TW": { type: "suffix", value: "@twitter.com" }
 }
 
-// Twitter output: "@username@twitter.com"
-// Bluesky output: "https://bsky.app/profile/username"
+// Input:  "@username"
+// Output: "@username@twitter.com"
 ```
 
 ---
@@ -363,9 +382,13 @@ MENTION_FORMATTING: {
 ### PLATFORM-SPECIFIC SETTINGS
 
 #### POST_FROM - string
-Source platform identifier. Formerly `POST_FROM` (unchanged).
+Identifier for the source platform of the post.
 
-**Options:** `"BS"` (Bluesky), `"RSS"`, `"TW"` (Twitter/X), `"YT"` (YouTube)
+**Options:**
+- `"BS"` - Bluesky
+- `"RSS"` - RSS feed
+- `"TW"` - Twitter/X
+- `"YT"` - YouTube
 
 **Example:**
 ```javascript
@@ -373,13 +396,13 @@ POST_FROM: "TW"
 ```
 
 #### SHOW_REAL_NAME - boolean
-Use author's real name instead of username. Formerly `SHOULD_PREFER_REAL_NAME`.
+If true, use the author's real name (if available) instead of their username in certain contexts (e.g., reposts, quotes).
 
 **Example:**
 ```javascript
 SHOW_REAL_NAME: true
 
-// Output: "Daniel Šnor 𝕏📤 ..." (instead of "@danielsnor 𝕏📤 ...")
+// Output: "Daniel Šnor 𝕏🔤 ..." (instead of "@danielsnor 𝕏🔤 ...")
 ```
 
 #### SHOW_TITLE_AS_CONTENT - boolean
@@ -401,6 +424,65 @@ Maximum input length for RSS feeds before processing (0 = no limit). Formerly `R
 ```javascript
 RSS_MAX_INPUT_CHARS: 1000
 ```
+
+---
+
+## Advanced Platform Detection
+
+### TypeScript Compatibility
+The script is fully compatible with TypeScript 2.9.2 (IFTTT's JavaScript environment). All type definitions are included for better code validation.
+
+### Platform Detection
+The script automatically adapts its behavior based on `POST_FROM`:
+- **TW**: Handles replies, retweets, quotes, self-quotes, self-reposts, t.co URL removal
+- **BS**: Handles quote markers, moves URLs to end
+- **RSS**: Uses content selection logic, applies RSS-specific limits
+- **YT**: Minimal processing, content-focused
+
+### Self-Quote and Self-Repost Handling
+**New in v3.0**: The script now properly detects and formats self-quotes and self-reposts:
+
+- Self-quotes are detected by comparing the quoted user's username with the current author
+- Self-reposts are detected by checking if the RT @username matches the current author
+- Both use `PREFIX_SELF_REFERENCE` instead of displaying the user's @username
+- This provides cleaner, more natural output (e.g., "vlastní post" instead of "@username")
+- The comparison uses `authorUsername` (not display name) to work correctly with `SHOW_REAL_NAME`
+
+---
+
+## Migration Guide from v3.0.0 to v3.0.3
+
+### Updated Settings
+
+#### URL_REPLACE_FROM
+The setting now supports both string and array formats:
+
+**v3.0.0 format (still supported):**
+```javascript
+URL_REPLACE_FROM: "https://x.com/"
+```
+
+**v3.0.3 format (new):**
+```javascript
+URL_REPLACE_FROM: ["https://x.com/", "https://twitter.com/"]
+```
+
+**Migration example:**
+```javascript
+// Before v3.0.3 - needed complex workarounds
+URL_REPLACE_FROM: "https://x.com/"
+// Could only replace one domain at a time
+
+// v3.0.3 - simple array
+URL_REPLACE_FROM: ["https://twitter.com/", "https://x.com/"]
+URL_REPLACE_TO: "https://xcancel.com/"
+// Now replaces both domains with single configuration
+```
+
+### No Breaking Changes
+- All v3.0.0 configurations work without modification in v3.0.3
+- Single string format is fully backward compatible
+- No other settings were changed or renamed
 
 ---
 
@@ -438,126 +520,19 @@ RSS_MAX_INPUT_CHARS: 1000
 
 - `PHRASES_BANNED` and `PHRASES_REQUIRED` now support `FilterRule` objects with regex, AND, and OR logic
 - `CONTENT_REPLACEMENTS` now supports `literal` flag for non-regex patterns
+- `URL_REPLACE_FROM` now supports array format (v3.0.3+)
 
 ### Behavior Changes
 
-- Self-quotes are now detected and formatted: In v2.0, self-quotes were excluded. In v3.0, they are properly detected and formatted with `PREFIX_SELF_REFERENCE` instead of the user's @username.
-- Self-reposts always allowed: The `REPOST_ALLOWED` setting now only affects external reposts. Self-reposts are always processed and formatted with `PREFIX_SELF_REFERENCE`.
-- Improved quote tweet URL selection: Quote tweets now prefer `entryUrl` (the user's own tweet) over `imageUrl` (the quoted tweet) for the final URL.
-- RSS truncation tracking: When RSS content is truncated at input stage (`RSS_MAX_INPUT_CHARS`), this is now tracked throughout processing to ensure proper ellipsis handling.
-
----
-
-## Advanced Examples
-
-### Complex Filtering Setup
-
-```javascript
-PHRASES_BANNED: [
-  // Block any post with "advertisement"
-  "advertisement",
-  
-  // Block posts with sale percentages (e.g., "50% off")
-  { type: "regex", pattern: "\\d+%\\s*off", flags: "i" },
-  
-  // Block posts that have BOTH "limited" AND "offer"
-  { type: "and", keywords: ["limited", "offer"] },
-  
-  // Block posts with any commercial trigger words
-  { type: "or", keywords: ["buy now", "shop", "deal", "discount"] }
-],
-
-PHRASES_REQUIRED: [
-  // Require at least one tech-related keyword
-  { type: "or", keywords: ["technology", "software", "hardware", "coding"] }
-]
-```
-
-### Platform-Specific Configurations
-
-```javascript
-// For Twitter bot
-POST_FROM: "TW",
-SHOW_REAL_NAME: true,
-URL_REPLACE_FROM: "https://x.com/",
-URL_REPLACE_TO: "https://twitter.com/",
-MENTION_FORMATTING: {
-  "TW": { type: "suffix", value: "@twitter.com" }
-},
-PREFIX_REPOST: " 𝕏📤 ",
-PREFIX_QUOTE: " 𝕏📝💬 ",
-PREFIX_SELF_REFERENCE: "vlastní post",
-
-// For Bluesky bot
-POST_FROM: "BS",
-SHOW_REAL_NAME: true,
-MENTION_FORMATTING: {
-  "BS": { type: "none", value: "" }
-},
-PREFIX_REPOST: " 🦋📤 ",
-PREFIX_QUOTE: " 🦋📝💬 ",
-PREFIX_SELF_REFERENCE: "own post"
-```
-
-### Self-Reference Examples
-```javascript
-// Czech configuration
-PREFIX_SELF_REFERENCE: "vlastní post"
-// Output for self-quote: "Daniel Šnor 𝕏📝💬 vlastní post: Content here..."
-// Output for self-repost: "Daniel Šnor 𝕏📤 vlastní post: Content here..."
-
-// English configuration
-PREFIX_SELF_REFERENCE: "own post"
-// Output for self-quote: "Daniel Šnor 𝕏📝💬 own post: Content here..."
-// Output for self-repost: "Daniel Šnor 𝕏📤 own post: Content here..."
-
-// Minimal configuration (just emoji)
-PREFIX_SELF_REFERENCE: "↩️"
-// Output for self-quote: "Daniel Šnor 𝕏📝💬 ↩️: Content here..."
-```
-
----
-
-## Performance Notes
-
-v3.0 includes significant performance optimizations:
-
-- **Lazy character map**: HTML entities are only processed when detected in content
-- **Unified caching**: Regex patterns and escaped strings share a FIFO cache (max 500 entries)
-- **Early exits**: Filter checks return immediately when conditions are met
-- **Pre-compilation**: `URL_DOMAIN_FIXES` patterns are compiled at initialization
-- **Optimized skip checks**: Reduced redundant checks with early returns
-
----
-
-## Additional Notes
-
-### Special Characters and Escape Sequences
-When configuring strings, ensure special characters are properly escaped to avoid processing errors in IFTTT. The script handles most common cases automatically.
-
-### TypeScript Compatibility
-The script is fully compatible with TypeScript 2.9.2 (IFTTT's JavaScript environment). All type definitions are included for better code validation.
-
-### Platform Detection
-The script automatically adapts its behavior based on `POST_FROM`:
-- **TW**: Handles replies, retweets, quotes, self-quotes, self-reposts, t.co URL removal
-- **BS**: Handles quote markers, moves URLs to end
-- **RSS**: Uses content selection logic, applies RSS-specific limits
-- **YT**: Minimal processing, content-focused
-
-### Self-Quote and Self-Repost Handling
-**New in v3.0**: The script now properly detects and formats self-quotes and self-reposts:
-
-Self-quotes are detected by comparing the quoted user's username with the current author
-Self-reposts are detected by checking if the RT @username matches the current author
-Both use `PREFIX_SELF_REFERENCE` instead of displaying the user's @username
-This provides cleaner, more natural output (e.g., "vlastní post" instead of "@username")
-The comparison uses `authorUsername` (not display name) to work correctly with `SHOW_REAL_NAME`
+- **Self-quotes are now detected and formatted**: In v2.0, self-quotes were excluded. In v3.0, they are properly detected and formatted with `PREFIX_SELF_REFERENCE` instead of the user's @username.
+- **Self-reposts always allowed**: The `REPOST_ALLOWED` setting now only affects external reposts. Self-reposts are always processed and formatted with `PREFIX_SELF_REFERENCE`.
+- **Improved quote tweet URL selection**: Quote tweets now prefer `entryUrl` (the user's own tweet) over `imageUrl` (the quoted tweet) for the final URL.
+- **RSS truncation tracking**: When RSS content is truncated at input stage (`RSS_MAX_INPUT_CHARS`), this is now tracked throughout processing to ensure proper ellipsis handling.
 
 ---
 
 ## That's All, Folks
 
-This documentation covers all configuration options for IFTTT filter script v3.0.0. For questions or support, contact via social networks or About.me page.
+This documentation covers all configuration options for IFTTT filter script v3.0.3. For questions or support, contact via social networks or About.me page.
 
-(Updated: October 2025)
+(Updated: November 2025)
