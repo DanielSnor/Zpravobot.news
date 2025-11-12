@@ -66,7 +66,7 @@ const SETTINGS: AppSettings = {
   URL_REPLACE_TO: "https://xcancel.com/", // E.g., "" | `https://twitter.com/` | `https://x.com/`. Target URL pattern for replacement.
   URL_NO_TRIM_DOMAINS: [
     "facebook.com", "www.facebook.com",     // Facebook
-    "instagram.com", "www.instagram.com"    // Instagram
+    "instagram.com", "www.instagram.com",   // Instagram
     "youtu.be", "youtube.com",              // Youtube
     "bit.ly",                               // Bit.ly shortened links
     "goo.gl",                               // Google shortened links
@@ -120,7 +120,7 @@ const entryAuthor = Twitter.newTweetFromSearch.UserName || "";
 // Title of the feed (can be username, feed name, etc.). For Twitter, this is often UserName.
 const feedTitle = Twitter.newTweetFromSearch.UserName || "";
 // URL of the source feed/profile. For Twitter, this is constructed from the username.
-const feedUrl = "https://twitter.com/" + (Twitter.newTweetFromSearch.UserName || "");
+const feedUrl = "https://x.com/" + (Twitter.newTweetFromSearch.UserName || "");
 
 ///////////////////////////////////////////////////////////////////////////////
 // IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.0.3 - Chaos Never Dies Day, Nov 9th, 2025
