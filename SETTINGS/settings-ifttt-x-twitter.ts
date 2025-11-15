@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 𝕏 webhook settings - Chaos Never Dies Day, Nov 9th, 2025 rev
+// IFTTT 𝕏 webhook settings - Button Day rev, Nov 16th, 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Configuration settings for the IFTTT webhook filter.
@@ -39,6 +39,7 @@ interface AppSettings {
   MENTION_FORMATTING: { [platform: string]: { type: "prefix" | "suffix" | "none";value: string } }; // Defines how @mentions are formatted per platform (e.g., add suffix, prefix, or do nothing).
 
   // PLATFORM-SPECIFIC SETTINGS ////////////////////////////////////////////////
+  MOVE_URL_TO_END: boolean; // If true, move URLs from the beginning of content to the end (useful for RSS feeds where URLs appear at the start).
   POST_FROM: "BS" | "RSS" | "TW" | "YT"; // Identifier for the source platform of the post (e.g., Bluesky, RSS feed, Twitter, YouTube).
   SHOW_REAL_NAME: boolean; // If true, use the author's real name (if available) instead of their username in certain contexts (e.g., reposts, quotes).
   SHOW_TITLE_AS_CONTENT: boolean; // If true, prioritize entryTitle over entryContent as the main post content.
@@ -62,11 +63,11 @@ const SETTINGS: AppSettings = {
   SMART_TOLERANCE_PERCENT: 12, // 5-25, recommended 12. Percentage of POST_LENGTH that can be wasted to preserve sentence boundaries in smart trim mode.
 
   // URL CONFIGURATION //////////////////////////////////////////////////////////
-  URL_REPLACE_FROM: ["https://twitter.com/", "https://x.com/"], // E.g., "" | "https://x.com/" | ["https://x.com/", "https://twitter.com/"]. Source URL pattern(s) to be replaced. Can be string or array.
-  URL_REPLACE_TO: "https://xcancel.com/", // E.g., "" | `https://twitter.com/` | `https://x.com/`. Target URL pattern for replacement.
+  URL_REPLACE_FROM: ["https://x.com/", "https://twitter.com/"], // E.g., "" | "https://x.com/" | ["https://x.com/", "https://twitter.com/"]. Source URL pattern(s) to be replaced. Can be string or array.
+  URL_REPLACE_TO: "https://xcancel.com/", // E.g., "" | `https://x.com/` | `https://xcancel.com/`. Target URL pattern for replacement.
   URL_NO_TRIM_DOMAINS: [
     "facebook.com", "www.facebook.com",     // Facebook
-    "instagram.com", "www.instagram.com"    // Instagram
+    "instagram.com", "www.instagram.com",   // Instagram
     "youtu.be", "youtube.com",              // Youtube
     "bit.ly",                               // Bit.ly shortened links
     "goo.gl",                               // Google shortened links
@@ -85,10 +86,11 @@ const SETTINGS: AppSettings = {
   PREFIX_QUOTE: " 𝕏📝💬 ", // E.g., "" | "comments post from" | "🦋📝💬" | "𝕏📝💬". Formatting for quoted content.
   PREFIX_IMAGE_URL: "", // E.g., "" | "🖼️ ". Prefix for image URLs if shown.
   PREFIX_POST_URL: "\n", // E.g., "" | "\n\n🦋 " | "\n\n𝕏 " | "\n🔗 ". Formatting for post URLs.
-  PREFIX_SELF_REFERENCE: "vlastní post", // Text for self-quotes a self-reposts
-  MENTION_FORMATTING: { "TW": { type: "suffix", value: "@twitter.com" }, }, // Suffix added to Twitter mentions for clarity or linking.
+  PREFIX_SELF_REFERENCE: "svůj post", // Text for self-quotes a self-reposts
+  MENTION_FORMATTING: { "TW": { type: "prefix", value: "https://xcancel.com/" }, }, // Prefix added to Twitter mentions for clarity or linking.
 
   // PLATFORM-SPECIFIC SETTINGS ////////////////////////////////////////////////
+  MOVE_URL_TO_END: false, // true | false. Move URLs from beginning to end of content (useful for RSS feeds).
   POST_FROM: "TW", // "BS" | "RSS" | "TW" | "YT". Set this based on the IFTTT trigger used for the applet.
   SHOW_REAL_NAME: true, // true | false. Prefer real name over username if available.
   SHOW_TITLE_AS_CONTENT: false, // true | false. Use title as content if set to true.

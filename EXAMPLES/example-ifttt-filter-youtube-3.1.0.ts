@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 📙📗📘 webhook settings - Chaos Never Dies Day, Nov 9th, 2025 rev
+// IFTTT 📺 webhook settings - Button Day rev, Nov 16th, 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Configuration settings for the IFTTT webhook filter.
@@ -39,6 +39,7 @@ interface AppSettings {
   MENTION_FORMATTING: { [platform: string]: { type: "prefix" | "suffix" | "none";value: string } }; // Defines how @mentions are formatted per platform (e.g., add suffix, prefix, or do nothing).
 
   // PLATFORM-SPECIFIC SETTINGS ////////////////////////////////////////////////
+  MOVE_URL_TO_END: boolean; // If true, move URLs from the beginning of content to the end (useful for RSS feeds where URLs appear at the start).
   POST_FROM: "BS" | "RSS" | "TW" | "YT"; // Identifier for the source platform of the post (e.g., Bluesky, RSS feed, Twitter, YouTube).
   SHOW_REAL_NAME: boolean; // If true, use the author's real name (if available) instead of their username in certain contexts (e.g., reposts, quotes).
   SHOW_TITLE_AS_CONTENT: boolean; // If true, prioritize entryTitle over entryContent as the main post content.
@@ -56,11 +57,8 @@ const SETTINGS: AppSettings = {
   
   // CONTENT PROCESSING & TRANSFORMATION ////////////////////////////////////////
   AMPERSAND_SAFE_CHAR: `⅋`, // Replacement for & char to prevent encoding issues in URLs or text.
-  CONTENT_REPLACEMENTS: [ 
-    { pattern: "^.+?\\s+(Posted|shared|updated status)$", replacement: "", flags: "i", literal: false }, // Removes the FB Posted title
-    { pattern: "(When[^>]+deleted.)", replacement: "", flags: "gim", literal: false }, // Removes the FB deletion message
-  ], 
-  POST_LENGTH: 200, // 0 - 500 chars. Adjust based on target platform's character limit.
+  CONTENT_REPLACEMENTS: [], // E.g.: { pattern: "what", replacement: "by_what", flags: "gi", literal: false }
+  POST_LENGTH: 250, // 0 - 500 chars. Adjust based on target platform's character limit.
   POST_LENGTH_TRIM_STRATEGY: "smart", // "sentence" | "word" | "smart". Try to preserve meaningful content during trimming.
   SMART_TOLERANCE_PERCENT: 12, // 5-25, recommended 12. Percentage of POST_LENGTH that can be wasted to preserve sentence boundaries in smart trim mode.
   
@@ -87,12 +85,13 @@ const SETTINGS: AppSettings = {
   PREFIX_REPOST: "", // E.g., "" | "shares" | "𝕏📤". Formatting prefix for reposts.
   PREFIX_QUOTE: "", // E.g., "" | "comments post from" | "🦋📝💬" | "𝕏📝💬". Formatting for quoted content.
   PREFIX_IMAGE_URL: "", // E.g., "" | "🖼️ ". Prefix for image URLs if shown.
-  PREFIX_POST_URL: "\n", // E.g., "" | "\n\n🦋 " | "\n\n𝕏 " | "\n🔗 ". Formatting for post URLs.
+  PREFIX_POST_URL: "\nYT 📺👇👇👇\n", // E.g., "" | "\n\n🦋 " | "\n\n𝕏 " | "\n🔗 ". Formatting for post URLs.
   PREFIX_SELF_REFERENCE: "", // Text for self-quotes a self-reposts
-  MENTION_FORMATTING: { "RSS": { type: "prefix", value: "https://www.instagram.com/" }, }, // Prefix for Instagram mentions.
+  MENTION_FORMATTING: { "YT": { type: "none", value: "" }, }, // Default behavior if platform-specific rule is missing.
   
   // PLATFORM-SPECIFIC SETTINGS ////////////////////////////////////////////////
-  POST_FROM: "RSS", // "BS" | "RSS" | "TW" | "YT". Set this based on the IFTTT trigger used for the applet.
+  MOVE_URL_TO_END: false, // true | false. Move URLs from beginning to end of content (useful for RSS feeds).
+  POST_FROM: "YT", // "BS" | "RSS" | "TW" | "YT". Set this based on the IFTTT trigger used for the applet.
   SHOW_REAL_NAME: true, // true | false. Prefer real name over username if available.
   SHOW_TITLE_AS_CONTENT: false, // true | false. Use title as content if set to true.
   
@@ -101,7 +100,7 @@ const SETTINGS: AppSettings = {
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘 webhook connector - Chaos Never Dies Day, Nov 9th, 2025 rev
+// IFTTT 📺 webhook connector - Button Day, Nov 16th, 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // This connector processes data from various sources (e.g., RSS, Twitter, Bluesky)
@@ -110,23 +109,23 @@ const SETTINGS: AppSettings = {
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-// Main text content from the source. For BlueSky and RSS, this is often EntryContent (HTML or plain text).
-const entryContent = Feed.newFeedItem.EntryContent || "";
-// Title from the source. For BlueSky and RSS, this is the EntryTitle field.
-const entryTitle = Feed.newFeedItem.EntryTitle || "";
-// URL of the specific post/item. For BlueSky and RSS, this is the direct link to the item.
-const entryUrl = Feed.newFeedItem.EntryUrl || "";
-// URL of the first image/media link found in the post. For BlueSky and RSS, this is EntryImageUrl (might be unreliable).
-const entryImageUrl = Feed.newFeedItem.EntryImageUrl || "";
-// Username of the post author. For BlueSky and RSS, this is the EntryAuthor field.
-const entryAuthor = Feed.newFeedItem.EntryAuthor || "";
-// Title of the feed (can be username, feed name, etc.). For BlueSky and RSS, this is FeedTitle.
-const feedTitle = Feed.newFeedItem.FeedTitle || "";
-// URL of the source feed/profile. For BlueSky and RSS, this is the FeedUrl field.
-const feedUrl = Feed.newFeedItem.FeedUrl || "";
+// Main text content from the source. For YouTube, this is the video description.
+const entryContent = Youtube.newPublicVideoFromSubscriptions.Description || "";
+// Title from the source. For YouTube, this is the video title.
+const entryTitle = Youtube.newPublicVideoFromSubscriptions.Title || "";
+// URL of the specific post/item. For YouTube, this is the direct link to the video.
+const entryUrl = Youtube.newPublicVideoFromSubscriptions.Url || "";
+// URL of the first image/media link found in the post. For YouTube, this is the empty string.
+const entryImageUrl = "";
+// Username of the post author. For YouTube, this is the AuthorName field (channel name).
+const entryAuthor = Youtube.newPublicVideoFromSubscriptions.AuthorName || "";
+// Title of the feed (can be username, feed name, etc.). For YouTube, this is the AuthorName (channel name).
+const feedTitle = Youtube.newPublicVideoFromSubscriptions.Title || "";
+// URL of the source feed/profile. For YouTube, this is the empty string.
+const feedUrl = "";
 
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.0.3 - Chaos Never Dies Day, Nov 9th, 2025
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.1.0 - Button Day, Nov 16th, 2025
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Processes and filters posts from various platforms (Twitter, Bluesky, RSS, YouTube)
@@ -136,7 +135,11 @@ const feedUrl = Feed.newFeedItem.FeedUrl || "";
 ///////////////////////////////////////////////////////////////////////////////
 
 // Filter rule definition for advanced filtering logic
-interface FilterRule { type: "literal" | "regex" | "and" | "or"; pattern ? : string; keywords ? : string[]; flags ? : string; }
+interface FilterRule { type: "literal" | "regex" | "and" | "or" | "not" | "complex"; pattern?: string; keywords?: string[]; flags?: string;
+  rule?: FilterRule;              // NEW: For NOT rule
+  operator?: "and" | "or";        // NEW: For COMPLEX rule
+  rules?: FilterRule[];           // NEW: For COMPLEX rule
+}
 
 // Type definitions for Object.entries (standard augmentation)
 interface ObjectConstructor { entries < T > (o: { [s: string]: T } | ArrayLike < T > ): [string, T][]; }
@@ -145,7 +148,6 @@ interface ObjectConstructor { entries < T > (o: { [s: string]: T } | ArrayLike <
 interface PlatformConfig {
   useParsedText ? : boolean;
   useFeedTitleAuthor ? : boolean;
-  applyMoveUrlToEnd ? : boolean;
   handleReplies ? : boolean;
   handleRetweets ? : boolean;
   handleQuotes ? : boolean;
@@ -159,18 +161,12 @@ interface ProcessedContent { content: string; feedAuthor: string; userNameToSkip
 interface ProcessedStatus { trimmedContent: string; needsEllipsis: boolean; urlToShow: string; }
 
 // Type definitions for string manipulation (standard augmentation)
-interface String {
-  startsWith(searchString: string, position ? : number): boolean;
-  endsWith(searchString: string, endPosition ? : number): boolean;
-}
+interface String { startsWith(searchString: string, position ? : number): boolean; endsWith(searchString: string, endPosition ? : number): boolean; }
 
 // Type definition for Array.from (ES6 feature with runtime detection)
 // IFTTT uses ES5 runtime, but we check for availability at runtime with typeof check
 // Note: Simplified definition using only ArrayLike (no Iterable) for ES5 compatibility
-interface ArrayConstructor {
-  from < T > (arrayLike: ArrayLike < T > ): T[];
-  from < T, U > (arrayLike: ArrayLike < T >, mapfn: (v: T, k: number) => U, thisArg ? : any): U[];
-}
+interface ArrayConstructor { from < T > (arrayLike: ArrayLike < T > ): T[]; from < T, U > (arrayLike: ArrayLike < T >, mapfn: (v: T, k: number) => U, thisArg ? : any): U[]; }
 
 // Type definitions for trim result
 interface TrimResult { content: string; needsEllipsis: boolean; }
@@ -185,8 +181,8 @@ const fifoQueue: string[] = [];
 
 // Define platform specific content cleaning.
 const platformConfigs: { [key: string]: PlatformConfig } = {
-  BS: { useFeedTitleAuthor: true, applyMoveUrlToEnd: true, handleQuotes: true, useGetContent: true },
-  RSS: { useGetContent: true, applyMoveUrlToEnd: true },
+  BS: { useFeedTitleAuthor: true, handleQuotes: true, useGetContent: true },
+  RSS: { useGetContent: true },
   TW: { useParsedText: true, handleReplies: true, handleRetweets: true, handleQuotes: true },
   YT: { useGetContent: true }
 };
@@ -441,10 +437,10 @@ function truncateRssInput(content: string): TruncateRssResult {
 function hasTruncatedUrl(text: any): boolean {
   if (!text || typeof text !== "string") return false;
   
-  // Detection of URLs with ellipsis: "https://domain/…" or "https://domain/…/path…"
+  // Detection of URLs with ellipsis: "https://domain/â€¦" or "https://domain/â€¦/pathâ€¦"
   if (/https?:\/\/[^\s]*\u2026/i.test(text)) return true;
   
-  // Detecting URLs with /… somewhere in the path
+  // Detecting URLs with /â€¦ somewhere in the path
   if (/https?:\/\/[^\s]*\/\u2026/i.test(text)) return true;
   
   return false;
@@ -459,7 +455,7 @@ function removeTruncatedUrl(text: any): string {
   // Removing the complete URL with ellipsis anywhere in it
   result = result.replace(/https?:\/\/[^\s]*\u2026[^\s]*/gi, "\u2026");
   
-  // Removing incomplete URLs without protocol: "www.example.…rest"
+  // Removing incomplete URLs without protocol: "www.example.â€¦rest"
   result = result.replace(/(?:www\.)?[a-zA-Z0-9][a-zA-Z0-9-]*\.[a-zA-Z0-9][^\s]*\u2026[^\s]*/gi, "\u2026");
   
   // Normalization of multiple ellipses
@@ -563,35 +559,56 @@ function isValidImageUrl(str: string): boolean {
   return REGEX_PATTERNS.URL_PROTOCOL.test(str);
 }
 
-/** Checks if string matches FilterRule (literal/regex/AND/OR) */
+/** Checks if string matches FilterRule (literal/regex/AND/OR/NOT/COMPLEX) */
 function matchesFilterRule(str: string, rule: string | FilterRule): boolean {
-  if (!str) return false;
+  if (!str) return false; // An empty input never matches
+  
   const lowerStr = str.toLowerCase();
 
-  if (typeof rule === "string") { return lowerStr.indexOf(rule.toLowerCase()) !== -1; }
+  if (typeof rule === "string") { return lowerStr.indexOf(rule.toLowerCase()) !== -1; } // SIMPLE STRING - case-insensitive substring match
 
-  if (typeof rule !== "object") return false;
+  if (typeof rule !== "object") return false; // OBJECT VALIDATION
 
-  switch (rule.type) {
-    case "literal":
+  switch (rule.type) { // PROCESSING BY RULE TYPE
+    case "literal": // LITERAL: Case-insensitive substring match
       if (!rule.pattern) return false;
       return lowerStr.indexOf(rule.pattern.toLowerCase()) !== -1;
 
-    case "regex":
+    case "regex": // REGEX: Regular expression matching
       if (!rule.pattern) return false;
       try {
         const regex = new RegExp(rule.pattern, rule.flags || "i");
         return regex.test(str);
       } catch (e) { return false; }
-
-    case "and":
+    
+    case "and": // AND: All keywords must be present
       if (!rule.keywords || rule.keywords.length === 0) return false;
       for (var i = 0; i < rule.keywords.length; i++) { if (lowerStr.indexOf(rule.keywords[i].toLowerCase()) === -1) { return false; } }
       return true;
-
-    case "or":
+    
+    case "or": // OR: At least one keyword must be present
       if (!rule.keywords || rule.keywords.length === 0) return false;
-      for (var i = 0; i < rule.keywords.length; i++) { if (lowerStr.indexOf(rule.keywords[i].toLowerCase()) !== -1) { return true; } }
+      for (var i = 0; i < rule.keywords.length; i++) { if (lowerStr.indexOf(rule.keywords[i].toLowerCase()) !== -1) { return true;  } }
+      return false;
+
+    case "not": // NOT: Inverts the result of the nested rule (NEW in v3.1.0)
+      if (!rule.rule) return false;
+      return !matchesFilterRule(str, rule.rule); // We recursively evaluate the nested rule and invert the result.
+    
+    case "complex": // COMPLEX: Combines multiple rules using AND/OR (NEW in v3.1.0)
+      if (!rule.rules || rule.rules.length === 0) return false;
+      if (!rule.operator) return false;
+
+      if (rule.operator === "and") { // AND logic: All nested rules must be satisfied
+        for (var i = 0; i < rule.rules.length; i++) { if (!matchesFilterRule(str, rule.rules[i])) { return false; } }
+        return true;
+      }
+      
+      if (rule.operator === "or") { // OR logic: At least one nested rule must be satisfied
+        for (var i = 0; i < rule.rules.length; i++) { if (matchesFilterRule(str, rule.rules[i])) { return true; } }
+        return false;
+      }
+
       return false;
   }
 
@@ -648,10 +665,7 @@ function decodeNumericEntities(str: string): string {
     // For characters outside BMP (> 0xFFFF), use surrogate pair
     if (codePoint > 0xFFFF) {
       codePoint -= 0x10000;
-      return String.fromCharCode(
-        0xD800 + (codePoint >> 10),
-        0xDC00 + (codePoint & 0x3FF)
-      );
+      return String.fromCharCode( 0xD800 + (codePoint >> 10), 0xDC00 + (codePoint & 0x3FF) );
     }
     
     return String.fromCharCode(codePoint);
@@ -1049,13 +1063,13 @@ function processContent(rawContent: any, title: string, feedTitle: string, image
 
   content = normalizeHtml(content);
 
-  // This ensures ellipsis (…) is detected before URL encoding turns it into %E2%80%A6
+  // This ensures ellipsis (â€¦) is detected before URL encoding turns it into %E2%80%A6
   if (hasTruncatedUrl(content)) { content = removeTruncatedUrl(content); }
 
   content = processAmpersands(content);
 
   // Platform-specific content modifications
-  if (config.applyMoveUrlToEnd) { content = moveUrlToEnd(content); }
+  if (SETTINGS.MOVE_URL_TO_END) { content = moveUrlToEnd(content); }
 
   if (config.handleReplies) { content = removeReplyPrefix(content); }
 
@@ -1103,7 +1117,8 @@ function processStatus(content: string, entryUrl: string, imageUrl: string, titl
     const hasImage = isValidImageUrl(imageUrl);
 
     if (showUrl || contentHasUrl) {
-      if (isQuoteTweet) {
+      // When FORCE_SHOW_ORIGIN_POSTURL or it is a quote tweet, always use entryUrl
+      if (SETTINGS.FORCE_SHOW_ORIGIN_POSTURL || isQuoteTweet) {
         urlToShow = entryUrl;
       } else {
         urlToShow = contentHasUrl ? (hasImage ? imageUrl : entryUrl) : (hasImage ? imageUrl : entryUrl);
@@ -1120,7 +1135,7 @@ function processStatus(content: string, entryUrl: string, imageUrl: string, titl
   return { trimmedContent: trimmedContent, needsEllipsis: needsEllipsis, urlToShow: urlToShow };
 }
 
-/** Centralized URL processing: URL_REPLACE_FROM→TO (supports array), trim/encode via processAmpersands */
+/** Centralized URL processing: URL_REPLACE_FROMâ†’TO (supports array), trim/encode via processAmpersands */
 function processUrl(url: string): string {
   url = safeString(url);
   if (!url || url === "(none)") return "";
@@ -1166,13 +1181,9 @@ function shouldSkip(content: any, title: string, url: string, imageUrl: string, 
   
   if (isRepost(title) && !isSelfRepost(title, author) && !SETTINGS.REPOST_ALLOWED) { return { skip: true, reason: "External repost not allowed" }; }
 
-  if (SETTINGS.PHRASES_BANNED && SETTINGS.PHRASES_BANNED.length > 0) {
-    if (hasBannedContent(title) || hasBannedContent(content) || hasBannedContent(url) || hasBannedContent(imageUrl)) { return { skip: true, reason: "Contains banned phrases" }; } 
-  }
+  if (SETTINGS.PHRASES_BANNED && SETTINGS.PHRASES_BANNED.length > 0) { if (hasBannedContent(title) || hasBannedContent(content) || hasBannedContent(url) || hasBannedContent(imageUrl)) { return { skip: true, reason: "Contains banned phrases" }; } }
 
-  if (SETTINGS.PHRASES_REQUIRED && SETTINGS.PHRASES_REQUIRED.length > 0) {
-    if (!hasRequiredKeywords(title) && !hasRequiredKeywords(content)) { return { skip: true, reason: "Missing mandatory keywords" }; }
-  }
+  if (SETTINGS.PHRASES_REQUIRED && SETTINGS.PHRASES_REQUIRED.length > 0) { if (!hasRequiredKeywords(title) && !hasRequiredKeywords(content)) { return { skip: true, reason: "Missing mandatory keywords" }; } }
 
   if (isReply(title) || isReply(content)) { return { skip: true, reason: "Reply post (starts with @username)" }; }
 

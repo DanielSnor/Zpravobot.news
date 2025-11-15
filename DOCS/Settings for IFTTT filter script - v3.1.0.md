@@ -1,6 +1,6 @@
-# Settings for IFTTT filter script v3.0.3
+# Settings for IFTTT filter script v3.1.0
 
-This document explains all settings possibilities for the IFTTT filter script version 3.0.3 (Chaos Never Dies Day, Nov 9th, 2025 rev), including default behaviors and examples of use. The script is designed to process posts from various platforms (e.g., Twitter, Bluesky, RSS, YouTube) and publish them via an IFTTT webhook.
+This document explains all settings possibilities for the IFTTT filter script version 3.1.0 (Button Day, Nov 16th, 2025 rev), including default behaviors and examples of use. The script is designed to process posts from various platforms (e.g., Twitter, Bluesky, RSS, YouTube) and publish them via an IFTTT webhook.
 
 The output is composed of several parts:
 
@@ -19,6 +19,16 @@ These parts are combined in the output format, for example:
 > 🔗 https://example.com/post/link-to-post
 
 Note: Filter scripts in IFTTT run as "scripts in scripts over scripts," so special care must be taken with special characters, often requiring escape sequences.
+
+---
+
+## What's New in v3.1.0
+
+- **Advanced NOT/COMPLEX filtering rules**: New `FilterRule` types enabling sophisticated logical combinations:
+- `not`: Negates any filter rule (string, regex, and, or, or even nested complex rules)
+- `complex`: Combines multiple rules using AND/OR operators for multi-level filtering logic
+- **MOVE_URL_TO_END setting**: Migrated from platform-specific hardcoded behavior to user-configurable setting. Allows users to control whether URLs at the beginning of content should be moved to the end (useful for RSS feeds).
+- **Enhanced FORCE_SHOW_ORIGIN_POSTURL**: Now properly handles quote tweets by preferring `entryUrl` (the user's own tweet) over `imageUrl` (the quoted tweet URL).
 
 ---
 
@@ -50,25 +60,19 @@ The Settings for the final script look like the following:
 
 ```javascript
 const SETTINGS: AppSettings = {
-  ///////////////////////////////////////////////////////////////////////////
-  // CONTENT FILTERING & VALIDATION
-  ///////////////////////////////////////////////////////////////////////////
+  // CONTENT FILTERING & VALIDATION /////////////////////////////////////////
   PHRASES_BANNED: [], 
   PHRASES_REQUIRED: [], 
   REPOST_ALLOWED: true,
 
-  ///////////////////////////////////////////////////////////////////////////
-  // CONTENT PROCESSING & TRANSFORMATION
-  ///////////////////////////////////////////////////////////////////////////
+  // CONTENT PROCESSING & TRANSFORMATION ////////////////////////////////////
   AMPERSAND_SAFE_CHAR: `⅋`,
   CONTENT_REPLACEMENTS: [],
   POST_LENGTH: 444,
   POST_LENGTH_TRIM_STRATEGY: "smart",
   SMART_TOLERANCE_PERCENT: 12,
 
-  ///////////////////////////////////////////////////////////////////////////
-  // URL CONFIGURATION
-  ///////////////////////////////////////////////////////////////////////////
+  // URL CONFIGURATION //////////////////////////////////////////////////////
   URL_REPLACE_FROM: ["https://twitter.com/", "https://x.com/"],
   URL_REPLACE_TO: "https://xcancel.com/",
   URL_NO_TRIM_DOMAINS: ["youtu.be", "youtube.com"],
@@ -77,26 +81,21 @@ const SETTINGS: AppSettings = {
   FORCE_SHOW_FEEDURL: false,
   SHOW_IMAGEURL: false,
 
-  ///////////////////////////////////////////////////////////////////////////
-  // OUTPUT FORMATTING & PREFIXES
-  ///////////////////////////////////////////////////////////////////////////
+  // OUTPUT FORMATTING & PREFIXES ///////////////////////////////////////////
   PREFIX_REPOST: " 𝕏🔤 ",
   PREFIX_QUOTE: " 𝕏🔖💬 ",
   PREFIX_IMAGE_URL: "",
   PREFIX_POST_URL: "\n",
-  PREFIX_SELF_REFERENCE: "vlastní post",
+  PREFIX_SELF_REFERENCE: "his post",
   MENTION_FORMATTING: { "TW": { type: "suffix", value: "@twitter.com" } },
 
-  ///////////////////////////////////////////////////////////////////////////
-  // PLATFORM-SPECIFIC SETTINGS
-  ///////////////////////////////////////////////////////////////////////////
+  // PLATFORM-SPECIFIC SETTINGS /////////////////////////////////////////////
+  MOVE_URL_TO_END: false,
   POST_FROM: "TW",
   SHOW_REAL_NAME: true,
   SHOW_TITLE_AS_CONTENT: false,
 
-  ///////////////////////////////////////////////////////////////////////////
-  // RSS-SPECIFIC SETTINGS
-  ///////////////////////////////////////////////////////////////////////////
+  // RSS-SPECIFIC SETTINGS //////////////////////////////////////////////////
   RSS_MAX_INPUT_CHARS: 1000,
 };
 ```
@@ -108,7 +107,7 @@ const SETTINGS: AppSettings = {
 ### CONTENT FILTERING & VALIDATION
 
 #### PHRASES_BANNED - (string | FilterRule)[]
-Advanced filtering system for banned content. Supports simple strings, regex patterns, and logical combinations.
+Advanced filtering system for banned content. Supports simple strings, regex patterns, and logical combinations including NOT and COMPLEX rules (new in v3.1.0).
 
 **Examples:**
 ```javascript
@@ -130,16 +129,121 @@ PHRASES_BANNED: [
   { type: "or", keywords: ["ad", "sponsored", "promo"] }
 ]
 
+// NOT logic - negates any rule (NEW in v3.1.0)
+PHRASES_BANNED: [
+  { type: "not", rule: "breaking news" }  // Block posts that DON'T contain "breaking news"
+]
+
+// NOT with regex (NEW in v3.1.0)
+PHRASES_BANNED: [
+  { type: "not", rule: { type: "regex", pattern: "\\d{4}", flags: "g" } }  // Block posts without any 4-digit numbers
+]
+
+// COMPLEX logic - multi-level combinations (NEW in v3.1.0)
+PHRASES_BANNED: [
+  { 
+    type: "complex",
+    operator: "and",
+    rules: [
+      "advertisement",
+      { type: "or", keywords: ["sale", "discount", "offer"] }
+    ]
+  }
+  // Blocks posts that contain "advertisement" AND (sale OR discount OR offer)
+]
+
+// Advanced COMPLEX example with NOT (NEW in v3.1.0)
+PHRASES_BANNED: [
+  {
+    type: "complex",
+    operator: "and",
+    rules: [
+      { type: "or", keywords: ["click", "here", "link"] },
+      { type: "not", rule: "official" }
+    ]
+  }
+  // Blocks posts with clickbait words but NOT containing "official"
+]
+
 // Mixed approach
 PHRASES_BANNED: [
   "advertisement",
   { type: "regex", pattern: "\\d+% off", flags: "i" },
-  { type: "and", keywords: ["limited", "offer"] }
+  { type: "and", keywords: ["limited", "offer"] },
+  { type: "not", rule: { type: "or", keywords: ["news", "announcement"] } }
 ]
 ```
 
+**Complex combinations of multiple OR and AND operators:**
+```javascript
+// Complex combination of OR and AND rules
+PHRASES_BANNED: [
+  // Block posts containing "sale" OR "discount"
+  { type: "or", keywords: ["sale", "discount"] },
+  
+  // Block posts containing "buy" AND "now" AND "limited" simultaneously
+  { type: "and", keywords: ["buy", "now", "limited"] },
+  
+  // Multiple OR blocks
+  { type: "or", keywords: ["advertisement", "sponsored", "promo"] },
+  { type: "or", keywords: ["spam", "scam", "fake"] },
+  
+  // Multiple AND blocks
+  { type: "and", keywords: ["click", "here", "link"] },
+  { type: "and", keywords: ["free", "gift", "claim"] }
+]
+
+// Advanced combination with regex and logical operators
+PHRASES_BANNED: [
+  // Regex for percentage discounts
+  { type: "regex", pattern: "\\d+%\\s*off", flags: "i" },
+  
+  // OR: Block affiliate or referral links
+  { type: "or", keywords: ["affiliate", "referral", "ref="] },
+  
+  // AND: Block urgent sales messaging
+  { type: "and", keywords: ["limited", "time", "offer"] },
+  { type: "and", keywords: ["act", "now", "expires"] },
+  
+  // Simple string for specific hashtag
+  "#ad"
+]
+
+// Extremely complex example: Multi-layer filtering
+PHRASES_BANNED: [
+  // Layer 1: General spam indicators
+  { type: "or", keywords: ["spam", "scam", "phishing"] },
+  
+  // Layer 2: Commercial combinations
+  { type: "and", keywords: ["buy", "now", "discount"] },
+  { type: "and", keywords: ["limited", "time", "offer", "expires"] },
+  { type: "and", keywords: ["free", "gift", "claim", "here"] },
+  
+  // Layer 3: Affiliate and tracking
+  { type: "or", keywords: ["affiliate", "referral", "tracking"] },
+  { type: "regex", pattern: "\\?ref=|\\?aff=|\\?utm_", flags: "i" },
+  
+  // Layer 4: Clickbait patterns
+  { type: "or", keywords: ["you won't believe", "shocking truth", "doctors hate"] },
+  { type: "regex", pattern: "number \\d+ will (shock|amaze|surprise)", flags: "i" },
+  
+  // Layer 5: Crypto spam
+  { type: "and", keywords: ["crypto", "investment", "guaranteed"] },
+  { type: "and", keywords: ["bitcoin", "profit", "easy"] }
+]
+```
+
+**Logic notes:**
+- Within `PHRASES_BANNED`: If **ANY** rule is satisfied → post is blocked
+- Within `PHRASES_REQUIRED`: **ALL** rules must be satisfied → otherwise post is blocked
+- `AND` operator: All keywords in the array must be present simultaneously
+- `OR` operator: Any keyword from the array is sufficient
+- `NOT` operator (v3.1.0): Negates the result of the inner rule
+- `COMPLEX` operator (v3.1.0): Enables nested AND/OR combinations with multiple rules
+- Regex: Enables complex pattern matching (e.g., "50% off" or "75% discount")
+
 #### PHRASES_REQUIRED - (string | FilterRule)[]
-Mandatory keywords or patterns that must appear in posts. Uses the same FilterRule system as `PHRASES_BANNED`.
+Mandatory keywords or patterns that must appear in posts. Uses the same FilterRule system as `PHRASES_BANNED`, including NOT and COMPLEX rules (new in v3.1.0).
 
 **Examples:**
 ```javascript
@@ -149,6 +253,44 @@ PHRASES_REQUIRED: ["news", "update"]
 // Complex requirement
 PHRASES_REQUIRED: [
   { type: "or", keywords: ["breaking", "urgent", "alert"] }
+]
+
+// NOT logic - post must NOT contain certain phrases (NEW in v3.1.0)
+PHRASES_REQUIRED: [
+  { type: "not", rule: "spam" }  // Only allow posts that don't contain "spam"
+]
+
+// COMPLEX logic example (NEW in v3.1.0)
+PHRASES_REQUIRED: [
+  {
+    type: "complex",
+    operator: "or",
+    rules: [
+      { type: "and", keywords: ["tech", "innovation"] },
+      { type: "and", keywords: ["science", "research"] }
+    ]
+  }
+  // Requires: (tech AND innovation) OR (science AND research)
+]
+
+// Combination for PHRASES_REQUIRED
+PHRASES_REQUIRED: [
+  // At least one of these terms must be present
+  { type: "or", keywords: ["news", "breaking", "update", "announcement"] },
+  
+  // AND at least one of these technical terms
+  { type: "or", keywords: ["technology", "AI", "software", "hardware"] }
+  
+  // Note: All rules in PHRASES_REQUIRED must be satisfied (AND between rules)
+]
+
+// Practical example: Tech news feed filter
+PHRASES_REQUIRED: [
+  // Must contain at least one tech category keyword
+  { type: "or", keywords: ["technology", "tech", "software", "hardware", "AI", "machine learning"] },
+  
+  // AND must contain at least one news indicator
+  { type: "or", keywords: ["announces", "launches", "releases", "unveils", "introduces"] }
 ]
 ```
 
@@ -282,11 +424,17 @@ URL_DOMAIN_FIXES: ["rspkt.cz", "example.com"]
 ```
 
 #### FORCE_SHOW_ORIGIN_POSTURL - boolean
+**Enhanced in v3.1.0**: Now properly handles quote tweets by preferring `entryUrl` (the user's own tweet) over `imageUrl` (the quoted tweet URL).
+
 If true, always include the original post URL in the output, regardless of other conditions. Works in conjunction with other URL display logic.
 
 **Example:**
 ```javascript
 FORCE_SHOW_ORIGIN_POSTURL: false
+
+// When set to true on quote tweets:
+// v3.0.3: Might show the quoted tweet's URL (imageUrl)
+// v3.1.0: Always shows the user's own tweet URL (entryUrl) ✓
 ```
 
 #### FORCE_SHOW_FEEDURL - boolean
@@ -381,6 +529,30 @@ MENTION_FORMATTING: {
 
 ### PLATFORM-SPECIFIC SETTINGS
 
+#### MOVE_URL_TO_END - boolean
+**New in v3.1.0.** If true, move URLs from the beginning of content to the end.
+
+Previously, this behavior was hardcoded for Bluesky platform. Now it's a user-configurable setting that can be applied to any platform. This is particularly useful for RSS feeds where URLs often appear at the start of content.
+
+**Migration from v3.0.x:**
+- In v3.0.x: Automatic for `POST_FROM: "BS"` (hardcoded)
+- In v3.1.0: User-controlled via `MOVE_URL_TO_END` setting
+
+**Example:**
+```javascript
+MOVE_URL_TO_END: false  // Default - URLs stay in original position
+MOVE_URL_TO_END: true   // URLs at content start are moved to end
+
+// Example transformation when true:
+// Before: "https://example.com/article This is the content text"
+// After:  "This is the content text https://example.com/article"
+```
+
+**Common use cases:**
+- RSS feeds with URLs at the start
+- Bluesky posts (replaces old hardcoded behavior)
+- Any platform where URL-first format is undesirable
+
 #### POST_FROM - string
 Identifier for the source platform of the post.
 
@@ -435,7 +607,7 @@ The script is fully compatible with TypeScript 2.9.2 (IFTTT's JavaScript environ
 ### Platform Detection
 The script automatically adapts its behavior based on `POST_FROM`:
 - **TW**: Handles replies, retweets, quotes, self-quotes, self-reposts, t.co URL removal
-- **BS**: Handles quote markers, moves URLs to end
+- **BS**: Handles quote markers (URL positioning now controlled by `MOVE_URL_TO_END`)
 - **RSS**: Uses content selection logic, applies RSS-specific limits
 - **YT**: Minimal processing, content-focused
 
@@ -447,6 +619,106 @@ The script automatically adapts its behavior based on `POST_FROM`:
 - Both use `PREFIX_SELF_REFERENCE` instead of displaying the user's @username
 - This provides cleaner, more natural output (e.g., "vlastní post" instead of "@username")
 - The comparison uses `authorUsername` (not display name) to work correctly with `SHOW_REAL_NAME`
+
+---
+
+## Migration Guide from v3.0.3 to v3.1.0
+
+### New Settings
+
+#### MOVE_URL_TO_END
+**NEW in v3.1.0** - Now a user-configurable setting instead of hardcoded behavior.
+
+**Before v3.1.0:**
+```javascript
+// Bluesky automatically moved URLs to end (hardcoded)
+POST_FROM: "BS"  // URLs automatically moved to end
+```
+
+**v3.1.0:**
+```javascript
+// Now explicitly configurable for any platform
+POST_FROM: "BS"
+MOVE_URL_TO_END: true  // User controls URL positioning
+
+// Or use with other platforms
+POST_FROM: "RSS"
+MOVE_URL_TO_END: true  // Also works for RSS feeds
+```
+
+**Default values:**
+- `MOVE_URL_TO_END: false` - URLs stay in original position (default for TW, RSS, YT)
+- For Bluesky users: Add `MOVE_URL_TO_END: true` to maintain v3.0.x behavior
+
+### Enhanced Settings
+
+#### FORCE_SHOW_ORIGIN_POSTURL
+**Enhanced in v3.1.0** - Better quote tweet handling.
+
+**Change:**
+- Now properly prefers `entryUrl` (user's own tweet) over `imageUrl` (quoted tweet) for quote tweets
+- Ensures correct URL is always shown when this setting is enabled
+
+**Example:**
+```javascript
+// v3.0.3 behavior on quote tweets
+FORCE_SHOW_ORIGIN_POSTURL: true
+// Might show: https://twitter.com/other_user/status/123 (quoted tweet)
+
+// v3.1.0 behavior on quote tweets
+FORCE_SHOW_ORIGIN_POSTURL: true
+// Always shows: https://twitter.com/your_user/status/456 (your tweet) ✓
+```
+
+### New Filter Rules
+
+#### NOT and COMPLEX Rules
+**NEW in v3.1.0** - Advanced logical filtering.
+
+**NOT rule example:**
+```javascript
+// Block posts that DON'T contain "breaking"
+PHRASES_BANNED: [
+  { type: "not", rule: "breaking" }
+]
+
+// Block posts WITHOUT any 4-digit number
+PHRASES_BANNED: [
+  { type: "not", rule: { type: "regex", pattern: "\\d{4}", flags: "g" } }
+]
+```
+
+**COMPLEX rule example:**
+```javascript
+// Requires: (tech AND innovation) OR (science AND research)
+PHRASES_REQUIRED: [
+  {
+    type: "complex",
+    operator: "or",
+    rules: [
+      { type: "and", keywords: ["tech", "innovation"] },
+      { type: "and", keywords: ["science", "research"] }
+    ]
+  }
+]
+
+// Block: clickbait words but NOT from official sources
+PHRASES_BANNED: [
+  {
+    type: "complex",
+    operator: "and",
+    rules: [
+      { type: "or", keywords: ["click", "here", "link"] },
+      { type: "not", rule: "official" }
+    ]
+  }
+]
+```
+
+### No Breaking Changes
+- All v3.0.3 configurations work without modification in v3.1.0
+- Bluesky users should add `MOVE_URL_TO_END: true` to maintain previous behavior
+- New filter rules (NOT, COMPLEX) are optional enhancements
 
 ---
 
@@ -516,23 +788,31 @@ URL_REPLACE_TO: "https://xcancel.com/"
 - `URL_DOMAIN_FIXES` - Automatic protocol addition
 - New trim strategy: `"smart"` for `POST_LENGTH_TRIM_STRATEGY`
 
+### New Settings in v3.1.0
+
+- `MOVE_URL_TO_END` - User-configurable URL positioning (previously hardcoded for Bluesky)
+- `NOT` filter rule type - Negation logic for filtering
+- `COMPLEX` filter rule type - Multi-level logical combinations
+
 ### Enhanced Settings
 
-- `PHRASES_BANNED` and `PHRASES_REQUIRED` now support `FilterRule` objects with regex, AND, and OR logic
+- `PHRASES_BANNED` and `PHRASES_REQUIRED` now support `FilterRule` objects with regex, AND, OR, NOT, and COMPLEX logic
 - `CONTENT_REPLACEMENTS` now supports `literal` flag for non-regex patterns
 - `URL_REPLACE_FROM` now supports array format (v3.0.3+)
+- `FORCE_SHOW_ORIGIN_POSTURL` now properly handles quote tweets (v3.1.0+)
 
 ### Behavior Changes
 
 - **Self-quotes are now detected and formatted**: In v2.0, self-quotes were excluded. In v3.0, they are properly detected and formatted with `PREFIX_SELF_REFERENCE` instead of the user's @username.
 - **Self-reposts always allowed**: The `REPOST_ALLOWED` setting now only affects external reposts. Self-reposts are always processed and formatted with `PREFIX_SELF_REFERENCE`.
-- **Improved quote tweet URL selection**: Quote tweets now prefer `entryUrl` (the user's own tweet) over `imageUrl` (the quoted tweet) for the final URL.
+- **Improved quote tweet URL selection**: Quote tweets now prefer `entryUrl` (the user's own tweet) over `imageUrl` (the quoted tweet) for the final URL (v3.1.0+).
 - **RSS truncation tracking**: When RSS content is truncated at input stage (`RSS_MAX_INPUT_CHARS`), this is now tracked throughout processing to ensure proper ellipsis handling.
+- **URL positioning now configurable**: Bluesky's automatic "move URL to end" is now a user setting `MOVE_URL_TO_END` (v3.1.0+).
 
 ---
 
 ## That's All, Folks
 
-This documentation covers all configuration options for IFTTT filter script v3.0.3. For questions or support, contact via social networks or About.me page.
+This documentation covers all configuration options for IFTTT filter script v3.1.0. For questions or support, contact via social networks or About.me page.
 
 (Updated: November 2025)

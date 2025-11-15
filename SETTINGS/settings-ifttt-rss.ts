@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 📙📗📘 webhook settings - Chaos Never Dies Day, Nov 9th, 2025 rev
+// IFTTT 📙📗📘 webhook settings - Button Day rev, Nov 16th, 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Configuration settings for the IFTTT webhook filter.
@@ -39,6 +39,7 @@ interface AppSettings {
   MENTION_FORMATTING: { [platform: string]: { type: "prefix" | "suffix" | "none";value: string } }; // Defines how @mentions are formatted per platform (e.g., add suffix, prefix, or do nothing).
 
   // PLATFORM-SPECIFIC SETTINGS ////////////////////////////////////////////////
+  MOVE_URL_TO_END: boolean; // If true, move URLs from the beginning of content to the end (useful for RSS feeds where URLs appear at the start).
   POST_FROM: "BS" | "RSS" | "TW" | "YT"; // Identifier for the source platform of the post (e.g., Bluesky, RSS feed, Twitter, YouTube).
   SHOW_REAL_NAME: boolean; // If true, use the author's real name (if available) instead of their username in certain contexts (e.g., reposts, quotes).
   SHOW_TITLE_AS_CONTENT: boolean; // If true, prioritize entryTitle over entryContent as the main post content.
@@ -66,7 +67,7 @@ const SETTINGS: AppSettings = {
   URL_REPLACE_TO: "", // E.g., "" | `https://twitter.com/` | `https://x.com/`. Target URL pattern for replacement.
   URL_NO_TRIM_DOMAINS: [
     "facebook.com", "www.facebook.com",     // Facebook
-    "instagram.com", "www.instagram.com"    // Instagram
+    "instagram.com", "www.instagram.com",   // Instagram
     "youtu.be", "youtube.com",              // Youtube
     "bit.ly",                               // Bit.ly shortened links
     "goo.gl",                               // Google shortened links
@@ -89,6 +90,7 @@ const SETTINGS: AppSettings = {
   MENTION_FORMATTING: { "RSS": { type: "suffix", value: "@twitter.com" }, }, // Default behavior if platform-specific rule is missing.
   
   // PLATFORM-SPECIFIC SETTINGS ////////////////////////////////////////////////
+  MOVE_URL_TO_END: false, // true | false. Move URLs from beginning to end of content (useful for RSS feeds).
   POST_FROM: "RSS", // "BS" | "RSS" | "TW" | "YT". Set this based on the IFTTT trigger used for the applet.
   SHOW_REAL_NAME: true, // true | false. Prefer real name over username if available.
   SHOW_TITLE_AS_CONTENT: false, // true | false. Use title as content if set to true.
