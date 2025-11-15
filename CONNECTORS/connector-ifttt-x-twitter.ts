@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// Connector for IFTTT 𝕏 webhook - Chaos Never Dies Day, Nov 9th, 2025 rev
+// Connector for IFTTT 𝕏 webhook - Button Day rev, Nov 16th, 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // This connector processes data from various sources (e.g., RSS, Twitter, Bluesky)
@@ -21,4 +21,4 @@ const entryAuthor = Twitter.newTweetFromSearch.UserName || "";
 // Title of the feed (can be username, feed name, etc.). For Twitter, this is often UserName.
 const feedTitle = Twitter.newTweetFromSearch.UserName || "";
 // URL of the source feed/profile. For Twitter, this is constructed from the username.
-const feedUrl = "https://twitter.com/" + (Twitter.newTweetFromSearch.UserName || "");
+const feedUrl = "https://x.com/" + (Twitter.newTweetFromSearch.UserName || "");
