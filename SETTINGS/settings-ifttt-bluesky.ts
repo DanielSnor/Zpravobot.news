@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋 webhook settings - Chaos Never Dies Day, Nov 9th, 2025 rev
+// IFTTT 🦋 webhook settings - Button Day rev, Nov 16th, 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Configuration settings for the IFTTT webhook filter.
@@ -39,6 +39,7 @@ interface AppSettings {
   MENTION_FORMATTING: { [platform: string]: { type: "prefix" | "suffix" | "none";value: string } }; // Defines how @mentions are formatted per platform (e.g., add suffix, prefix, or do nothing).
 
   // PLATFORM-SPECIFIC SETTINGS ////////////////////////////////////////////////
+  MOVE_URL_TO_END: boolean; // If true, move URLs from the beginning of content to the end (useful for RSS feeds where URLs appear at the start).
   POST_FROM: "BS" | "RSS" | "TW" | "YT"; // Identifier for the source platform of the post (e.g., Bluesky, RSS feed, Twitter, YouTube).
   SHOW_REAL_NAME: boolean; // If true, use the author's real name (if available) instead of their username in certain contexts (e.g., reposts, quotes).
   SHOW_TITLE_AS_CONTENT: boolean; // If true, prioritize entryTitle over entryContent as the main post content.
@@ -50,36 +51,36 @@ interface AppSettings {
 // Application settings configuration
 const SETTINGS: AppSettings = {
   // CONTENT FILTERING & VALIDATION /////////////////////////////////////////////
-  PHRASES_BANNED: [], // E.g., ["advertisement", "discount", "sale"]. Leave empty to disable this filter.
-  PHRASES_REQUIRED: [], // E.g., ["news", "updates", "important"]. Leave empty to disable mandatory keyword filtering.
+  PHRASES_BANNED: [], // E.g., ["advertisement", { type: "regex", pattern: "\\bsale\\b", flags: "i" }]. Leave empty to disable this filter.
+  PHRASES_REQUIRED: [], // E.g., ["news", { type: "and", keywords: ["tech", "innovation"] }]. Leave empty to disable mandatory keyword filtering.
   REPOST_ALLOWED: true, // true | false. Determines if reposts are processed or skipped.
-  
+
   // CONTENT PROCESSING & TRANSFORMATION ////////////////////////////////////////
   AMPERSAND_SAFE_CHAR: `⅋`, // Replacement for & char to prevent encoding issues in URLs or text.
   CONTENT_REPLACEMENTS: [], // E.g.: { pattern: "what", replacement: "by_what", flags: "gi", literal: false }
   POST_LENGTH: 333, // 0 - 500 chars. Adjust based on target platform's character limit.
   POST_LENGTH_TRIM_STRATEGY: "smart", // "sentence" | "word" | "smart". Try to preserve meaningful content during trimming.
   SMART_TOLERANCE_PERCENT: 12, // 5-25, recommended 12. Percentage of POST_LENGTH that can be wasted to preserve sentence boundaries in smart trim mode.
-  
+
   // URL CONFIGURATION //////////////////////////////////////////////////////////
-  URL_REPLACE_FROM: "", // E.g., "" | `https://twitter.com/` | `https://x.com/`. Source URL pattern to be replaced.
-  URL_REPLACE_TO: "", // E.g., "" | `https://twitter.com/` | `https://x.com/`. Target URL pattern for replacement.
+  URL_REPLACE_FROM: "", // E.g., "" | "https://x.com/" | ["https://x.com/", "https://twitter.com/"]. Source URL pattern(s) to be replaced. Can be string or array.
+  URL_REPLACE_TO: "", // E.g., "" | `https://x.com/` | `https://xcancel.com/`. Target URL pattern for replacement.
   URL_NO_TRIM_DOMAINS: [
-    "facebook.com", "www.facebook.com",     // Facebook
-    "instagram.com", "www.instagram.com"    // Instagram
-    "youtu.be", "youtube.com",              // Youtube
-    "bit.ly",                               // Bit.ly shortened links
-    "goo.gl",                               // Google shortened links
-    "ift.tt",                               // IFTTT shortened links
-    "ow.ly",                                // Hootsuite shortened links
-    "t.co",                                 // Twitter shortened links
-    "tinyurl.com",                          // TinyURL shortened links
+    "facebook.com", "www.facebook.com", // Facebook
+    "instagram.com", "www.instagram.com", // Instagram
+    "youtu.be", "youtube.com", // Youtube
+    "bit.ly", // Bit.ly shortened links
+    "goo.gl", // Google shortened links
+    "ift.tt", // IFTTT shortened links
+    "ow.ly", // Hootsuite shortened links
+    "t.co", // Twitter shortened links
+    "tinyurl.com", // TinyURL shortened links
   ], // URLs in this list are excluded from trimming but still encoded.  
   URL_DOMAIN_FIXES: [], // Domains that are automatically prefixed with https:// if the protocol is missing.
   FORCE_SHOW_ORIGIN_POSTURL: true, // true | false. Always show original post URL (works with other URL display logic).
   FORCE_SHOW_FEEDURL: false, // true | false. Use feed URL as fallback instead of post-specific URL when URL processing fails.
   SHOW_IMAGEURL: false, // true | false. Include image URLs in output if available.
-  
+
   // OUTPUT FORMATTING & PREFIXES ///////////////////////////////////////////////
   PREFIX_REPOST: "", // E.g., "" | "shares" | "𝕏📤". Formatting prefix for reposts.
   PREFIX_QUOTE: " 🦋📝💬", // E.g., "" | "comments post from" | "🦋📝💬" | "𝕏📝💬". Formatting for quoted content.
@@ -87,12 +88,13 @@ const SETTINGS: AppSettings = {
   PREFIX_POST_URL: "\n", // E.g., "" | "\n\n🦋 " | "\n\n𝕏 " | "\n🔗 ". Formatting for post URLs.
   PREFIX_SELF_REFERENCE: "", // Text for self-quotes a self-reposts
   MENTION_FORMATTING: { "BS": { type: "prefix", value: "https://bsky.app/profile/" }, }, // Prefix added to BlueSky mentions for clarity or linking.
-  
- // PLATFORM-SPECIFIC SETTINGS ////////////////////////////////////////////////
+
+  // PLATFORM-SPECIFIC SETTINGS /////////////////////////////////////////////////
+  MOVE_URL_TO_END: true, // true | false. Move URLs from beginning to end of content (useful for RSS feeds).
   POST_FROM: "BS", // "BS" | "RSS" | "TW" | "YT". Set this based on the IFTTT trigger used for the applet.
   SHOW_REAL_NAME: true, // true | false. Prefer real name over username if available.
   SHOW_TITLE_AS_CONTENT: false, // true | false. Use title as content if set to true.
-  
+
   // RSS-SPECIFIC SETTINGS //////////////////////////////////////////////////////
   RSS_MAX_INPUT_CHARS: 1000, // Limit input to 1000 characters for RSS before HTML processing.
 };

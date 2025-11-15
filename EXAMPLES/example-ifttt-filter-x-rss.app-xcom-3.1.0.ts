@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 𝕏 webhook settings - Nightly Build 20251112
+// IFTTT 📙📗📘 webhook settings - Button Day rev, Nov 16th, 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Configuration settings for the IFTTT webhook filter.
@@ -51,9 +51,9 @@ interface AppSettings {
 // Application settings configuration
 const SETTINGS: AppSettings = {
   // CONTENT FILTERING & VALIDATION /////////////////////////////////////////////
-  PHRASES_BANNED: [], // E.g., ["advertisement", { type: "regex", pattern: "\\bsale\\b", flags: "i" }]. Leave empty to disable this filter.
-  PHRASES_REQUIRED: [], // E.g., ["news", { type: "and", keywords: ["tech", "innovation"] }]. Leave empty to disable mandatory keyword filtering.
-  REPOST_ALLOWED: true, // true | false. Determines if reposts are processed or skipped.
+  PHRASES_BANNED: [], // E.g., ["advertisement", "discount", "sale"]. Leave empty to disable this filter.
+  PHRASES_REQUIRED: [], // E.g., ["news", "updates", "important"]. Leave empty to disable mandatory keyword filtering.
+  REPOST_ALLOWED: true, // true | false. Determines if reposts are processed or skipped.  
 
   // CONTENT PROCESSING & TRANSFORMATION ////////////////////////////////////////
   AMPERSAND_SAFE_CHAR: `⅋`, // Replacement for & char to prevent encoding issues in URLs or text.
@@ -61,7 +61,7 @@ const SETTINGS: AppSettings = {
   POST_LENGTH: 444, // 0 - 500 chars. Adjust based on target platform's character limit.
   POST_LENGTH_TRIM_STRATEGY: "smart", // "sentence" | "word" | "smart". Try to preserve meaningful content during trimming.
   SMART_TOLERANCE_PERCENT: 12, // 5-25, recommended 12. Percentage of POST_LENGTH that can be wasted to preserve sentence boundaries in smart trim mode.
-
+  
   // URL CONFIGURATION //////////////////////////////////////////////////////////
   URL_REPLACE_FROM: ["https://twitter.com/", "https://x.com/"], // E.g., "" | "https://x.com/" | ["https://x.com/", "https://twitter.com/"]. Source URL pattern(s) to be replaced. Can be string or array.
   URL_REPLACE_TO: "https://x.com/", // E.g., "" | `https://x.com/` | `https://xcancel.com/`. Target URL pattern for replacement.
@@ -77,30 +77,30 @@ const SETTINGS: AppSettings = {
     "tinyurl.com",                          // TinyURL shortened links
   ], // URLs in this list are excluded from trimming but still encoded.  
   URL_DOMAIN_FIXES: [], // Domains that are automatically prefixed with https:// if the protocol is missing.
-  FORCE_SHOW_ORIGIN_POSTURL: false, // true | false. Always show original post URL (works with other URL display logic).
+  FORCE_SHOW_ORIGIN_POSTURL: true, // true | false. Always show original post URL (works with other URL display logic).
   FORCE_SHOW_FEEDURL: false, // true | false. Use feed URL as fallback instead of post-specific URL when URL processing fails.
   SHOW_IMAGEURL: false, // true | false. Include image URLs in output if available.
-
+  
   // OUTPUT FORMATTING & PREFIXES ///////////////////////////////////////////////
   PREFIX_REPOST: " 𝕏📤 ", // E.g., "" | "shares" | "𝕏📤". Formatting prefix for reposts.
   PREFIX_QUOTE: " 𝕏📝💬 ", // E.g., "" | "comments post from" | "🦋📝💬" | "𝕏📝💬". Formatting for quoted content.
   PREFIX_IMAGE_URL: "", // E.g., "" | "🖼️ ". Prefix for image URLs if shown.
   PREFIX_POST_URL: "\n", // E.g., "" | "\n\n🦋 " | "\n\n𝕏 " | "\n🔗 ". Formatting for post URLs.
-  PREFIX_SELF_REFERENCE: "vlastní post", // Text for self-quotes a self-reposts
-  MENTION_FORMATTING: { "TW": { type: "prefix", value: "https://x.com/" }, }, // Suffix added to Twitter mentions for clarity or linking.
-
-  // PLATFORM-SPECIFIC SETTINGS /////////////////////////////////////////////////
+  PREFIX_SELF_REFERENCE: "svůj post", // Text for self-quotes a self-reposts
+  MENTION_FORMATTING: { "RSS": { type: "prefix", value: "https://x.com/" }, }, // Prefix added to Xcancel mentions for clarity or linking.
+  
+  // PLATFORM-SPECIFIC SETTINGS ////////////////////////////////////////////////
   MOVE_URL_TO_END: false, // true | false. Move URLs from beginning to end of content (useful for RSS feeds).
-  POST_FROM: "TW", // "BS" | "RSS" | "TW" | "YT". Set this based on the IFTTT trigger used for the applet.
+  POST_FROM: "RSS", // "BS" | "RSS" | "TW" | "YT". Set this based on the IFTTT trigger used for the applet.
   SHOW_REAL_NAME: true, // true | false. Prefer real name over username if available.
   SHOW_TITLE_AS_CONTENT: false, // true | false. Use title as content if set to true.
-
+  
   // RSS-SPECIFIC SETTINGS //////////////////////////////////////////////////////
   RSS_MAX_INPUT_CHARS: 1000, // Limit input to 1000 characters for RSS before HTML processing.
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 𝕏 webhook connector - Chaos Never Dies Day, Nov 9th, 2025 rev
+// IFTTT 🦋📙📗📘 webhook connector - Button Day, Nov 16th, 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // This connector processes data from various sources (e.g., RSS, Twitter, Bluesky)
@@ -109,23 +109,23 @@ const SETTINGS: AppSettings = {
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-// Main text content from the source. For Twitter, this is often TweetEmbedCode (HTML embed code).
-const entryContent = Twitter.newTweetFromSearch.TweetEmbedCode || "";
-// Title from the source. For Twitter, this is clean content without HTML (Text field).
-const entryTitle = Twitter.newTweetFromSearch.Text || "";
-// URL of the specific post/item. For Twitter, this is the direct link to the tweet.
-const entryUrl = Twitter.newTweetFromSearch.LinkToTweet || "";
-// URL of the first image/media link found in the post. For Twitter, this is FirstLinkUrl.
-const entryImageUrl = Twitter.newTweetFromSearch.FirstLinkUrl || "";
-// Username of the post author. For Twitter, this is the UserName field.
-const entryAuthor = Twitter.newTweetFromSearch.UserName || "";
-// Title of the feed (can be username, feed name, etc.). For Twitter, this is often UserName.
-const feedTitle = Twitter.newTweetFromSearch.UserName || "";
-// URL of the source feed/profile. For Twitter, this is constructed from the username.
-const feedUrl = "https://x.com/" + (Twitter.newTweetFromSearch.UserName || "");
+// Main text content from the source. For BlueSky and RSS, this is often EntryContent (HTML or plain text).
+const entryContent = Feed.newFeedItem.EntryContent || "";
+// Title from the source. For BlueSky and RSS, this is the EntryTitle field.
+const entryTitle = Feed.newFeedItem.EntryTitle || "";
+// URL of the specific post/item. For BlueSky and RSS, this is the direct link to the item.
+const entryUrl = Feed.newFeedItem.EntryUrl || "";
+// URL of the first image/media link found in the post. For BlueSky and RSS, this is EntryImageUrl (might be unreliable).
+const entryImageUrl = Feed.newFeedItem.EntryImageUrl || "";
+// Username of the post author. For BlueSky and RSS, this is the EntryAuthor field.
+const entryAuthor = Feed.newFeedItem.EntryAuthor || "";
+// Title of the feed (can be username, feed name, etc.). For BlueSky and RSS, this is FeedTitle.
+const feedTitle = Feed.newFeedItem.FeedTitle || "";
+// URL of the source feed/profile. For BlueSky and RSS, this is the FeedUrl field.
+const feedUrl = Feed.newFeedItem.FeedUrl || "";
 
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.1.0 - Nightly Build 20251112
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.1.0 - Button Day, Nov 16th, 2025
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Processes and filters posts from various platforms (Twitter, Bluesky, RSS, YouTube)
