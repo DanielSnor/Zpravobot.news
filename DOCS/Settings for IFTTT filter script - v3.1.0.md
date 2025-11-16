@@ -24,10 +24,27 @@ Note: Filter scripts in IFTTT run as "scripts in scripts over scripts," so speci
 
 ## What's New in v3.1.0
 
+- **Unified Filtering System with Regex Support** (merged from v3.2.0): Revolutionary enhancement to filter rules enabling granular content matching across multiple dimensions:
+  - **New filter fields**: `content`, `contentRegex`, `username`, `usernameRegex`, `domain`, `domainRegex`
+  - **Content filtering**: Match literal keywords or regex patterns in post content
+  - **Username filtering**: Filter by author usernames with literal or regex matching
+  - **Domain filtering**: Filter by URL domains with literal or regex patterns
+  - **Flexible combinations**: Mix literal and regex patterns in the same filter
+  - **Full backward compatibility**: Legacy `keywords` syntax still works
+
+- **Anchor Tag HTML Processing** (merged from v3.2.0 hotfix): Fixes RSS feed HTML anchor tag handling:
+  - Properly extracts URLs from `<a href="...">text</a>` tags
+  - Prevents duplicate `https://` protocols (e.g., from `pic.twitter.com`)
+  - Removes anchor link text while preserving URLs
+  - Handles multiple anchor tags correctly
+  - Works seamlessly with `CONTENT_REPLACEMENTS` and `URL_DOMAIN_FIXES`
+
 - **Advanced NOT/COMPLEX filtering rules**: New `FilterRule` types enabling sophisticated logical combinations:
-- `not`: Negates any filter rule (string, regex, and, or, or even nested complex rules)
-- `complex`: Combines multiple rules using AND/OR operators for multi-level filtering logic
+  - `not`: Negates any filter rule (string, regex, and, or, or even nested complex rules)
+  - `complex`: Combines multiple rules using AND/OR operators for multi-level filtering logic
+
 - **MOVE_URL_TO_END setting**: Migrated from platform-specific hardcoded behavior to user-configurable setting. Allows users to control whether URLs at the beginning of content should be moved to the end (useful for RSS feeds).
+
 - **Enhanced FORCE_SHOW_ORIGIN_POSTURL**: Now properly handles quote tweets by preferring `entryUrl` (the user's own tweet) over `imageUrl` (the quoted tweet URL).
 
 ---
@@ -174,8 +191,213 @@ PHRASES_BANNED: [
 ]
 ```
 
-**Complex combinations of multiple OR and AND operators:**
+---
+
+### Unified Filtering System (NEW in v3.1.0)
+
+The unified filtering system extends filter rules with powerful new fields for matching content, usernames, and domains. These can be used in `PHRASES_BANNED` and `PHRASES_REQUIRED`.
+
+#### New FilterRule Fields
+
+Each filter rule can now include these optional fields:
+
+- **content**: `string[]` - Array of literal strings to match in post content (OR logic)
+- **contentRegex**: `string[]` - Array of regex patterns to match in content (OR logic)  
+- **username**: `string[]` - Array of literal usernames to match (OR logic)
+- **usernameRegex**: `string[]` - Array of regex patterns for usernames (OR logic)
+- **domain**: `string[]` - Array of literal domains to match in URLs (OR logic)
+- **domainRegex**: `string[]` - Array of regex patterns for domains (OR logic)
+
+#### OR Filter with Unified Fields
+
+OR filters pass if **ANY** condition is met:
+
 ```javascript
+// OR: Content matching (literal)
+PHRASES_REQUIRED: [
+  {
+    type: "or",
+    content: ["breaking", "urgent", "alert"]
+  }
+  // Requires at least one of these keywords
+]
+
+// OR: Content matching (regex)
+PHRASES_REQUIRED: [
+  {
+    type: "or",
+    contentRegex: ["\\b(AI|ML)\\b", "machine\\s+learning", "neural\\s+network"]
+  }
+  // Matches if content contains AI, ML, machine learning, or neural network
+]
+
+// OR: Username matching (literal)
+PHRASES_REQUIRED: [
+  {
+    type: "or",
+    username: ["@techcrunch", "@verge", "@wired"]
+  }
+  // Only posts from these users
+]
+
+// OR: Username matching (regex)
+PHRASES_REQUIRED: [
+  {
+    type: "or",
+    usernameRegex: ["^@news", "^@media", "bot$"]
+  }
+  // Usernames starting with @news or @media, or ending with bot
+]
+
+// OR: Mixed content and username
+PHRASES_REQUIRED: [
+  {
+    type: "or",
+    content: ["technology", "science"],
+    username: ["@techcrunch", "@verge"]
+  }
+  // Pass if content has technology/science OR from techcrunch/verge
+]
+```
+
+#### AND Filter with Unified Fields
+
+AND filters pass only if **ALL** conditions are met:
+
+```javascript
+// AND: Domain + keyword
+PHRASES_REQUIRED: [
+  {
+    type: "and",
+    domain: ["github.com"],
+    content: ["release"]
+  }
+  // Requires BOTH github.com domain AND "release" keyword
+]
+
+// AND: Domain regex + protocol
+PHRASES_REQUIRED: [
+  {
+    type: "and",
+    domainRegex: ["\\.(com|org|net)", "https://"]
+  }
+  // Requires https:// AND .com/.org/.net TLD
+]
+
+// AND: Content + username
+PHRASES_REQUIRED: [
+  {
+    type: "and",
+    content: ["AI", "research"],
+    username: ["@scientist"]
+  }
+  // Requires ALL: content has "AI" AND "research" AND from @scientist
+]
+```
+
+#### NOT Filter with Unified Fields
+
+NOT filters **reject** posts that match:
+
+```javascript
+// NOT: Block spam domains (literal)
+PHRASES_BANNED: [
+  {
+    type: "not",
+    domain: ["spam.com", "ads.example.com", "malicious.net"]
+  }
+  // Block posts from these domains
+]
+
+// NOT: Block URL shorteners (regex)
+PHRASES_BANNED: [
+  {
+    type: "not",
+    domainRegex: ["bit\\.ly", "tinyurl", "shortener"]
+  }
+  // Block bit.ly, tinyurl, and other shorteners
+]
+
+// NOT: Block low-quality sources
+PHRASES_BANNED: [
+  {
+    type: "not",
+    usernameRegex: ["spam", "bot", "fake"]
+  }
+  // Block usernames containing spam, bot, or fake
+]
+```
+
+#### Complex Unified Filtering Examples
+
+```javascript
+// Complex: GitHub releases only
+PHRASES_REQUIRED: [
+  {
+    type: "and",
+    domain: ["github.com"],
+    contentRegex: ["\\bv?\\d+\\.\\d+\\.\\d+\\b"]  // Version numbers
+  }
+  // Requires github.com AND version number pattern
+]
+
+// Complex: Trusted tech news only
+PHRASES_REQUIRED: [
+  {
+    type: "or",
+    username: ["@techcrunch", "@verge", "@arstechnica"],
+    domain: ["techcrunch.com", "theverge.com", "arstechnica.com"]
+  },
+  {
+    type: "and",
+    content: ["tech", "news"],
+    domainRegex: ["https://"]  // Require secure HTTPS
+  }
+]
+
+// Complex: Block spam but allow official accounts
+PHRASES_BANNED: [
+  {
+    type: "and",
+    contentRegex: ["buy\\s+now", "limited\\s+offer", "act\\s+fast"],
+    username: ["^(?!@official)"]  // Negative lookahead: NOT @official
+  }
+  // Block promotional language UNLESS from @official
+]
+
+// Complex: Multi-layer content filtering
+PHRASES_REQUIRED: [
+  {
+    type: "or",
+    contentRegex: [
+      "\\b(AI|ML|GPT)\\b",              // AI terms
+      "machine\\s+learning",             // ML phrase
+      "neural\\s+network"                // NN phrase
+    ]
+  },
+  {
+    type: "and",
+    domainRegex: ["https://", "\\.(com|org|edu)"],  // Secure + trusted TLD
+    usernameRegex: ["^@(?!spam|bot)"]               // Not spam/bot users
+  }
+]
+```
+
+#### Backward Compatibility
+
+Legacy `keywords` syntax still works and is equivalent to `content`:
+
+```javascript
+// LEGACY (still works):
+PHRASES_REQUIRED: [
+  { type: "or", keywords: ["AI", "ML"] }
+]
+
+// EQUIVALENT NEW SYNTAX:
+PHRASES_REQUIRED: [
+  { type: "or", content: ["AI", "ML"] }
+]
+```
 // Complex combination of OR and AND rules
 PHRASES_BANNED: [
   // Block posts containing "sale" OR "discount"
@@ -336,7 +558,64 @@ CONTENT_REPLACEMENTS: [
 ]
 ```
 
-#### POST_LENGTH - number
+**Note on Anchor Tag HTML Processing (NEW in v3.1.0):**
+
+The script now intelligently handles HTML anchor tags in RSS feeds and other content sources. This feature works automatically and requires no configuration, but works particularly well with `CONTENT_REPLACEMENTS`:
+
+```javascript
+// Example: RSS feed with anchor tag
+// Input: 'Article text. <a href="https://t.co/abc123">pic.twitter.com/xyz789</a>'
+
+CONTENT_REPLACEMENTS: [
+  // Remove t.co shortened URLs
+  { pattern: "https?:\\/\\/t\\.co\\/[a-zA-Z0-9]+", replacement: "", flags: "g" },
+  // Remove pic.twitter.com references
+  { pattern: "pic\\.twitter\\.com\\/[a-zA-Z0-9]+", replacement: "", flags: "g" }
+]
+
+// Result: 'Article text.'
+// The script extracts the href URL, then CONTENT_REPLACEMENTS removes it
+```
+
+**How Anchor Tag Processing Works:**
+
+1. **Extracts URLs from href**: `<a href="https://example.com">text</a>` → `https://example.com`
+2. **Removes link text**: The text between tags is removed to avoid duplication
+3. **Handles edge cases**:
+   - Empty href: `<a href="">text</a>` → `text` (keeps text, no URL)
+   - No text: `<a href="URL"></a>` → `URL` (keeps URL only)
+   - Multiple anchors: Each is processed independently
+   - Nested HTML: `<a href="URL"><strong>text</strong></a>` → `URL`
+
+4. **Prevents duplicate protocols**: 
+   - Before: `<a href="https://t.co/abc">pic.twitter.com/xyz</a>` might become `https://pic.https://twitter.com/xyz`
+   - After: Correctly becomes just `https://t.co/abc`
+
+5. **Works with other features**:
+   - Combines seamlessly with `CONTENT_REPLACEMENTS` (as shown above)
+   - Respects `URL_DOMAIN_FIXES` for protocol replacement
+   - Compatible with all platforms (RSS, Twitter, Bluesky, YouTube)
+
+**Real-world example (ČT24 RSS feed):**
+
+```javascript
+// Input from RSS feed:
+// 'V katedrále svatého Víta... <a href="https://t.co/xyz">pic.twitter.com/abc</a>'
+
+CONTENT_REPLACEMENTS: [
+  { pattern: "https?:\\/\\/t\\.co\\/[a-zA-Z0-9]+", replacement: "", flags: "g" },
+  { pattern: "pic\\.twitter\\.com\\/[a-zA-Z0-9]+", replacement: "", flags: "g" }
+]
+URL_DOMAIN_FIXES: ["twitter.com|x.com"]
+FORCE_SHOW_ORIGIN_POSTURL: true
+
+// Processing steps:
+// 1. Extract href: https://t.co/xyz
+// 2. Remove anchor text: pic.twitter.com/abc
+// 3. Apply CONTENT_REPLACEMENTS: Remove t.co URL
+// 4. Add post URL from entryUrl: https://x.com/CT24zive/status/123
+// Final output: 'V katedrále svatého Víta...\nhttps://x.com/CT24zive/status/123'
+```
 Maximum post length in characters (0-500). Content exceeding this will be trimmed according to `POST_LENGTH_TRIM_STRATEGY`.
 
 **Example:**
@@ -793,13 +1072,25 @@ URL_REPLACE_TO: "https://xcancel.com/"
 - `MOVE_URL_TO_END` - User-configurable URL positioning (previously hardcoded for Bluesky)
 - `NOT` filter rule type - Negation logic for filtering
 - `COMPLEX` filter rule type - Multi-level logical combinations
+- **Unified Filtering fields** (merged from v3.2.0):
+  - `content` - Array of literal strings for content matching
+  - `contentRegex` - Array of regex patterns for content matching
+  - `username` - Array of literal usernames for filtering
+  - `usernameRegex` - Array of regex patterns for username matching
+  - `domain` - Array of literal domains for URL filtering
+  - `domainRegex` - Array of regex patterns for domain matching
+- **Anchor Tag HTML Processing** (merged from v3.2.0 hotfix) - Automatic handling of `<a href>` tags in RSS and other content
 
 ### Enhanced Settings
 
-- `PHRASES_BANNED` and `PHRASES_REQUIRED` now support `FilterRule` objects with regex, AND, OR, NOT, and COMPLEX logic
+- `PHRASES_BANNED` and `PHRASES_REQUIRED` now support:
+  - `FilterRule` objects with regex, AND, OR, NOT, and COMPLEX logic
+  - **Unified filtering fields**: `content`, `contentRegex`, `username`, `usernameRegex`, `domain`, `domainRegex` (v3.1.0)
+  - Full backward compatibility with legacy `keywords` syntax
 - `CONTENT_REPLACEMENTS` now supports `literal` flag for non-regex patterns
 - `URL_REPLACE_FROM` now supports array format (v3.0.3+)
 - `FORCE_SHOW_ORIGIN_POSTURL` now properly handles quote tweets (v3.1.0+)
+- **Anchor tag HTML processing** now automatic for all content sources (v3.1.0)
 
 ### Behavior Changes
 
