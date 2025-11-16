@@ -66,15 +66,9 @@ const SETTINGS: AppSettings = {
   URL_REPLACE_FROM: "", // E.g., "" | `https://twitter.com/` | `https://x.com/`. Source URL pattern to be replaced.
   URL_REPLACE_TO: "", // E.g., "" | `https://twitter.com/` | `https://x.com/`. Target URL pattern for replacement.
   URL_NO_TRIM_DOMAINS: [
-    "facebook.com", "www.facebook.com",     // Facebook
-    "instagram.com", "www.instagram.com",   // Instagram
-    "youtu.be", "youtube.com",              // Youtube
-    "bit.ly",                               // Bit.ly shortened links
-    "goo.gl",                               // Google shortened links
-    "ift.tt",                               // IFTTT shortened links
-    "ow.ly",                                // Hootsuite shortened links
-    "t.co",                                 // Twitter shortened links
-    "tinyurl.com",                          // TinyURL shortened links
+    "facebook.com", "www.facebook.com", "instagram.com", "www.instagram.com", // Facebook and Instagram
+    "bit.ly", "goo.gl", "ift.tt", "ow.ly", "t.co", "tinyurl.com",             // Bit.ly, Google, IFTTT, Hootsuite, Twitter and TinyURL shortened links
+    "youtu.be", "youtube.com",                                                // Youtube
   ], // URLs in this list are excluded from trimming but still encoded.  
   URL_DOMAIN_FIXES: [], // Domains that are automatically prefixed with https:// if the protocol is missing.
   FORCE_SHOW_ORIGIN_POSTURL: true, // true | false. Always show original post URL (works with other URL display logic).
@@ -136,23 +130,23 @@ const feedUrl = Feed.newFeedItem.FeedUrl || "";
 
 // Filter rule definition for advanced filtering logic
 interface FilterRule { type: "literal" | "regex" | "and" | "or" | "not" | "complex"; pattern?: string; keywords?: string[]; flags?: string;
-  rule?: FilterRule;              // NEW: For NOT rule
-  operator?: "and" | "or";        // NEW: For COMPLEX rule
-  rules?: FilterRule[];           // NEW: For COMPLEX rule
+  rule?: FilterRule;              // For NOT rule (legacy support)
+  operator?: "and" | "or";        // For COMPLEX rule
+  rules?: FilterRule[];           // For COMPLEX rule
+  // NEW in v3.1.0: Unified structure for OR, AND, NOT operations
+  content?: string[];             // Literal content matches
+  contentRegex?: string[];        // Regex content patterns
+  username?: string[];            // Literal username matches
+  usernameRegex?: string[];       // Regex username patterns
+  domain?: string[];              // Literal domain matches
+  domainRegex?: string[];         // Regex domain patterns
 }
 
 // Type definitions for Object.entries (standard augmentation)
 interface ObjectConstructor { entries < T > (o: { [s: string]: T } | ArrayLike < T > ): [string, T][]; }
 
 // Type definitions for Platform configurations
-interface PlatformConfig {
-  useParsedText ? : boolean;
-  useFeedTitleAuthor ? : boolean;
-  handleReplies ? : boolean;
-  handleRetweets ? : boolean;
-  handleQuotes ? : boolean;
-  useGetContent ? : boolean;
-}
+interface PlatformConfig { useParsedText ? : boolean; useFeedTitleAuthor ? : boolean; handleReplies ? : boolean; handleRetweets ? : boolean; handleQuotes ? : boolean; useGetContent ? : boolean; }
 
 // Type definitions for processed content result
 interface ProcessedContent { content: string; feedAuthor: string; userNameToSkip: string; }
@@ -275,6 +269,7 @@ const CHAR_MAP: { [key: string]: string } = {
 
 /** Precompiled regex patterns (TS 2.9.2 compatible) */
 const REGEX_PATTERNS = {
+  ANCHOR_TAG: /<a\s+[^>]*href=["']([^"']+)["'][^>]*>.*?<\/a>/gi,
   BS_QUOTE: /\[contains quote post or other embedded content\]/gi,
   ELLIPSIS_MULTI: /\u2026{2,}/gim,
   ELLIPSIS_NORMALIZE: /\.(\s*\.){2,}/gim,
@@ -330,7 +325,7 @@ const REGEX_PATTERNS = {
   }
 })();
 
-// OPTIMIZED HELPER FUNCTIONS /////////////////////////////////////////////////
+///// OPTIMIZED HELPER FUNCTIONS /////
 
 /** Escapes special chars for regex use */
 function escapeRegExp(str: string): string {
@@ -437,10 +432,10 @@ function truncateRssInput(content: string): TruncateRssResult {
 function hasTruncatedUrl(text: any): boolean {
   if (!text || typeof text !== "string") return false;
   
-  // Detection of URLs with ellipsis: "https://domain/â€¦" or "https://domain/â€¦/pathâ€¦"
+  // Detection of URLs with ellipsis: "https://domain/…" or "https://domain/…/path…"
   if (/https?:\/\/[^\s]*\u2026/i.test(text)) return true;
   
-  // Detecting URLs with /â€¦ somewhere in the path
+  // Detecting URLs with /… somewhere in the path
   if (/https?:\/\/[^\s]*\/\u2026/i.test(text)) return true;
   
   return false;
@@ -455,7 +450,7 @@ function removeTruncatedUrl(text: any): string {
   // Removing the complete URL with ellipsis anywhere in it
   result = result.replace(/https?:\/\/[^\s]*\u2026[^\s]*/gi, "\u2026");
   
-  // Removing incomplete URLs without protocol: "www.example.â€¦rest"
+  // Removing incomplete URLs without protocol: "www.example.…rest"
   result = result.replace(/(?:www\.)?[a-zA-Z0-9][a-zA-Z0-9-]*\.[a-zA-Z0-9][^\s]*\u2026[^\s]*/gi, "\u2026");
   
   // Normalization of multiple ellipses
@@ -559,6 +554,82 @@ function isValidImageUrl(str: string): boolean {
   return REGEX_PATTERNS.URL_PROTOCOL.test(str);
 }
 
+/** Helper: Evaluates unified filter structure (content/username/domain with regex support) - NEW in v3.1.0 */
+function matchesUnifiedFilter(str: string, rule: FilterRule, matchType: "or" | "and" | "not"): boolean {
+  if (!str) return false;
+  const lowerStr = str.toLowerCase();
+  var hasAnyCondition = false;
+  var results: boolean[] = [];
+
+  // Process content filters
+  if (rule.content && rule.content.length > 0) {
+    hasAnyCondition = true;
+    for (var i = 0; i < rule.content.length; i++) { results.push(lowerStr.indexOf(rule.content[i].toLowerCase()) !== -1); }
+  }
+
+  // Process contentRegex filters
+  if (rule.contentRegex && rule.contentRegex.length > 0) {
+    hasAnyCondition = true;
+    for (var i = 0; i < rule.contentRegex.length; i++) {
+      try {
+        const regex = new RegExp(rule.contentRegex[i], "i");
+        results.push(regex.test(str));
+      } catch (e) { results.push(false); }
+    }
+  }
+
+  // Process username filters
+  if (rule.username && rule.username.length > 0) {
+    hasAnyCondition = true;
+    for (var i = 0; i < rule.username.length; i++) { results.push(lowerStr.indexOf(rule.username[i].toLowerCase()) !== -1); }
+  }
+
+  // Process usernameRegex filters
+  if (rule.usernameRegex && rule.usernameRegex.length > 0) {
+    hasAnyCondition = true;
+    for (var i = 0; i < rule.usernameRegex.length; i++) {
+      try {
+        const regex = new RegExp(rule.usernameRegex[i], "i");
+        results.push(regex.test(str));
+      } catch (e) { results.push(false); }
+    }
+  }
+
+  // Process domain filters
+  if (rule.domain && rule.domain.length > 0) {
+    hasAnyCondition = true;
+    for (var i = 0; i < rule.domain.length; i++) { results.push(lowerStr.indexOf(rule.domain[i].toLowerCase()) !== -1); }
+  }
+
+  // Process domainRegex filters
+  if (rule.domainRegex && rule.domainRegex.length > 0) {
+    hasAnyCondition = true;
+    for (var i = 0; i < rule.domainRegex.length; i++) {
+      try {
+        const regex = new RegExp(rule.domainRegex[i], "i");
+        results.push(regex.test(str));
+      } catch (e) { results.push(false); }
+    }
+  }
+
+  // If no conditions were defined, return false
+  if (!hasAnyCondition) return false;
+
+  // Evaluate results based on match type
+  if (matchType === "or") { // OR: At least one condition must be true
+    for (var i = 0; i < results.length; i++) { if (results[i]) return true; }
+    return false;
+  } else if (matchType === "and") { // AND: All conditions must be true
+    for (var i = 0; i < results.length; i++) { if (!results[i]) return false; }
+    return results.length > 0;
+  } else if (matchType === "not") { // NOT: Invert OR logic (none of the conditions should be true)
+    for (var i = 0; i < results.length; i++) { if (results[i]) return false; }
+    return results.length > 0;
+  }
+
+  return false;
+}
+
 /** Checks if string matches FilterRule (literal/regex/AND/OR/NOT/COMPLEX) */
 function matchesFilterRule(str: string, rule: string | FilterRule): boolean {
   if (!str) return false; // An empty input never matches
@@ -581,21 +652,30 @@ function matchesFilterRule(str: string, rule: string | FilterRule): boolean {
         return regex.test(str);
       } catch (e) { return false; }
     
-    case "and": // AND: All keywords must be present
+    case "and": // AND: All keywords must be present (legacy) OR unified structure (NEW in v3.1.0)
+      // NEW v3.1.0: Check for unified structure first
+      if (rule.content || rule.contentRegex || rule.username || rule.usernameRegex || rule.domain || rule.domainRegex) { return matchesUnifiedFilter(str, rule, "and"); }
+      // Legacy: keywords array
       if (!rule.keywords || rule.keywords.length === 0) return false;
       for (var i = 0; i < rule.keywords.length; i++) { if (lowerStr.indexOf(rule.keywords[i].toLowerCase()) === -1) { return false; } }
       return true;
     
-    case "or": // OR: At least one keyword must be present
+    case "or": // OR: At least one keyword must be present (legacy) OR unified structure (NEW in v3.1.0)
+      // NEW v3.1.0: Check for unified structure first
+      if (rule.content || rule.contentRegex || rule.username || rule.usernameRegex || rule.domain || rule.domainRegex) { return matchesUnifiedFilter(str, rule, "or"); }
+      // Legacy: keywords array
       if (!rule.keywords || rule.keywords.length === 0) return false;
       for (var i = 0; i < rule.keywords.length; i++) { if (lowerStr.indexOf(rule.keywords[i].toLowerCase()) !== -1) { return true;  } }
       return false;
 
-    case "not": // NOT: Inverts the result of the nested rule (NEW in v3.1.0)
+    case "not": // NOT: Inverts the result (legacy nested rule OR unified structure - NEW in v3.1.0)
+      // NEW v3.1.0: Check for unified structure first
+      if (rule.content || rule.contentRegex || rule.username || rule.usernameRegex || rule.domain || rule.domainRegex) { return matchesUnifiedFilter(str, rule, "not"); }
+      // Legacy: nested rule
       if (!rule.rule) return false;
       return !matchesFilterRule(str, rule.rule); // We recursively evaluate the nested rule and invert the result.
     
-    case "complex": // COMPLEX: Combines multiple rules using AND/OR (NEW in v3.1.0)
+    case "complex": // COMPLEX: Combines multiple rules using AND/OR (v3.1.0)
       if (!rule.rules || rule.rules.length === 0) return false;
       if (!rule.operator) return false;
 
@@ -615,7 +695,7 @@ function matchesFilterRule(str: string, rule: string | FilterRule): boolean {
   return false;
 }
 
-// TEXT PROCESSING AND NORMALIZATION FUNCTIONS ////////////////////////////////
+///// TEXT PROCESSING AND NORMALIZATION FUNCTIONS /////
 
 /** Applies CONTENT_REPLACEMENTS regex rules */
 function applyContentReplacements(str: string): string {
@@ -691,6 +771,13 @@ function normalizeHtml(str: string): string {
   if (!str) return "";
 
   const TEMP_NEWLINE = "TEMP_NL_MARKER";
+
+  // CRITICAL FIX: Extract href URLs from anchor tags BEFORE general HTML cleanup
+  // This prevents duplicate URL issues like "https://pic.https://twitter.com/..."
+  str = str.replace(REGEX_PATTERNS.ANCHOR_TAG, function(match: string, hrefUrl: string): string {
+    // Replace entire <a href="URL">text</a> with just the URL from href attribute
+    return hrefUrl || "";
+  });
 
   // Single-pass HTML cleanup
   str = str.replace(REGEX_PATTERNS.HTML_CLEANUP, function(match: string, lineBreak: string, tag2: string, headingTag: string, otherTag: string, newline: string): string {
@@ -884,7 +971,7 @@ function trimUrlQuery(url: string): string {
   return qIndex === -1 ? url : url.substring(0, qIndex);
 }
 
-// EXTRACTION FUNCTIONS ///////////////////////////////////////////////////////
+///// EXTRACTION FUNCTIONS /////
 
 /** Extracts real author name from TweetEmbedCode */
 function extractRealName(embedCode: string): string {
@@ -927,7 +1014,7 @@ function extractUsername(url: string): string {
   return match && match[1] ? match[1] : "";
 }
 
-// FORMATTING FUNCTIONS ///////////////////////////////////////////////////////
+///// FORMATTING FUNCTIONS /////
 
 /** Formats @mentions per platform (adds prefix/suffix, skips specified name) */
 function formatMentions(str: string, skipName: string, platform: string): string {
@@ -987,7 +1074,7 @@ function formatRepost(content: string, author: string, authorUsername: string, r
 /** Removes "R to @username: " prefix */
 function removeReplyPrefix(str: string): string { return str.replace(REGEX_PATTERNS.RESPONSE_PREFIX, ""); }
 
-// CONTENT SELECTION AND COMPOSITION FUNCTIONS ////////////////////////////////
+///// CONTENT SELECTION AND COMPOSITION FUNCTIONS /////
 
 /** Composes final content: processContent + formatMentions */
 function composeContent(title: string, author: string, feedTitle: string, rawContent: any, imageUrl: string): string {
@@ -1063,7 +1150,7 @@ function processContent(rawContent: any, title: string, feedTitle: string, image
 
   content = normalizeHtml(content);
 
-  // This ensures ellipsis (â€¦) is detected before URL encoding turns it into %E2%80%A6
+  // This ensures ellipsis (Ã¢â‚¬Â¦) is detected before URL encoding turns it into %E2%80%A6
   if (hasTruncatedUrl(content)) { content = removeTruncatedUrl(content); }
 
   content = processAmpersands(content);
@@ -1135,7 +1222,7 @@ function processStatus(content: string, entryUrl: string, imageUrl: string, titl
   return { trimmedContent: trimmedContent, needsEllipsis: needsEllipsis, urlToShow: urlToShow };
 }
 
-/** Centralized URL processing: URL_REPLACE_FROMâ†’TO (supports array), trim/encode via processAmpersands */
+/** Centralized URL processing: URL_REPLACE_FROMÃ¢â€ â€™TO (supports array), trim/encode via processAmpersands */
 function processUrl(url: string): string {
   url = safeString(url);
   if (!url || url === "(none)") return "";
@@ -1190,7 +1277,7 @@ function shouldSkip(content: any, title: string, url: string, imageUrl: string, 
   return { skip: false, reason: "" };
 }
 
-// MAIN EXECUTION LOGIC ///////////////////////////////////////////////////////
+///// MAIN EXECUTION LOGIC /////
 
 const skipCheck = shouldSkip(entryContent, entryTitle, entryUrl, entryImageUrl, entryAuthor);
 
