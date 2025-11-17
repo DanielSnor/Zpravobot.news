@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 📙📗📘 webhook settings - Button Day rev, Nov 16th, 2025 rev
+// IFTTT 𝕏 webhook settings - Xcancel var, Button Day rev, Nov 16th, 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Configuration settings for the IFTTT webhook filter.
@@ -51,53 +51,50 @@ interface AppSettings {
 // Application settings configuration
 const SETTINGS: AppSettings = {
   // CONTENT FILTERING & VALIDATION /////////////////////////////////////////////
-  PHRASES_BANNED: [], // E.g., ["advertisement", "discount", "sale"]. Leave empty to disable this filter.
-  PHRASES_REQUIRED: [], // E.g., ["news", "updates", "important"]. Leave empty to disable mandatory keyword filtering.
+  PHRASES_BANNED: [], // E.g., ["advertisement", { type: "regex", pattern: "\\bsale\\b", flags: "i" }]. Leave empty to disable this filter.
+  PHRASES_REQUIRED: [], // E.g., ["news", { type: "and", keywords: ["tech", "innovation"] }]. Leave empty to disable mandatory keyword filtering.
   REPOST_ALLOWED: true, // true | false. Determines if reposts are processed or skipped.
-  
+
   // CONTENT PROCESSING & TRANSFORMATION ////////////////////////////////////////
   AMPERSAND_SAFE_CHAR: `⅋`, // Replacement for & char to prevent encoding issues in URLs or text.
-  CONTENT_REPLACEMENTS: [ 
-    { pattern: "^.+?\\s+(Posted|shared|updated status)$", replacement: "", flags: "i", literal: false }, // Removes the FB Posted title
-    { pattern: "(When[^>]+deleted.)", replacement: "", flags: "gim", literal: false }, // Removes the FB deletion message
-  ], // E.g.: { pattern: "what", replacement: "by_what", flags: "gi", literal: false }
-  POST_LENGTH: 200, // 0 - 500 chars. Adjust based on target platform's character limit.
+  CONTENT_REPLACEMENTS: [], // E.g.: { pattern: "what", replacement: "by_what", flags: "gi", literal: false }
+  POST_LENGTH: 444, // 0 - 500 chars. Adjust based on target platform's character limit.
   POST_LENGTH_TRIM_STRATEGY: "smart", // "sentence" | "word" | "smart". Try to preserve meaningful content during trimming.
   SMART_TOLERANCE_PERCENT: 12, // 5-25, recommended 12. Percentage of POST_LENGTH that can be wasted to preserve sentence boundaries in smart trim mode.
-  
+
   // URL CONFIGURATION //////////////////////////////////////////////////////////
-  URL_REPLACE_FROM: "", // E.g., "" | `https://twitter.com/` | `https://x.com/`. Source URL pattern to be replaced.
-  URL_REPLACE_TO: "", // E.g., "" | `https://twitter.com/` | `https://x.com/`. Target URL pattern for replacement.
+  URL_REPLACE_FROM: ["https://x.com/", "https://twitter.com/"], // E.g., "" | "https://x.com/" | ["https://x.com/", "https://twitter.com/"]. Source URL pattern(s) to be replaced. Can be string or array.
+  URL_REPLACE_TO: "https://xcancel.com/", // E.g., "" | `https://x.com/` | `https://xcancel.com/`. Target URL pattern for replacement.
   URL_NO_TRIM_DOMAINS: [
     "facebook.com", "www.facebook.com", "instagram.com", "www.instagram.com", // Facebook and Instagram
     "bit.ly", "goo.gl", "ift.tt", "ow.ly", "t.co", "tinyurl.com",             // Bit.ly, Google, IFTTT, Hootsuite, Twitter and TinyURL shortened links
     "youtu.be", "youtube.com",                                                // Youtube
   ], // URLs in this list are excluded from trimming but still encoded.  
   URL_DOMAIN_FIXES: [], // Domains that are automatically prefixed with https:// if the protocol is missing.
-  FORCE_SHOW_ORIGIN_POSTURL: true, // true | false. Always show original post URL (works with other URL display logic).
+  FORCE_SHOW_ORIGIN_POSTURL: false, // true | false. Always show original post URL (works with other URL display logic).
   FORCE_SHOW_FEEDURL: false, // true | false. Use feed URL as fallback instead of post-specific URL when URL processing fails.
   SHOW_IMAGEURL: false, // true | false. Include image URLs in output if available.
-  
+
   // OUTPUT FORMATTING & PREFIXES ///////////////////////////////////////////////
-  PREFIX_REPOST: "", // E.g., "" | "shares" | "𝕏📤". Formatting prefix for reposts.
-  PREFIX_QUOTE: "", // E.g., "" | "comments post from" | "🦋📝💬" | "𝕏📝💬". Formatting for quoted content.
+  PREFIX_REPOST: " 𝕏📤 ", // E.g., "" | "shares" | "𝕏📤". Formatting prefix for reposts.
+  PREFIX_QUOTE: " 𝕏📝💬 ", // E.g., "" | "comments post from" | "🦋📝💬" | "𝕏📝💬". Formatting for quoted content.
   PREFIX_IMAGE_URL: "", // E.g., "" | "🖼️ ". Prefix for image URLs if shown.
   PREFIX_POST_URL: "\n", // E.g., "" | "\n\n🦋 " | "\n\n𝕏 " | "\n🔗 ". Formatting for post URLs.
-  PREFIX_SELF_REFERENCE: "", // Text for self-quotes a self-reposts
-  MENTION_FORMATTING: { "RSS": { type: "prefix", value: "https://www.instagram.com/" }, }, // Prefix for Instagram mentions.
-  
-  // PLATFORM-SPECIFIC SETTINGS ////////////////////////////////////////////////
-  MOVE_URL_TO_END: true, // true | false. Move URLs from beginning to end of content (useful for RSS feeds).
-  POST_FROM: "RSS", // "BS" | "RSS" | "TW" | "YT". Set this based on the IFTTT trigger used for the applet.
+  PREFIX_SELF_REFERENCE: "svůj post", // Text for self-quotes a self-reposts
+  MENTION_FORMATTING: { "TW": { type: "prefix", value: "https://xcancel.com/" }, }, // Suffix added to Twitter mentions for clarity or linking.
+
+  // PLATFORM-SPECIFIC SETTINGS /////////////////////////////////////////////////
+  MOVE_URL_TO_END: false, // true | false. Move URLs from beginning to end of content (useful for RSS feeds).
+  POST_FROM: "TW", // "BS" | "RSS" | "TW" | "YT". Set this based on the IFTTT trigger used for the applet.
   SHOW_REAL_NAME: true, // true | false. Prefer real name over username if available.
   SHOW_TITLE_AS_CONTENT: false, // true | false. Use title as content if set to true.
-  
+
   // RSS-SPECIFIC SETTINGS //////////////////////////////////////////////////////
   RSS_MAX_INPUT_CHARS: 1000, // Limit input to 1000 characters for RSS before HTML processing.
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘 webhook connector - Button Day, Nov 16th, 2025 rev
+// IFTTT 𝕏 webhook connector - Button Day, Nov 16th, 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // This connector processes data from various sources (e.g., RSS, Twitter, Bluesky)
@@ -106,23 +103,23 @@ const SETTINGS: AppSettings = {
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-// Main text content from the source. For BlueSky and RSS, this is often EntryContent (HTML or plain text).
-const entryContent = Feed.newFeedItem.EntryContent || "";
-// Title from the source. For BlueSky and RSS, this is the EntryTitle field.
-const entryTitle = Feed.newFeedItem.EntryTitle || "";
-// URL of the specific post/item. For BlueSky and RSS, this is the direct link to the item.
-const entryUrl = Feed.newFeedItem.EntryUrl || "";
-// URL of the first image/media link found in the post. For BlueSky and RSS, this is EntryImageUrl (might be unreliable).
-const entryImageUrl = Feed.newFeedItem.EntryImageUrl || "";
-// Username of the post author. For BlueSky and RSS, this is the EntryAuthor field.
-const entryAuthor = Feed.newFeedItem.EntryAuthor || "";
-// Title of the feed (can be username, feed name, etc.). For BlueSky and RSS, this is FeedTitle.
-const feedTitle = Feed.newFeedItem.FeedTitle || "";
-// URL of the source feed/profile. For BlueSky and RSS, this is the FeedUrl field.
-const feedUrl = Feed.newFeedItem.FeedUrl || "";
+// Main text content from the source. For Twitter, this is often TweetEmbedCode (HTML embed code).
+const entryContent = Twitter.newTweetFromSearch.TweetEmbedCode || "";
+// Title from the source. For Twitter, this is clean content without HTML (Text field).
+const entryTitle = Twitter.newTweetFromSearch.Text || "";
+// URL of the specific post/item. For Twitter, this is the direct link to the tweet.
+const entryUrl = Twitter.newTweetFromSearch.LinkToTweet || "";
+// URL of the first image/media link found in the post. For Twitter, this is FirstLinkUrl.
+const entryImageUrl = Twitter.newTweetFromSearch.FirstLinkUrl || "";
+// Username of the post author. For Twitter, this is the UserName field.
+const entryAuthor = Twitter.newTweetFromSearch.UserName || "";
+// Title of the feed (can be username, feed name, etc.). For Twitter, this is often UserName.
+const feedTitle = Twitter.newTweetFromSearch.UserName || "";
+// URL of the source feed/profile. For Twitter, this is constructed from the username.
+const feedUrl = "https://x.com/" + (Twitter.newTweetFromSearch.UserName || "");
 
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.1.0 - Button Day, Nov 16th, 2025
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.1.1 - Take A Hike Day, Nov 17, 2025
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Processes and filters posts from various platforms (Twitter, Bluesky, RSS, YouTube)
@@ -133,16 +130,12 @@ const feedUrl = Feed.newFeedItem.FeedUrl || "";
 
 // Filter rule definition for advanced filtering logic
 interface FilterRule { type: "literal" | "regex" | "and" | "or" | "not" | "complex"; pattern?: string; keywords?: string[]; flags?: string;
-  rule?: FilterRule;              // For NOT rule (legacy support)
-  operator?: "and" | "or";        // For COMPLEX rule
-  rules?: FilterRule[];           // For COMPLEX rule
+  rule?: FilterRule;                                // For NOT rule (legacy support)
+  operator?: "and" | "or"; rules?: FilterRule[];    // For COMPLEX rule
   // NEW in v3.1.0: Unified structure for OR, AND, NOT operations
-  content?: string[];             // Literal content matches
-  contentRegex?: string[];        // Regex content patterns
-  username?: string[];            // Literal username matches
-  usernameRegex?: string[];       // Regex username patterns
-  domain?: string[];              // Literal domain matches
-  domainRegex?: string[];         // Regex domain patterns
+  content?: string[]; contentRegex?: string[];      // Literal content matches and Regex content patterns
+  username?: string[]; usernameRegex?: string[];    // Literal username matches and Regex username patterns
+  domain?: string[]; domainRegex?: string[];        // Literal domain matches and Regex domain patterns
 }
 
 // Type definitions for Object.entries (standard augmentation)
@@ -1109,7 +1102,22 @@ function composeStatus(content: string, entryUrl: string, imageUrl: string, titl
   const status = processStatus(content, entryUrl, imageUrl, title, author, wasRssTruncated);
 
   const resultImageUrl = typeof imageUrl === "string" ? processUrl(imageUrl) : "";
-  const imageStatus = (isValidImageUrl(imageUrl) && SETTINGS.SHOW_IMAGEURL) ? SETTINGS.PREFIX_IMAGE_URL + resultImageUrl : "";
+  
+  // FIX v3.1.1: Separate logic for media vs. external links
+  var imageStatus = "";
+  
+  if (isValidImageUrl(imageUrl)) {
+    const isMedia = imageUrl.endsWith("/photo/1") || imageUrl.endsWith("/video/1");
+    
+    if (isMedia && SETTINGS.SHOW_IMAGEURL) {
+      // Display media URL only if SHOW_IMAGEURL: true
+      imageStatus = SETTINGS.PREFIX_POST_URL + resultImageUrl;
+    } else if (!isMedia) {
+      // Always display external link (not media) - FIX regression from v3.1.0
+      imageStatus = SETTINGS.PREFIX_POST_URL + resultImageUrl;
+    }
+  }
+  
   const finalUrl = (status.urlToShow && typeof status.urlToShow === "string") ? SETTINGS.PREFIX_POST_URL + processUrl(status.urlToShow) : "";
 
   return status.trimmedContent + imageStatus + finalUrl;

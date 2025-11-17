@@ -57,7 +57,10 @@ const SETTINGS: AppSettings = {
   
   // CONTENT PROCESSING & TRANSFORMATION ////////////////////////////////////////
   AMPERSAND_SAFE_CHAR: `⅋`, // Replacement for & char to prevent encoding issues in URLs or text.
-  CONTENT_REPLACEMENTS: [], // E.g.: { pattern: "what", replacement: "by_what", flags: "gi", literal: false }
+  CONTENT_REPLACEMENTS: [ 
+    { pattern: "^.+?\\s+(Posted|shared|updated status)$", replacement: "", flags: "i", literal: false }, // Removes the FB Posted title
+    { pattern: "(When[^>]+deleted.)", replacement: "", flags: "gim", literal: false }, // Removes the FB deletion message
+  ], // E.g.: { pattern: "what", replacement: "by_what", flags: "gi", literal: false }
   POST_LENGTH: 200, // 0 - 500 chars. Adjust based on target platform's character limit.
   POST_LENGTH_TRIM_STRATEGY: "smart", // "sentence" | "word" | "smart". Try to preserve meaningful content during trimming.
   SMART_TOLERANCE_PERCENT: 12, // 5-25, recommended 12. Percentage of POST_LENGTH that can be wasted to preserve sentence boundaries in smart trim mode.
@@ -81,10 +84,10 @@ const SETTINGS: AppSettings = {
   PREFIX_IMAGE_URL: "", // E.g., "" | "🖼️ ". Prefix for image URLs if shown.
   PREFIX_POST_URL: "\n", // E.g., "" | "\n\n🦋 " | "\n\n𝕏 " | "\n🔗 ". Formatting for post URLs.
   PREFIX_SELF_REFERENCE: "", // Text for self-quotes a self-reposts
-  MENTION_FORMATTING: { "RSS": { type: "suffix", value: "@twitter.com" }, }, // Default behavior if platform-specific rule is missing.
+  MENTION_FORMATTING: { "RSS": { type: "prefix", value: "https://www.instagram.com/" }, }, // Prefix for Instagram mentions.
   
   // PLATFORM-SPECIFIC SETTINGS ////////////////////////////////////////////////
-  MOVE_URL_TO_END: false, // true | false. Move URLs from beginning to end of content (useful for RSS feeds).
+  MOVE_URL_TO_END: true, // true | false. Move URLs from beginning to end of content (useful for RSS feeds).
   POST_FROM: "RSS", // "BS" | "RSS" | "TW" | "YT". Set this based on the IFTTT trigger used for the applet.
   SHOW_REAL_NAME: true, // true | false. Prefer real name over username if available.
   SHOW_TITLE_AS_CONTENT: false, // true | false. Use title as content if set to true.
@@ -119,7 +122,7 @@ const feedTitle = Feed.newFeedItem.FeedTitle || "";
 const feedUrl = Feed.newFeedItem.FeedUrl || "";
 
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.1.0 - Button Day, Nov 16th, 2025
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.1.1 - Take A Hike Day, Nov 17, 2025
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Processes and filters posts from various platforms (Twitter, Bluesky, RSS, YouTube)
@@ -130,16 +133,12 @@ const feedUrl = Feed.newFeedItem.FeedUrl || "";
 
 // Filter rule definition for advanced filtering logic
 interface FilterRule { type: "literal" | "regex" | "and" | "or" | "not" | "complex"; pattern?: string; keywords?: string[]; flags?: string;
-  rule?: FilterRule;              // For NOT rule (legacy support)
-  operator?: "and" | "or";        // For COMPLEX rule
-  rules?: FilterRule[];           // For COMPLEX rule
+  rule?: FilterRule;                                // For NOT rule (legacy support)
+  operator?: "and" | "or"; rules?: FilterRule[];    // For COMPLEX rule
   // NEW in v3.1.0: Unified structure for OR, AND, NOT operations
-  content?: string[];             // Literal content matches
-  contentRegex?: string[];        // Regex content patterns
-  username?: string[];            // Literal username matches
-  usernameRegex?: string[];       // Regex username patterns
-  domain?: string[];              // Literal domain matches
-  domainRegex?: string[];         // Regex domain patterns
+  content?: string[]; contentRegex?: string[];      // Literal content matches and Regex content patterns
+  username?: string[]; usernameRegex?: string[];    // Literal username matches and Regex username patterns
+  domain?: string[]; domainRegex?: string[];        // Literal domain matches and Regex domain patterns
 }
 
 // Type definitions for Object.entries (standard augmentation)
@@ -1106,7 +1105,22 @@ function composeStatus(content: string, entryUrl: string, imageUrl: string, titl
   const status = processStatus(content, entryUrl, imageUrl, title, author, wasRssTruncated);
 
   const resultImageUrl = typeof imageUrl === "string" ? processUrl(imageUrl) : "";
-  const imageStatus = (isValidImageUrl(imageUrl) && SETTINGS.SHOW_IMAGEURL) ? SETTINGS.PREFIX_IMAGE_URL + resultImageUrl : "";
+  
+  // FIX v3.1.1: Separate logic for media vs. external links
+  var imageStatus = "";
+  
+  if (isValidImageUrl(imageUrl)) {
+    const isMedia = imageUrl.endsWith("/photo/1") || imageUrl.endsWith("/video/1");
+    
+    if (isMedia && SETTINGS.SHOW_IMAGEURL) {
+      // Display media URL only if SHOW_IMAGEURL: true
+      imageStatus = SETTINGS.PREFIX_POST_URL + resultImageUrl;
+    } else if (!isMedia) {
+      // Always display external link (not media) - FIX regression from v3.1.0
+      imageStatus = SETTINGS.PREFIX_POST_URL + resultImageUrl;
+    }
+  }
+  
   const finalUrl = (status.urlToShow && typeof status.urlToShow === "string") ? SETTINGS.PREFIX_POST_URL + processUrl(status.urlToShow) : "";
 
   return status.trimmedContent + imageStatus + finalUrl;
