@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 𝕏 webhook settings - Xcom ver, Button Day rev, Nov 16th, 2025 rev
+// IFTTT 𝕏 webhook settings - Xcom Button Day rev, Nov 16th, 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Configuration settings for the IFTTT webhook filter.
@@ -119,7 +119,7 @@ const feedTitle = Twitter.newTweetFromSearch.UserName || "";
 const feedUrl = "https://x.com/" + (Twitter.newTweetFromSearch.UserName || "");
 
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.1.1 - Nightly Build 20251117
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.1.2 - Nightly Build 20251118 18:30
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Processes and filters posts from various platforms (Twitter, Bluesky, RSS, YouTube)
@@ -1028,8 +1028,18 @@ function formatMentions(str: string, skipName: string, platform: string): string
 
   try {
     const regex = getCachedRegex(pattern, "gi");
-    return str.replace(regex, function(match: string, username: string): string {
-      if (format.type === "prefix") { return format.value + username; }
+    return str.replace(regex, function(match: string, username: string, offset: number, fullStr: string): string {
+      if (format.type === "prefix") { 
+        var result = format.value + username;
+        // Check if next character after match is start of URL (h from http/https)
+        var nextCharIndex = offset + match.length;
+        if (nextCharIndex < fullStr.length) {
+          var nextChar = fullStr.charAt(nextCharIndex);
+          // If followed by 'h' (likely http/https), add space
+          if (nextChar === 'h' && fullStr.substring(nextCharIndex).match(/^https?:\/\//)) { result += " "; }
+        }
+        return result;
+      }
       return match + format.value;
     });
   } catch (e) { return str; }
@@ -1098,24 +1108,24 @@ function composeContent(title: string, author: string, feedTitle: string, rawCon
 /** Composes final status: trimmed content + optional image URL + optional post URL */
 function composeStatus(content: string, entryUrl: string, imageUrl: string, title: string, author: string, wasRssTruncated: boolean): string {
   content = content || "";
-
   const status = processStatus(content, entryUrl, imageUrl, title, author, wasRssTruncated);
-
   const resultImageUrl = typeof imageUrl === "string" ? processUrl(imageUrl) : "";
   
-  // FIX v3.1.1: Separate logic for media vs. external links
+  // Display imageUrl based on platform and type
   var imageStatus = "";
   
-  if (isValidImageUrl(imageUrl)) {
-    const isMedia = imageUrl.endsWith("/photo/1") || imageUrl.endsWith("/video/1");
-    
-    if (isMedia && SETTINGS.SHOW_IMAGEURL) {
-      // Display media URL only if SHOW_IMAGEURL: true
-      imageStatus = SETTINGS.PREFIX_POST_URL + resultImageUrl;
-    } else if (!isMedia) {
-      // Always display external link (not media) - FIX regression from v3.1.0
-      imageStatus = SETTINGS.PREFIX_POST_URL + resultImageUrl;
+  if (SETTINGS.POST_FROM === "TW") {
+    // Twitter platform
+    if (!isValidImageUrl(imageUrl) && typeof imageUrl === "string" && (imageUrl.endsWith("/photo/1") || imageUrl.endsWith("/video/1"))) {
+      // Twitter media (photo/video) - respect SHOW_IMAGEURL
+      imageStatus = SETTINGS.SHOW_IMAGEURL ? SETTINGS.PREFIX_IMAGE_URL + resultImageUrl : "";
+    } else if (isValidImageUrl(imageUrl)) {
+      // Twitter external link - display with FORCE_SHOW_ORIGIN_POSTURL
+      if (SETTINGS.FORCE_SHOW_ORIGIN_POSTURL) { imageStatus = SETTINGS.PREFIX_POST_URL + resultImageUrl; }
     }
+  } else {
+    // Other platforms (BS, RSS, YT)
+    if (isValidImageUrl(imageUrl)) { imageStatus = SETTINGS.SHOW_IMAGEURL ? SETTINGS.PREFIX_IMAGE_URL + resultImageUrl : ""; }
   }
   
   const finalUrl = (status.urlToShow && typeof status.urlToShow === "string") ? SETTINGS.PREFIX_POST_URL + processUrl(status.urlToShow) : "";
@@ -1215,7 +1225,7 @@ function processStatus(content: string, entryUrl: string, imageUrl: string, titl
     const hasImage = isValidImageUrl(imageUrl);
 
     if (showUrl || contentHasUrl) {
-      // When FORCE_SHOW_ORIGIN_POSTURL or it is a quote tweet, always use entryUrl
+      // FIX v3.1.2: Prioritize entryUrl when FORCE_SHOW_ORIGIN_POSTURL is enabled
       if (SETTINGS.FORCE_SHOW_ORIGIN_POSTURL || isQuoteTweet) {
         urlToShow = entryUrl;
       } else {
@@ -1233,7 +1243,7 @@ function processStatus(content: string, entryUrl: string, imageUrl: string, titl
   return { trimmedContent: trimmedContent, needsEllipsis: needsEllipsis, urlToShow: urlToShow };
 }
 
-/** Centralized URL processing: URL_REPLACE_FROMÃ¢â€ â€™TO (supports array), trim/encode via processAmpersands */
+/** Centralized URL processing utility replaces URL_REPLACE_FROM → URL_REPLACE_TO (supports array), trim/encode via processAmpersands */
 function processUrl(url: string): string {
   url = safeString(url);
   if (!url || url === "(none)") return "";
