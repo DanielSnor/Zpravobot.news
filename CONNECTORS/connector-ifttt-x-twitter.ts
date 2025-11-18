@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// Connector for IFTTT 𝕏 webhook - Button Day rev, Nov 16th, 2025 rev
+// Connector for IFTTT 𝕏 webhook - Apple Cider Day rev, Nov 18th, 2025 rev
 ///////////////////////////////////////////////////////////////////////////////
 //
 // This connector processes data from various sources (e.g., RSS, Twitter, Bluesky)
