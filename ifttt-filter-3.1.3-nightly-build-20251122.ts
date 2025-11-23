@@ -1,5 +1,125 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.1.2 - Apple Cider Day, Nov 18th, 2025
+// IFTTT 𝕏 webhook settings - Xcom Apple Cider Day rev, Nov 18th, 2025 rev
+///////////////////////////////////////////////////////////////////////////////
+//
+// Configuration settings for the IFTTT webhook filter.
+// These settings define content rules, platform-specific behavior, and formatting options.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+// Application settings definition 
+interface AppSettings {
+  ///// CONTENT FILTERING & VALIDATION /////
+  PHRASES_BANNED: (string | FilterRule)[]; // List of phrases or filter rules that indicate banned content. Posts containing these will be skipped. Supports literal strings, regex patterns, and logical combinations (and/or).
+  PHRASES_REQUIRED: (string | FilterRule)[]; // List of keywords or filter rules that must appear in the post content or title for it to be published. Supports literal strings, regex patterns, and logical combinations (and/or).
+  REPOST_ALLOWED: boolean; // Whether reposts (retweets) are allowed to be published.
+
+  ///// CONTENT PROCESSING & TRANSFORMATION /////
+  AMPERSAND_SAFE_CHAR: string; // Character used to replace ampersands (&) in text to avoid encoding issues.
+  CONTENT_REPLACEMENTS: { pattern: string;replacement: string;flags ? : string;literal ? : boolean } []; // Array of regex patterns and replacements for manipulating post content (e.g., fixing URLs or removing unwanted text).
+  POST_LENGTH: number; // Maximum post length (0-500 chars) after processing.
+  POST_LENGTH_TRIM_STRATEGY: "sentence" | "word" | "smart"; // Strategy for truncation: word cut, sentence preservation, or smart hybrid approach with tolerance.
+  SMART_TOLERANCE_PERCENT: number; // For smart trim strategy: percentage of POST_LENGTH that can be "wasted" to preserve sentence boundaries (5-25, recommended 12).
+
+  ///// URL CONFIGURATION /////
+  URL_REPLACE_FROM: string | string[]; // Original post URL base string(s) to be replaced. Can be single domain (e.g., "https://x.com/") or array of domains (e.g., ["https://x.com/", "https://twitter.com/"]). Use escapeRegExp with this.
+  URL_REPLACE_TO: string; // Target post URL base string for replacement (e.g., "https://twitter.com/").
+  URL_NO_TRIM_DOMAINS: string[]; // URLs that should NOT be trimmed by trimUrlQuery, but should still be URL-encoded in processAmpersands.
+  URL_DOMAIN_FIXES: string[]; // A list of domains (e.g. "rspkt.cz", "example.com") to add the https:// protocol to, if missing.
+  FORCE_SHOW_ORIGIN_POSTURL: boolean; // If true, always include the original post URL in the output, regardless of other conditions. Works in conjunction with other URL display logic.
+  FORCE_SHOW_FEEDURL: boolean; // If true, show the feed's URL instead of the specific post's URL as a fallback when URL processing yields empty string.
+  SHOW_IMAGEURL: boolean; // If true, include image URLs in the post output (using PREFIX_IMAGE_URL).
+
+  ///// OUTPUT FORMATTING & PREFIXES /////
+  PREFIX_REPOST: string; // Prefix used when formatting a repost (retweet).
+  PREFIX_QUOTE: string; // Prefix used when formatting a quote post (mainly for Bluesky and Twitter).
+  PREFIX_IMAGE_URL: string; // Prefix added before the image URL when included.
+  PREFIX_POST_URL: string; // Prefix/suffix formatting added before/after the final post URL.
+  PREFIX_SELF_REFERENCE: string; // Text pro self-quotes a self-reposts (např. "svůj příspěvek")
+  MENTION_FORMATTING: { [platform: string]: { type: "prefix" | "suffix" | "none";value: string } }; // Defines how @mentions are formatted per platform (e.g., add suffix, prefix, or do nothing).
+
+  ///// PLATFORM-SPECIFIC SETTINGS /////
+  MOVE_URL_TO_END: boolean; // If true, move URLs from the beginning of content to the end (useful for RSS feeds where URLs appear at the start).
+  POST_FROM: "BS" | "RSS" | "TW" | "YT"; // Identifier for the source platform of the post (e.g., Bluesky, RSS feed, Twitter, YouTube).
+  SHOW_REAL_NAME: boolean; // If true, use the author's real name (if available) instead of their username in certain contexts (e.g., reposts, quotes).
+  SHOW_TITLE_AS_CONTENT: boolean; // If true, prioritize entryTitle over entryContent as the main post content.
+
+  ///// RSS-SPECIFIC SETTINGS /////
+  RSS_MAX_INPUT_CHARS: number; // Maximum input length for RSS feeds before processing (0 = no limit).
+}
+
+// Application settings configuration
+const SETTINGS: AppSettings = {
+  ///// CONTENT FILTERING & VALIDATION /////
+  PHRASES_BANNED: [], // E.g., ["advertisement", { type: "regex", pattern: "\\bsale\\b", flags: "i" }]. Leave empty to disable this filter.
+  PHRASES_REQUIRED: [], // E.g., ["news", { type: "and", keywords: ["tech", "innovation"] }]. Leave empty to disable mandatory keyword filtering.
+  REPOST_ALLOWED: true, // true | false. Determines if reposts are processed or skipped.
+
+  ///// CONTENT PROCESSING & TRANSFORMATION /////
+  AMPERSAND_SAFE_CHAR: `⅋`, // Replacement for & char to prevent encoding issues in URLs or text.
+  CONTENT_REPLACEMENTS: [], // E.g.: { pattern: "what", replacement: "by_what", flags: "gi", literal: false }
+  POST_LENGTH: 444, // 0 - 500 chars. Adjust based on target platform's character limit.
+  POST_LENGTH_TRIM_STRATEGY: "smart", // "sentence" | "word" | "smart". Try to preserve meaningful content during trimming.
+  SMART_TOLERANCE_PERCENT: 12, // 5-25, recommended 12. Percentage of POST_LENGTH that can be wasted to preserve sentence boundaries in smart trim mode.
+
+  ///// URL CONFIGURATION /////
+  URL_REPLACE_FROM: ["https://x.com/", "https://twitter.com/"], // E.g., "" | "https://x.com/" | ["https://x.com/", "https://twitter.com/"]. Source URL pattern(s) to be replaced. Can be string or array.
+  URL_REPLACE_TO: "https://x.com/", // E.g., "" | `https://x.com/` | `https://xcancel.com/`. Target URL pattern for replacement.
+  URL_NO_TRIM_DOMAINS: [
+    "facebook.com", "www.facebook.com", "instagram.com", "www.instagram.com", // Facebook and Instagram
+    "bit.ly", "goo.gl", "ift.tt", "ow.ly", "t.co", "tinyurl.com",             // Bit.ly, Google, IFTTT, Hootsuite, Twitter and TinyURL shortened links
+    "youtu.be", "youtube.com",                                                // Youtube
+  ], // URLs in this list are excluded from trimming but still encoded.  
+  URL_DOMAIN_FIXES: [], // Domains that are automatically prefixed with https:// if the protocol is missing.
+  FORCE_SHOW_ORIGIN_POSTURL: false, // true | false. Always show original post URL (works with other URL display logic).
+  FORCE_SHOW_FEEDURL: false, // true | false. Use feed URL as fallback instead of post-specific URL when URL processing fails.
+  SHOW_IMAGEURL: false, // true | false. Include image URLs in output if available.
+
+  ///// OUTPUT FORMATTING & PREFIXES /////
+  PREFIX_REPOST: " 𝕏📤 ", // E.g., "" | "shares" | "𝕏📤". Formatting prefix for reposts.
+  PREFIX_QUOTE: " 𝕏📝💬 ", // E.g., "" | "comments post from" | "🦋📝💬" | "𝕏📝💬". Formatting for quoted content.
+  PREFIX_IMAGE_URL: "", // E.g., "" | "🖼️ ". Prefix for image URLs if shown.
+  PREFIX_POST_URL: "\n", // E.g., "" | "\n\n🦋 " | "\n\n𝕏 " | "\n🔗 ". Formatting for post URLs.
+  PREFIX_SELF_REFERENCE: "svůj post", // Text for self-quotes a self-reposts
+  MENTION_FORMATTING: { "TW": { type: "prefix", value: "https://x.com/" }, }, // Prefix added to Twitter mentions for clarity or linking.
+
+  ///// PLATFORM-SPECIFIC SETTINGS /////
+  MOVE_URL_TO_END: false, // true | false. Move URLs from beginning to end of content (useful for RSS feeds).
+  POST_FROM: "TW", // "BS" | "RSS" | "TW" | "YT". Set this based on the IFTTT trigger used for the applet.
+  SHOW_REAL_NAME: true, // true | false. Prefer real name over username if available.
+  SHOW_TITLE_AS_CONTENT: false, // true | false. Use title as content if set to true.
+
+  ////// RSS-SPECIFIC SETTINGS /////
+  RSS_MAX_INPUT_CHARS: 1000, // Limit input to 1000 characters for RSS before HTML processing.
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// IFTTT 𝕏 webhook connector - Apple Cider Day rev, Nov 18th, 2025 rev
+///////////////////////////////////////////////////////////////////////////////
+//
+// This connector processes data from various sources (e.g., RSS, Twitter, Bluesky)
+// and provides it to the IFTTT webhook for publishing. The data is filtered and
+// edited according to the settings in AppSettings.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+// Main text content from the source. For Twitter, this is often TweetEmbedCode (HTML embed code).
+const entryContent = Twitter.newTweetFromSearch.TweetEmbedCode || "";
+// Title from the source. For Twitter, this is clean content without HTML (Text field).
+const entryTitle = Twitter.newTweetFromSearch.Text || "";
+// URL of the specific post/item. For Twitter, this is the direct link to the tweet.
+const entryUrl = Twitter.newTweetFromSearch.LinkToTweet || "";
+// URL of the first image/media link found in the post. For Twitter, this is FirstLinkUrl.
+const entryImageUrl = Twitter.newTweetFromSearch.FirstLinkUrl || "";
+// Username of the post author. For Twitter, this is the UserName field.
+const entryAuthor = Twitter.newTweetFromSearch.UserName || "";
+// Title of the feed (can be username, feed name, etc.). For Twitter, this is often UserName.
+const feedTitle = Twitter.newTweetFromSearch.UserName || "";
+// URL of the source feed/profile. For Twitter, this is constructed from the username.
+const feedUrl = "https://x.com/" + (Twitter.newTweetFromSearch.UserName || "");
+
+///////////////////////////////////////////////////////////////////////////////
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.1.3 - Nightly Build 20251122 14:50
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Processes and filters posts from various platforms (Twitter, Bluesky, RSS, YouTube)
@@ -207,6 +327,87 @@ const REGEX_PATTERNS = {
 function escapeRegExp(str: string): string {
   if (!str) return "";
   return getCached("escape:" + str, function(): string { return str.replace(REGEX_PATTERNS.SPECIAL_CHARS, "\\$&"); });
+}
+
+/**
+ * Finds the last valid sentence terminator (period) within maxLength.
+ * A period is considered valid if:
+ * - It's followed by uppercase letter (new sentence)
+ * - It's followed by nothing (end of text)
+ * A period is NOT valid if:
+ * - It's preceded by number 1-31 and followed by lowercase (date like "12. listopadu")
+ * - It's followed by lowercase letter (abbreviation like "např.")
+ * @param str - Full text to search
+ * @param maxLength - Maximum position to search within
+ * @returns Index of last valid period, or -1 if none found
+ */
+function findLastSentenceEnd(str: string, maxLength: number): number {
+  var searchText = str.slice(0, maxLength);
+  var i = searchText.length - 1;
+  
+  // Search backwards for periods
+  while (i >= 0) {
+    if (searchText.charAt(i) === ".") {
+      // Check what's AFTER the period
+      var nextCharIndex = i + 1;
+      var charAfterPeriod = "";
+      var foundChar = false;
+      
+      // Skip whitespace to find next character
+      while (nextCharIndex < str.length) {
+        var c = str.charAt(nextCharIndex);
+        if (c !== " " && c !== "\t" && c !== "\n") {
+          charAfterPeriod = c;
+          foundChar = true;
+          break;
+        }
+        nextCharIndex++;
+      }
+      
+      // Case 1: Nothing after period (end of text)
+      if (!foundChar) {
+        // Check if this is a date period (number 1-31 before it)
+        var beforePeriod = searchText.slice(Math.max(0, i - 2), i);
+        var isDate = false;
+        
+        if (/\d{1,2}$/.test(beforePeriod)) {
+          var numMatch = beforePeriod.match(/\d{1,2}$/);
+          if (numMatch) {
+            var num = parseInt(numMatch[0], 10);
+            if (num >= 1 && num <= 31) { isDate = true; }
+          }
+        }
+        
+        // Valid terminator if not a date
+        if (!isDate) { return i; }
+        i--; continue;
+      }
+      
+      // Lowercase letter follows - likely abbreviation or date continuation
+      if (charAfterPeriod === charAfterPeriod.toLowerCase() && charAfterPeriod !== charAfterPeriod.toUpperCase()) {
+        var beforePeriod = searchText.slice(Math.max(0, i - 2), i); // Check if this is a date (number 1-31 before period)
+        
+        if (/\d{1,2}$/.test(beforePeriod)) {
+          var numMatch = beforePeriod.match(/\d{1,2}$/);
+          if (numMatch) {
+            var num = parseInt(numMatch[0], 10);
+            if (num >= 1 && num <= 31) { i--; continue; } // This is a date like "12. listopadu" - not a sentence end
+          }
+        }
+        // Not a date, but lowercase follows - abbreviation like "např."
+        i--; continue;
+      }
+      
+      // Uppercase letter follows - potential sentence end
+      if (charAfterPeriod === charAfterPeriod.toUpperCase() && charAfterPeriod !== charAfterPeriod.toUpperCase().toLowerCase()) { return i; } // This IS a valid sentence terminator (uppercase follows)
+      
+      // Other character (number, punctuation, etc.) - treat as not a sentence end
+      i--; continue;
+    }
+    i--;
+  }
+  
+  return -1; // No valid terminator found
 }
 
 /** Generic cache with FIFO eviction */
@@ -630,6 +831,69 @@ function decodeNumericEntities(str: string): string {
   return str;
 }
 
+/** Removes duplicate URLs from the end of the status text */
+function deduplicateTrailingUrls(text: string): string {
+  if (!text) return text;
+  
+  // Extract all URLs from the text
+  const urls: string[] = [];
+  var match;
+  REGEX_PATTERNS.URL_MATCH.lastIndex = 0;
+  while ((match = REGEX_PATTERNS.URL_MATCH.exec(text)) !== null) { urls.push(match[0]); }
+  
+  // If we have less than 2 URLs, no deduplication needed
+  if (urls.length < 2) return text;
+  
+  // Normalize URL by removing trailing slash for comparison
+  function normalizeUrl(url: string): string { return url.replace(/\/$/, ""); }
+  
+  // Work backwards from the end, removing duplicate URLs
+  var result = text;
+  var changed = true;
+  
+  while (changed) {
+    changed = false;
+    
+    // Re-extract URLs from current result
+    const currentUrls: { url: string; index: number }[] = [];
+    REGEX_PATTERNS.URL_MATCH.lastIndex = 0;
+    while ((match = REGEX_PATTERNS.URL_MATCH.exec(result)) !== null) { currentUrls.push({ url: match[0], index: match.index }); }
+    
+    // Need at least 2 URLs to compare
+    if (currentUrls.length < 2) break;
+    
+    // Get last two URLs
+    const lastUrl = currentUrls[currentUrls.length - 1];
+    const secondLastUrl = currentUrls[currentUrls.length - 2];
+    
+    // Check if they are identical (after normalization)
+    if (normalizeUrl(lastUrl.url) === normalizeUrl(secondLastUrl.url)) {
+      // Check if there's only whitespace between them
+      const betweenText = result.substring(secondLastUrl.index + secondLastUrl.url.length, lastUrl.index);
+      
+      if (/^\s*$/.test(betweenText)) {
+        // Remove whitespace + last URL
+        result = result.substring(0, secondLastUrl.index + secondLastUrl.url.length);
+        changed = true;
+      }
+    }
+  }
+  
+  // Normalize whitespace before last URL to PREFIX_POST_URL
+  const finalUrls: { url: string; index: number }[] = [];
+  REGEX_PATTERNS.URL_MATCH.lastIndex = 0;
+  while ((match = REGEX_PATTERNS.URL_MATCH.exec(result)) !== null) { finalUrls.push({ url: match[0], index: match.index }); }
+  
+  if (finalUrls.length > 0) {
+    const lastFinalUrl = finalUrls[finalUrls.length - 1];
+    const beforeLastUrl = result.substring(0, lastFinalUrl.index);
+    const textPart = beforeLastUrl.replace(/\s+$/, ""); // Remove trailing whitespace
+    result = textPart + SETTINGS.PREFIX_POST_URL + lastFinalUrl.url;
+  }
+  
+  return result;
+}
+
 /** Moves first URL to end of string */
 function moveUrlToEnd(str: string): string {
   if (!str) return "";
@@ -787,7 +1051,7 @@ function trimContent(str: string, wasPreTruncated: boolean): TrimResult {
   // Trim content if it exceeds POST_LENGTH
   if (str.length > SETTINGS.POST_LENGTH) {
     if (SETTINGS.POST_LENGTH_TRIM_STRATEGY === "sentence") {
-      const lastPeriod = str.slice(0, SETTINGS.POST_LENGTH).lastIndexOf(".");
+      const lastPeriod = findLastSentenceEnd(str, SETTINGS.POST_LENGTH);
       if (lastPeriod > 0) {
         str = str.slice(0, lastPeriod + 1);
         if (str.endsWith(". ") || str.endsWith(".\t") || str.endsWith(".\n")) { str = str.trim(); }
@@ -801,7 +1065,7 @@ function trimContent(str: string, wasPreTruncated: boolean): TrimResult {
       const toleranceChars = Math.floor(SETTINGS.POST_LENGTH * (SETTINGS.SMART_TOLERANCE_PERCENT || 12) / 100);
       const minAcceptable = SETTINGS.POST_LENGTH - toleranceChars;
 
-      const lastPeriod = str.slice(0, SETTINGS.POST_LENGTH).lastIndexOf(".");
+      const lastPeriod = findLastSentenceEnd(str, SETTINGS.POST_LENGTH);
       if (lastPeriod > 0) {
         const sentenceLen = lastPeriod + 1;
         if (sentenceLen >= minAcceptable) {
@@ -818,7 +1082,7 @@ function trimContent(str: string, wasPreTruncated: boolean): TrimResult {
         str = lastSpace > 0 ? str.slice(0, lastSpace) : str.slice(0, SETTINGS.POST_LENGTH - 1);
         needsEllipsis = true;
       }
-    } else {
+    } else { // "word" strategy
       const lastSpace = str.slice(0, SETTINGS.POST_LENGTH - 1).lastIndexOf(" ");
       str = lastSpace > 0 ? str.slice(0, lastSpace) : str.slice(0, SETTINGS.POST_LENGTH - 1);
       needsEllipsis = true;
@@ -832,7 +1096,7 @@ function trimContent(str: string, wasPreTruncated: boolean): TrimResult {
     needsEllipsis = true; // Mark that we need ellipsis since we removed content
   }
 
-  if (SETTINGS.POST_FROM !== "TW" && needsEllipsis) {
+  if (SETTINGS.POST_FROM !== "TW" && needsEllipsis) { // Add ellipsis if needed
     const hasSimpleTerminator = REGEX_PATTERNS.TERMINATOR_CHECK.test(str);
     if (!hasSimpleTerminator && !str.endsWith("\u2026")) { str += "\u2026"; }
   }
@@ -985,7 +1249,7 @@ function composeContent(title: string, author: string, feedTitle: string, rawCon
   return processed.content;
 }
 
-/** Composes final status: trimmed content + optional image URL + optional post URL */
+/** Composes final status: trimmed content + optional image URL + optional post URL, with URL deduplication */
 function composeStatus(content: string, entryUrl: string, imageUrl: string, title: string, author: string, wasRssTruncated: boolean): string {
   content = content || "";
   const status = processStatus(content, entryUrl, imageUrl, title, author, wasRssTruncated);
@@ -1010,7 +1274,9 @@ function composeStatus(content: string, entryUrl: string, imageUrl: string, titl
   
   const finalUrl = (status.urlToShow && typeof status.urlToShow === "string") ? SETTINGS.PREFIX_POST_URL + processUrl(status.urlToShow) : "";
 
-  return status.trimmedContent + imageStatus + finalUrl;
+  // Compose the final status and apply URL deduplication
+  const composedStatus = status.trimmedContent + imageStatus + finalUrl;
+  return deduplicateTrailingUrls(composedStatus);
 }
 
 /** Processes raw content: platform-specific rules, HTML cleanup, URL handling, replies/RT/quotes */

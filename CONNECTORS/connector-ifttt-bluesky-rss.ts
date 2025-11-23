@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// connector for IFTTT 🦋📙📗📘 webhook - Apple Cider Day rev, Nov 18th, 2025 rev
+// connector for IFTTT 🦋📙📗📘 webhook - Doctor Who Day rev, Nov 23rd, 2025
 ///////////////////////////////////////////////////////////////////////////////
 //
 // This connector processes data from various sources (e.g., RSS, Twitter, Bluesky)
@@ -8,17 +8,17 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-// Main text content from the source. For BlueSky and RSS, this is often EntryContent (HTML or plain text).
+// Main text content (EntryContent for BlueSky/RSS).
 const entryContent = Feed.newFeedItem.EntryContent || "";
-// Title from the source. For BlueSky and RSS, this is the EntryTitle field.
+// Title (EntryTitle for BlueSky/RSS).
 const entryTitle = Feed.newFeedItem.EntryTitle || "";
-// URL of the specific post/item. For BlueSky and RSS, this is the direct link to the item.
+// Post/item URL (direct link for BlueSky/RSS).
 const entryUrl = Feed.newFeedItem.EntryUrl || "";
-// URL of the first image/media link found in the post. For BlueSky and RSS, this is EntryImageUrl (might be unreliable).
+// First image/media URL (EntryImageUrl for BlueSky/RSS, may be unreliable).
 const entryImageUrl = Feed.newFeedItem.EntryImageUrl || "";
-// Username of the post author. For BlueSky and RSS, this is the EntryAuthor field.
+// Post author username (EntryAuthor for BlueSky/RSS).
 const entryAuthor = Feed.newFeedItem.EntryAuthor || "";
-// Title of the feed (can be username, feed name, etc.). For BlueSky and RSS, this is FeedTitle.
+// Feed title/username (FeedTitle for BlueSky/RSS).
 const feedTitle = Feed.newFeedItem.FeedTitle || "";
-// URL of the source feed/profile. For BlueSky and RSS, this is the FeedUrl field.
+// Source feed/profile URL (FeedUrl for BlueSky/RSS).
 const feedUrl = Feed.newFeedItem.FeedUrl || "";
