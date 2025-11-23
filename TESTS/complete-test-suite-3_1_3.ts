@@ -1,15 +1,16 @@
 ///////////////////////////////////////////////////////////////////////////////
-// COMPLETE Test Suite for IFTTT Webhook Filter v3.1.2
-// Build 20251118 - COMPREHENSIVE TESTING INCLUDING BUG FIXES
-// Total: ~220 tests (205 from v3.1.0 + 15 new v3.1.2 specific tests)
+// COMPLETE Test Suite for IFTTT Webhook Filter v3.1.3
+// Build 20251122 - COMPREHENSIVE TESTING INCLUDING URL DEDUPLICATION
+// Total: 166 tests (158 from v3.1.2 + 8 new v3.1.3 specific tests)
 ///////////////////////////////////////////////////////////////////////////////
 //
 // INCLUDED TESTS:
 // - 125 tests from v3.0.3 baseline
 // - 18 tests from v3.1.0 (MOVE_URL_TO_END, FORCE_SHOW_ORIGIN_POSTURL, NOT/COMPLEX)
-// - 50+ tests for Unified Filtering (OR/AND/NOT with regex)
-// - 12 tests for Anchor Tag Hotfix
-// - 15 NEW tests for v3.1.2 (FORCE_SHOW_ORIGIN_POSTURL bug fixes + whitespace)
+// - 21 tests for Unified Filtering (OR/AND/NOT with regex)
+// - 12 tests for Anchor Tag Hotfix  
+// - 15 tests from v3.1.2 (FORCE_SHOW_ORIGIN_POSTURL bug fixes + whitespace)
+// - 8 NEW tests for v3.1.3 (URL deduplication - deduplicateTrailingUrls)
 //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -564,12 +565,277 @@ console.log("   ✅ Real-world ČT24 RSS feed scenarios");
 console.log("");
 console.log("=".repeat(80));
 
+///////////////////////////////////////////////////////////////////////////////
+// NEW IN v3.1.3 - URL DEDUPLICATION TESTS
+///////////////////////////////////////////////////////////////////////////////
+
+const V3_1_3_GROUP_I_TESTS: TestCase[] = [
+	{
+		id: "V313-I1",
+		name: "Deníku N - RSS feed with duplicate URL at end",
+		category: "URL Deduplication v3.1.3",
+		priority: "HIGH",
+		description: "Real-world RSS feed from Deníku N with content URL + FORCE_SHOW URL",
+		settings: {
+			POST_FROM: "RSS",
+			FORCE_SHOW_ORIGIN_POSTURL: true,
+			PREFIX_POST_URL: "\n",
+			POST_LENGTH: 500,
+			POST_LENGTH_TRIM_STRATEGY: "smart"
+		},
+		input: {
+			TweetEmbedCode: "",
+			Text: "",
+			LinkToTweet: "",
+			FirstLinkUrl: "",
+			UserName: "DenikN",
+			EntryContent: "Pražský primátor Bohuslav Svoboda chce, aby byl nový most u Troji postaven \"nejpozději\" do roku 2031. https://denikn.cz/1501773/praha-chce-postavit-most-u-troji-nejpozdeji-do-roku-2031-vyjde-na-2-5-miliardy/",
+			EntryUrl: "https://denikn.cz/1501773/praha-chce-postavit-most-u-troji-nejpozdeji-do-roku-2031-vyjde-na-2-5-miliardy/",
+			EntryTitle: "",
+			FeedTitle: "Deníku N"
+		},
+		expected: {
+			output: "Pražský primátor Bohuslav Svoboda chce, aby byl nový most u Troji postaven \"nejpozději\" do roku 2031.\nhttps://denikn.cz/1501773/praha-chce-postavit-most-u-troji-nejpozdeji-do-roku-2031-vyjde-na-2-5-miliardy/",
+			shouldSkip: false
+		}
+	},
+	{
+		id: "V313-I2",
+		name: "Twitter/X tweet with URL matching LinkToTweet",
+		category: "URL Deduplication v3.1.3",
+		priority: "HIGH",
+		description: "Tweet containing its own URL in text + FORCE_SHOW adds same URL",
+		settings: {
+			POST_FROM: "TW",
+			FORCE_SHOW_ORIGIN_POSTURL: true,
+			PREFIX_POST_URL: "\n",
+			POST_LENGTH: 500
+		},
+		input: {
+			TweetEmbedCode: "",
+			Text: "Important announcement https://x.com/user/status/123456",
+			LinkToTweet: "https://x.com/user/status/123456",
+			FirstLinkUrl: "",
+			UserName: "testuser"
+		},
+		expected: {
+			output: "Important announcement\nhttps://x.com/user/status/123456",
+			shouldSkip: false
+		}
+	},
+	{
+		id: "V313-I3",
+		name: "Generic RSS/YouTube with duplicate URL",
+		category: "URL Deduplication v3.1.3",
+		priority: "HIGH",
+		description: "YouTube RSS feed with content URL + FORCE_SHOW URL",
+		settings: {
+			POST_FROM: "RSS",
+			FORCE_SHOW_ORIGIN_POSTURL: true,
+			PREFIX_POST_URL: "\n",
+			POST_LENGTH: 500
+		},
+		input: {
+			TweetEmbedCode: "",
+			Text: "",
+			LinkToTweet: "",
+			FirstLinkUrl: "",
+			UserName: "",
+			EntryContent: "Nové video o programování v TypeScript https://youtube.com/watch?v=abc123",
+			EntryUrl: "https://youtube.com/watch?v=abc123",
+			EntryTitle: "TypeScript Tutorial",
+			FeedTitle: "Dev Channel"
+		},
+		expected: {
+			output: "Nové video o programování v TypeScript\nhttps://youtube.com/watch?v=abc123",
+			shouldSkip: false
+		}
+	},
+	{
+		id: "V313-I4",
+		name: "Duplicate with trailing slash difference",
+		category: "URL Deduplication v3.1.3",
+		priority: "MEDIUM",
+		description: "Two URLs differing only by trailing slash",
+		settings: {
+			POST_FROM: "RSS",
+			FORCE_SHOW_ORIGIN_POSTURL: true,
+			PREFIX_POST_URL: "\n",
+			POST_LENGTH: 500
+		},
+		input: {
+			TweetEmbedCode: "",
+			Text: "",
+			LinkToTweet: "",
+			FirstLinkUrl: "",
+			UserName: "",
+			EntryContent: "Článek o Praze https://example.com/article/",
+			EntryUrl: "https://example.com/article",
+			EntryTitle: "",
+			FeedTitle: ""
+		},
+		expected: {
+			output: "Článek o Praze\nhttps://example.com/article/",
+			shouldSkip: false
+		}
+	},
+	{
+		id: "V313-I5",
+		name: "Multiple URLs - deduplication only at the end",
+		category: "URL Deduplication v3.1.3",
+		priority: "MEDIUM",
+		description: "Three URLs where only last two are duplicates",
+		settings: {
+			POST_FROM: "RSS",
+			PREFIX_POST_URL: "\n",
+			POST_LENGTH: 500
+		},
+		input: {
+			TweetEmbedCode: "",
+			Text: "",
+			LinkToTweet: "",
+			FirstLinkUrl: "",
+			UserName: "",
+			EntryContent: "Odkaz na https://example.com/first a také https://example.com/second https://example.com/second",
+			EntryUrl: "",
+			EntryTitle: "",
+			FeedTitle: ""
+		},
+		expected: {
+			output: "Odkaz na https://example.com/first a také\nhttps://example.com/second",
+			shouldSkip: false
+		}
+	},
+	{
+		id: "V313-I6",
+		name: "No duplicates - should remain unchanged",
+		category: "URL Deduplication v3.1.3",
+		priority: "LOW",
+		description: "Control test - no duplicates present",
+		settings: {
+			POST_FROM: "RSS",
+			PREFIX_POST_URL: "\n",
+			POST_LENGTH: 500
+		},
+		input: {
+			TweetEmbedCode: "",
+			Text: "",
+			LinkToTweet: "",
+			FirstLinkUrl: "",
+			UserName: "",
+			EntryContent: "První odkaz https://example.com/one a druhý https://example.com/two",
+			EntryUrl: "",
+			EntryTitle: "",
+			FeedTitle: ""
+		},
+		expected: {
+			output: "První odkaz https://example.com/one a druhý\nhttps://example.com/two",
+			shouldSkip: false
+		}
+	},
+	{
+		id: "V313-I7",
+		name: "Single URL - no deduplication needed",
+		category: "URL Deduplication v3.1.3",
+		priority: "LOW",
+		description: "Edge case - only one URL in text",
+		settings: {
+			POST_FROM: "RSS",
+			PREFIX_POST_URL: "\n",
+			POST_LENGTH: 500
+		},
+		input: {
+			TweetEmbedCode: "",
+			Text: "",
+			LinkToTweet: "",
+			FirstLinkUrl: "",
+			UserName: "",
+			EntryContent: "Text s jediným odkazem https://example.com/single",
+			EntryUrl: "",
+			EntryTitle: "",
+			FeedTitle: ""
+		},
+		expected: {
+			output: "Text s jediným odkazem\nhttps://example.com/single",
+			shouldSkip: false
+		}
+	},
+	{
+		id: "V313-I8",
+		name: "Three identical URLs in sequence",
+		category: "URL Deduplication v3.1.3",
+		priority: "MEDIUM",
+		description: "Stress test - multiple consecutive duplicates",
+		settings: {
+			POST_FROM: "RSS",
+			PREFIX_POST_URL: "\n",
+			POST_LENGTH: 500
+		},
+		input: {
+			TweetEmbedCode: "",
+			Text: "",
+			LinkToTweet: "",
+			FirstLinkUrl: "",
+			UserName: "",
+			EntryContent: "Text https://example.com/test https://example.com/test https://example.com/test",
+			EntryUrl: "",
+			EntryTitle: "",
+			FeedTitle: ""
+		},
+		expected: {
+			output: "Text\nhttps://example.com/test",
+			shouldSkip: false
+		}
+	}
+];
+
+const ALL_V3_1_3_NEW_TESTS = V3_1_3_GROUP_I_TESTS;
+
+///////////////////////////////////////////////////////////////////////////////
+// UPDATED TEST EXECUTION SUMMARY FOR v3.1.3
+///////////////////////////////////////////////////////////////////////////////
+
+console.log("");
+console.log("=".repeat(80));
+console.log("IFTTT Webhook Filter v3.1.3 - Complete Test Suite");
+console.log("=".repeat(80));
+console.log("");
+console.log("PREVIOUS VERSIONS (baseline):");
+console.log("  v3.0.3 Baseline Tests:                         125 tests");
+console.log("  v3.1.0 Group A - MOVE_URL_TO_END:              4 tests");
+console.log("  v3.1.0 Group B - FORCE_SHOW (original):        4 tests");
+console.log("  v3.1.0 Group C - NOT & COMPLEX:                10 tests");
+console.log("  v3.2.0 Group D - Unified Filtering:            21 tests");
+console.log("  v3.2.0 Group E - Anchor Tag Hotfix:            12 tests");
+console.log("  v3.1.2 Group F - FORCE_SHOW Fixes:             " + V3_1_2_GROUP_F_TESTS.length + " tests");
+console.log("  v3.1.2 Group G - Whitespace Cleanup:           " + V3_1_2_GROUP_G_TESTS.length + " tests");
+console.log("  v3.1.2 Group H - Combined Scenarios:           " + V3_1_2_GROUP_H_TESTS.length + " tests");
+console.log("");
+console.log("NEW v3.1.3 Features:");
+console.log("  Group I - URL Deduplication:                   " + V3_1_3_GROUP_I_TESTS.length + " tests");
+console.log("");
+console.log("─".repeat(80));
+console.log("TOTAL NEW v3.1.3 tests:                          " + ALL_V3_1_3_NEW_TESTS.length + " tests");
+console.log("TOTAL INCLUDING all previous versions:           " + (125 + 4 + 4 + 10 + 21 + 12 + ALL_V3_1_2_NEW_TESTS.length + ALL_V3_1_3_NEW_TESTS.length) + " tests");
+console.log("─".repeat(80));
+console.log("");
+console.log("🎯 CRITICAL v3.1.3 TEST AREAS:");
+console.log("   ✅ URL deduplication (deduplicateTrailingUrls function)");
+console.log("   ✅ Trailing slash normalization");
+console.log("   ✅ Multiple duplicate URL handling");
+console.log("   ✅ Real-world RSS feed scenarios (Deníku N)");
+console.log("   ✅ Inherited: Smart sentence detection (findLastSentenceEnd)");
+console.log("");
+console.log("=".repeat(80));
+
 // Export for test runner
 if (typeof module !== 'undefined' && module.exports) {
 	module.exports = {
 		ALL_V3_1_2_NEW_TESTS,
 		V3_1_2_GROUP_F_TESTS,
 		V3_1_2_GROUP_G_TESTS,
-		V3_1_2_GROUP_H_TESTS
+		V3_1_2_GROUP_H_TESTS,
+		ALL_V3_1_3_NEW_TESTS,
+		V3_1_3_GROUP_I_TESTS
 	};
 }
