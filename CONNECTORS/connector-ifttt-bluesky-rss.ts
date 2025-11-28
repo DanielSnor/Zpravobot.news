@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// connector for IFTTT 🦋📙📗📘 webhook - Doctor Who Day rev, Nov 23rd, 2025
+// connector for IFTTT 🦋📙📗📘 webhook - Black Friday rev, Nov 28th, 2025
 ///////////////////////////////////////////////////////////////////////////////
 //
 // This connector processes data from various sources (e.g., RSS, Twitter, Bluesky)
