@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 📺 webhook settings - Doctor Who Day rev, Nov 23rd, 2025
+// IFTTT 📺 webhook settings - Black Friday rev, Nov 28th, 2025
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Configuration settings for the IFTTT webhook filter.
@@ -51,7 +51,9 @@ const SETTINGS: AppSettings = {
   REPOST_ALLOWED: true, // true | false. Determines if reposts are processed or skipped.
   ///// CONTENT PROCESSING & TRANSFORMATION /////
   AMPERSAND_SAFE_CHAR: `⅋`, // Replacement for & char to prevent encoding issues in URLs or text.
-  CONTENT_REPLACEMENTS: [], // E.g.: { pattern: "what", replacement: "by_what", flags: "gi", literal: false }
+  CONTENT_REPLACEMENTS: [
+    { pattern: "\\nYT 📺👇👇👇\\n\\nYT 📺👇👇👇\\n", replacement: "\nYT 📺👇👇👇\n", flags: "g", literal: false }, // Deduplikovat dvojitý YT prefix
+  ], // E.g.: { pattern: "what", replacement: "by_what", flags: "gi", literal: false }
   POST_LENGTH: 250, // 0 - 500 chars. Adjust based on target platform's character limit.
   POST_LENGTH_TRIM_STRATEGY: "smart", // "sentence" | "word" | "smart". Try to preserve meaningful content during trimming.
   SMART_TOLERANCE_PERCENT: 12, // 5-25, recommended 12. Percentage of POST_LENGTH that can be wasted to preserve sentence boundaries in smart trim mode.
