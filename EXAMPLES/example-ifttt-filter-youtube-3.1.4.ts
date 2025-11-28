@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 📺 webhook settings - Doctor Who Day rev, Nov 23rd, 2025
+// IFTTT 📺 webhook settings - Black Friday rev, Nov 28th, 2025
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Configuration settings for the IFTTT webhook filter.
@@ -51,7 +51,9 @@ const SETTINGS: AppSettings = {
   REPOST_ALLOWED: true, // true | false. Determines if reposts are processed or skipped.
   ///// CONTENT PROCESSING & TRANSFORMATION /////
   AMPERSAND_SAFE_CHAR: `⅋`, // Replacement for & char to prevent encoding issues in URLs or text.
-  CONTENT_REPLACEMENTS: [], // E.g.: { pattern: "what", replacement: "by_what", flags: "gi", literal: false }
+  CONTENT_REPLACEMENTS: [
+    { pattern: "\\nYT 📺👇👇👇\\n\\nYT 📺👇👇👇\\n", replacement: "\nYT 📺👇👇👇\n", flags: "g", literal: false }, // Deduplikovat dvojitý YT prefix
+  ], // E.g.: { pattern: "what", replacement: "by_what", flags: "gi", literal: false }
   POST_LENGTH: 250, // 0 - 500 chars. Adjust based on target platform's character limit.
   POST_LENGTH_TRIM_STRATEGY: "smart", // "sentence" | "word" | "smart". Try to preserve meaningful content during trimming.
   SMART_TOLERANCE_PERCENT: 12, // 5-25, recommended 12. Percentage of POST_LENGTH that can be wasted to preserve sentence boundaries in smart trim mode.
@@ -84,7 +86,7 @@ const SETTINGS: AppSettings = {
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// connector for IFTTT 📺 webhook - Doctor Who Day rev, Nov 23rd, 2025
+// connector for IFTTT 📺 webhook - Black Friday rev, Nov 28th, 2025
 ///////////////////////////////////////////////////////////////////////////////
 //
 // This connector processes data from various sources (e.g., RSS, Twitter, Bluesky)
@@ -109,7 +111,7 @@ const feedTitle = Youtube.newPublicVideoFromSubscriptions.Title || "";
 const feedUrl = "";
 
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.1.3 - Doctor Who Day, Nov 23rd, 2025
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.1.4 - Black Friday, Nov 28th, 2025
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Processes and filters posts from various platforms (Twitter, Bluesky, RSS, YouTube)
@@ -199,21 +201,16 @@ const CHAR_MAP: { [key: string]: string } = {
    "&apos;": "'",                             // Apostrophe - HTML safety
    
    // --- Tier 2: IMPORTANT named entities (probable in Czech/Slovak RSS) ---
-   "&euro;": "€",                             // Euro sign - very common
-   "&pound;": "£",                            // British pound
-   "&yen;": "¥",                              // Japanese yen
-   "&cent;": "¢",                             // Cent
+   "&euro;": "€", "&pound;": "£",             // Euro sign, British pound
+   "&yen;": "¥", "&cent;": "¢",               // Japanese yen, Cent
    "&copy;": "©",                             // Copyright - common
-   "&reg;": "®",                              // Registered trademark - common
-   "&trade;": "™",                            // Trademark
+   "&reg;": "®", "&trade;": "™",              // Registered trademark, Trademark
    "&deg;": "°",                              // Degree symbol (temperatures!)
    "&plusmn;": "±",                           // Plus-minus
    "&times;": "×",                            // Multiplication
    "&divide;": "÷",                           // Division
-   "&frac14;": "¼",                           // 1/4 fraction
-   "&frac12;": "½",                           // 1/2 fraction
-   "&half;": "½",                             // 1/2 fraction (alternative)
-   "&frac34;": "¾",                           // 3/4 fraction
+   "&frac14;": "¼", "&frac34;": "¾",          // 1/4 and 3/4 fraction
+   "&frac12;": "½", "&half;": "½",            // 1/2 fraction and 1/2 fraction (alternative)
    
    // --- Additional common symbols ---
    "&laquo;": "«", "&raquo;": "»",            // Left and Right angle quote
@@ -226,10 +223,8 @@ const CHAR_MAP: { [key: string]: string } = {
    "&ne;": "≠",                               // Not equal
    "&minus;": "−",                            // Minus sign
    "&bull;": "•",                             // Bullet
-   "&middot;": "·",                           // Middle dot
-   "&centerdot;": "·",                        // Center dot (alternative)
-   "&sect;": "§",                             // Section sign
-   "&para;": "¶",                             // Paragraph sign
+   "&middot;": "·", "&centerdot;": "·",       // Middle dot and Center dot (alternative)
+   "&sect;": "§", "&para;": "¶",              // Section and Paragraph sign
    "&dagger;": "†", "&Dagger;": "‡",          // Dagger and Double dagger
    "&shy;": "-",                              // Soft hyphen
    
@@ -274,17 +269,34 @@ const REGEX_PATTERNS = {
 // Pre-process URL_DOMAIN_FIXES: add https:// prefix + update URL_MATCH regex
 (function initializeDomainFixes(): void {
   if (SETTINGS.URL_DOMAIN_FIXES && SETTINGS.URL_DOMAIN_FIXES.length > 0) {
-    // Add https:// prefix to domains in content
-    const domainPatterns = SETTINGS.URL_DOMAIN_FIXES
+    const domainPatterns: any[] = [];
+    
+    SETTINGS.URL_DOMAIN_FIXES
       .filter(function(d: string): boolean { return !!d; })
-      .map(function(domain: string): any {
-        return {
-          pattern: "(?<!https?:\\/\\/)" + domain.replace(/\./g, '\\.') + "\\/?",
-          replacement: "https://" + domain + "/",
-          flags: "gi",
+      .forEach(function(domain: string): void {
+        const escapedDomain = domain.replace(/\./g, '\\.');
+        
+        // CRITICAL: Process in specific order to avoid double-processing
+        
+        // Pattern 1: Protect valid URLs (https://domain or http://domain) - no modification
+        // Runs FIRST (prepended), replaces with itself
+        domainPatterns.push({
+          pattern: "(https?:\\/\\/)" + escapedDomain + "(\\/[^\\s]*|[\\s]|$)",
+          replacement: "$1" + domain + "$2",
+          flags: "gm",
           literal: false
-        };
+        });
+
+        // Pattern 2: Add https:// to bare domains at boundaries
+        // Skipped if Pattern 1 matched
+        domainPatterns.push({
+          pattern: "(^|[\\s\\(\\[\\{<\"'])" + escapedDomain + "(\\/[^\\s\\)\\]\\}>\"',;]*|[\\s\\)\\]\\}>\"',;]|$)",
+          replacement: "$1https://" + domain + "$2",
+          flags: "gm",
+          literal: false
+        });
       });
+    
     SETTINGS.CONTENT_REPLACEMENTS = domainPatterns.concat(SETTINGS.CONTENT_REPLACEMENTS || []);
     
     // Update URL_MATCH to detect domains without protocol
