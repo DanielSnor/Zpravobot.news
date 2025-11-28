@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 📙📗📘 webhook settings - Doctor Who Day rev, Nov 23rd, 2025
+// IFTTT 📙📗📘 webhook settings - Black Friday rev, Nov 28th, 2025
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Configuration settings for the IFTTT webhook filter.
@@ -73,7 +73,7 @@ const SETTINGS: AppSettings = {
   PREFIX_IMAGE_URL: "", // E.g., "" | "🖼️ ". Prefix for image URLs if shown.
   PREFIX_POST_URL: "\n", // E.g., "" | "\n\n🦋 " | "\n\n𝕏 " | "\n🔗 ". Formatting for post URLs.
   PREFIX_SELF_REFERENCE: "", // Text for self-quotes a self-reposts
-  MENTION_FORMATTING: { "RSS": { type: "suffix", value: "@twitter.com" }, }, // Default behavior if platform-specific rule is missing.
+  MENTION_FORMATTING: { "RSS": { type: "prefix", value: "https://xcancel.com/" }, }, // Default behavior if platform-specific rule is missing.
   ///// PLATFORM-SPECIFIC SETTINGS /////
   MOVE_URL_TO_END: false, // true | false. Move URLs from beginning to end of content (useful for RSS feeds).
   POST_FROM: "RSS", // "BS" | "RSS" | "TW" | "YT". Set this based on the IFTTT trigger used for the applet.
