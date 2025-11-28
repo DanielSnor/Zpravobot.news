@@ -119,7 +119,7 @@ const feedTitle = Twitter.newTweetFromSearch.UserName || "";
 const feedUrl = "https://x.com/" + (Twitter.newTweetFromSearch.UserName || "");
 
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.1.3 - Nightly Build 20251122 14:50
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.1.4 - Nightly Build 20251124 22:20
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Processes and filters posts from various platforms (Twitter, Bluesky, RSS, YouTube)
@@ -132,7 +132,6 @@ const feedUrl = "https://x.com/" + (Twitter.newTweetFromSearch.UserName || "");
 interface FilterRule { type: "literal" | "regex" | "and" | "or" | "not" | "complex"; pattern?: string; keywords?: string[]; flags?: string;
   rule?: FilterRule;                                // For NOT rule (legacy support)
   operator?: "and" | "or"; rules?: FilterRule[];    // For COMPLEX rule
-  // NEW in v3.1.0: Unified structure for OR, AND, NOT operations
   content?: string[]; contentRegex?: string[];      // Literal content matches and Regex content patterns
   username?: string[]; usernameRegex?: string[];    // Literal username matches and Regex username patterns
   domain?: string[]; domainRegex?: string[];        // Literal domain matches and Regex domain patterns
@@ -153,9 +152,7 @@ interface ProcessedStatus { trimmedContent: string; needsEllipsis: boolean; urlT
 // Type definitions for string manipulation (standard augmentation)
 interface String { startsWith(searchString: string, position ? : number): boolean; endsWith(searchString: string, endPosition ? : number): boolean; }
 
-// Type definition for Array.from (ES6 feature with runtime detection)
-// IFTTT uses ES5 runtime, but we check for availability at runtime with typeof check
-// Note: Simplified definition using only ArrayLike (no Iterable) for ES5 compatibility
+// Array.from polyfill (ES6 feature, runtime check for ES5 compatibility)
 interface ArrayConstructor { from < T > (arrayLike: ArrayLike < T > ): T[]; from < T, U > (arrayLike: ArrayLike < T >, mapfn: (v: T, k: number) => U, thisArg ? : any): U[]; }
 
 // Type definitions for trim result
@@ -204,63 +201,51 @@ const CHAR_MAP: { [key: string]: string } = {
    "&Zcaron;": "Ž", "&zcaron;": "ž",
    
    // --- Tier 1: CRITICAL named entities (frequently used in RSS feeds) ---
-   "&nbsp;": " ",           // Non-breaking space - VERY common
-   "&hellip;": "…",         // Ellipsis - common in articles
-   "&mdash;": "—",          // Em dash - common in articles
-   "&ndash;": "–",          // En dash
-   "&lt;": "<",             // Less than - HTML safety
-   "&gt;": ">",             // Greater than - HTML safety
-   "&quot;": '"',           // Quotation mark - HTML safety
-   "&apos;": "'",           // Apostrophe - HTML safety
+   "&nbsp;": " ",                             // Non-breaking space - VERY common
+   "&hellip;": "…",                           // Ellipsis - common in articles
+   "&mdash;": "—", "&ndash;": "–",            // Em dash and En dash
+   "&lt;": "<", "&gt;": ">",                  // Less than and Greater than - HTML safety
+   "&quot;": '"',                             // Quotation mark - HTML safety
+   "&apos;": "'",                             // Apostrophe - HTML safety
    
    // --- Tier 2: IMPORTANT named entities (probable in Czech/Slovak RSS) ---
-   "&euro;": "€",           // Euro sign - very common
-   "&pound;": "£",          // British pound
-   "&yen;": "¥",            // Japanese yen
-   "&cent;": "¢",           // Cent
-   "&copy;": "©",           // Copyright - common
-   "&reg;": "®",            // Registered trademark - common
-   "&trade;": "™",          // Trademark
-   "&deg;": "°",            // Degree symbol (temperatures!)
-   "&plusmn;": "±",         // Plus-minus
-   "&times;": "×",          // Multiplication
-   "&divide;": "÷",         // Division
-   "&frac14;": "¼",         // 1/4 fraction
-   "&frac12;": "½",         // 1/2 fraction
-   "&half;": "½",           // 1/2 fraction (alternative)
-   "&frac34;": "¾",         // 3/4 fraction
+   "&euro;": "€", "&pound;": "£",             // Euro sign, British pound
+   "&yen;": "¥", "&cent;": "¢",               // Japanese yen, Cent
+   "&copy;": "©",                             // Copyright - common
+   "&reg;": "®", "&trade;": "™",              // Registered trademark, Trademark
+   "&deg;": "°",                              // Degree symbol (temperatures!)
+   "&plusmn;": "±",                           // Plus-minus
+   "&times;": "×",                            // Multiplication
+   "&divide;": "÷",                           // Division
+   "&frac14;": "¼",                           // 1/4 fraction
+   "&frac12;": "½",                           // 1/2 fraction
+   "&half;": "½",                             // 1/2 fraction (alternative)
+   "&frac34;": "¾",                           // 3/4 fraction
    
    // --- Additional common symbols ---
-   "&laquo;": "«",          // Left angle quote
-   "&raquo;": "»",          // Right angle quote
-   "&lsquo;": "\u2018",     // Left single quote
-   "&rsquo;": "\u2019",     // Right single quote
-   "&ldquo;": "\u201C",     // Left double quote
-   "&rdquo;": "\u201D",     // Right double quote
-   "&sbquo;": "\u201A",     // Single low-9 quotation mark
-   "&bdquo;": "\u201E",     // Double low-9 quotation mark
-   "&prime;": "′",          // Prime
-   "&Prime;": "″",          // Double prime
-   "&permil;": "‰",         // Per mille
-   "&thickapprox;": "≈",    // Approximately equal
-   "&ne;": "≠",             // Not equal
-   "&minus;": "−",          // Minus sign
-   "&bull;": "•",           // Bullet
-   "&middot;": "·",         // Middle dot
-   "&centerdot;": "·",      // Center dot (alternative)
-   "&sect;": "§",           // Section sign
-   "&para;": "¶",           // Paragraph sign
-   "&dagger;": "†",         // Dagger
-   "&Dagger;": "‡",         // Double dagger
-   "&shy;": "-",            // Soft hyphen
+   "&laquo;": "«", "&raquo;": "»",            // Left and Right angle quote
+   "&lsquo;": "\u2018", "&rsquo;": "\u2019",  // Left and Right single quote
+   "&ldquo;": "\u201C", "&rdquo;": "\u201D",  // Left and Right double quote
+   "&sbquo;": "\u201A", "&bdquo;": "\u201E",  // Single and Double low-9 quotation mark
+   "&prime;": "′", "&Prime;": "″",            // Prime and Double prime
+   "&permil;": "‰",                           // Per mille
+   "&thickapprox;": "≈",                      // Approximately equal
+   "&ne;": "≠",                               // Not equal
+   "&minus;": "−",                            // Minus sign
+   "&bull;": "•",                             // Bullet
+   "&middot;": "·",                           // Middle dot
+   "&centerdot;": "·",                        // Center dot (alternative)
+   "&sect;": "§",                             // Section sign
+   "&para;": "¶",                             // Paragraph sign
+   "&dagger;": "†", "&Dagger;": "‡",          // Dagger and Double dagger
+   "&shy;": "-",                              // Soft hyphen
    
    // --- Special case: wrapped ellipsis entities ---
    "[&hellip;]": "…", "[&amp;hellip;]": "…", "&amp;hellip;": "…",
    "[&mldr;]": "…", "[&amp;mldr;]": "…", "&mldr;": "…", "&amp;mldr;": "…",
    
    // --- Ampersand variants (must be LAST to avoid replacing & in other entities) ---
-   "&amp;": SETTINGS.AMPERSAND_SAFE_CHAR,
-   "&": SETTINGS.AMPERSAND_SAFE_CHAR
+   "&amp;": SETTINGS.AMPERSAND_SAFE_CHAR, "&": SETTINGS.AMPERSAND_SAFE_CHAR
  };
 
 /** Precompiled regex patterns (TS 2.9.2 compatible) */
@@ -296,17 +281,34 @@ const REGEX_PATTERNS = {
 // Pre-process URL_DOMAIN_FIXES: add https:// prefix + update URL_MATCH regex
 (function initializeDomainFixes(): void {
   if (SETTINGS.URL_DOMAIN_FIXES && SETTINGS.URL_DOMAIN_FIXES.length > 0) {
-    // Add https:// prefix to domains in content
-    const domainPatterns = SETTINGS.URL_DOMAIN_FIXES
+    const domainPatterns: any[] = [];
+    
+    SETTINGS.URL_DOMAIN_FIXES
       .filter(function(d: string): boolean { return !!d; })
-      .map(function(domain: string): any {
-        return {
-          pattern: "(?<!https?:\\/\\/)" + domain.replace(/\./g, '\\.') + "\\/?",
-          replacement: "https://" + domain + "/",
-          flags: "gi",
+      .forEach(function(domain: string): void {
+        const escapedDomain = domain.replace(/\./g, '\\.');
+        
+        // CRITICAL: Process in specific order to avoid double-processing
+        
+        // Pattern 1: Protect valid URLs (https://domain or http://domain) - no modification
+        // Runs FIRST (prepended), replaces with itself
+        domainPatterns.push({
+          pattern: "(https?:\\/\\/)" + escapedDomain + "(\\/[^\\s]*|[\\s]|$)",
+          replacement: "$1" + domain + "$2",
+          flags: "gm",
           literal: false
-        };
+        });
+
+        // Pattern 2: Add https:// to bare domains at boundaries
+        // Skipped if Pattern 1 matched
+        domainPatterns.push({
+          pattern: "(^|[\\s\\(\\[\\{<\"'])" + escapedDomain + "(\\/[^\\s\\)\\]\\}>\"',;]*|[\\s\\)\\]\\}>\"',;]|$)",
+          replacement: "$1https://" + domain + "$2",
+          flags: "gm",
+          literal: false
+        });
       });
+    
     SETTINGS.CONTENT_REPLACEMENTS = domainPatterns.concat(SETTINGS.CONTENT_REPLACEMENTS || []);
     
     // Update URL_MATCH to detect domains without protocol
@@ -322,7 +324,6 @@ const REGEX_PATTERNS = {
 })();
 
 ///// OPTIMIZED HELPER FUNCTIONS /////
-
 /** Escapes special chars for regex use */
 function escapeRegExp(str: string): string {
   if (!str) return "";
@@ -330,31 +331,20 @@ function escapeRegExp(str: string): string {
 }
 
 /**
- * Finds the last valid sentence terminator (period) within maxLength.
- * A period is considered valid if:
- * - It's followed by uppercase letter (new sentence)
- * - It's followed by nothing (end of text)
- * A period is NOT valid if:
- * - It's preceded by number 1-31 and followed by lowercase (date like "12. listopadu")
- * - It's followed by lowercase letter (abbreviation like "např.")
- * @param str - Full text to search
- * @param maxLength - Maximum position to search within
- * @returns Index of last valid period, or -1 if none found
- */
+ * Finds last valid period within maxLength (excludes dates, abbreviations).
+ * Valid: followed by uppercase or end. Invalid: 12. listopadu, např.  */
 function findLastSentenceEnd(str: string, maxLength: number): number {
   var searchText = str.slice(0, maxLength);
   var i = searchText.length - 1;
   
   // Search backwards for periods
   while (i >= 0) {
-    if (searchText.charAt(i) === ".") {
-      // Check what's AFTER the period
+    if (searchText.charAt(i) === ".") { // Check what's AFTER the period
       var nextCharIndex = i + 1;
       var charAfterPeriod = "";
       var foundChar = false;
       
-      // Skip whitespace to find next character
-      while (nextCharIndex < str.length) {
+      while (nextCharIndex < str.length) { // Skip whitespace to find next character
         var c = str.charAt(nextCharIndex);
         if (c !== " " && c !== "\t" && c !== "\n") {
           charAfterPeriod = c;
@@ -364,10 +354,9 @@ function findLastSentenceEnd(str: string, maxLength: number): number {
         nextCharIndex++;
       }
       
-      // Case 1: Nothing after period (end of text)
+      // Nothing after period (end of text)
       if (!foundChar) {
-        // Check if this is a date period (number 1-31 before it)
-        var beforePeriod = searchText.slice(Math.max(0, i - 2), i);
+        var beforePeriod = searchText.slice(Math.max(0, i - 2), i); // Check if this is a date period (number 1-31 before it)
         var isDate = false;
         
         if (/\d{1,2}$/.test(beforePeriod)) {
@@ -378,8 +367,7 @@ function findLastSentenceEnd(str: string, maxLength: number): number {
           }
         }
         
-        // Valid terminator if not a date
-        if (!isDate) { return i; }
+        if (!isDate) { return i; } // Valid terminator if not a date
         i--; continue;
       }
       
@@ -394,15 +382,13 @@ function findLastSentenceEnd(str: string, maxLength: number): number {
             if (num >= 1 && num <= 31) { i--; continue; } // This is a date like "12. listopadu" - not a sentence end
           }
         }
-        // Not a date, but lowercase follows - abbreviation like "např."
-        i--; continue;
+        i--; continue; // Not a date, but lowercase follows - abbreviation like "např."
       }
       
       // Uppercase letter follows - potential sentence end
       if (charAfterPeriod === charAfterPeriod.toUpperCase() && charAfterPeriod !== charAfterPeriod.toUpperCase().toLowerCase()) { return i; } // This IS a valid sentence terminator (uppercase follows)
       
-      // Other character (number, punctuation, etc.) - treat as not a sentence end
-      i--; continue;
+      i--; continue; // Other character (number, punctuation, etc.) - treat as not a sentence end
     }
     i--;
   }
@@ -509,11 +495,9 @@ function truncateRssInput(content: string): TruncateRssResult {
 function hasTruncatedUrl(text: any): boolean {
   if (!text || typeof text !== "string") return false;
   
-  // Detection of URLs with ellipsis: "https://domain/…" or "https://domain/…/path…"
-  if (/https?:\/\/[^\s]*\u2026/i.test(text)) return true;
+  if (/https?:\/\/[^\s]*\u2026/i.test(text)) return true; // Detection of URLs with ellipsis: "https://domain/…" or "https://domain/…/path…"
   
-  // Detecting URLs with /… somewhere in the path
-  if (/https?:\/\/[^\s]*\/\u2026/i.test(text)) return true;
+  if (/https?:\/\/[^\s]*\/\u2026/i.test(text)) return true; // Detecting URLs with /… somewhere in the path
   
   return false;
 }
@@ -524,14 +508,11 @@ function removeTruncatedUrl(text: any): string {
   
   var result = text;
   
-  // Removing the complete URL with ellipsis anywhere in it
-  result = result.replace(/https?:\/\/[^\s]*\u2026[^\s]*/gi, "\u2026");
+  result = result.replace(/https?:\/\/[^\s]*\u2026[^\s]*/gi, "\u2026"); // Removing the complete URL with ellipsis anywhere in it
+
+  result = result.replace(/(?:www\.)?[a-zA-Z0-9][a-zA-Z0-9-]*\.[a-zA-Z0-9][^\s]*\u2026[^\s]*/gi, "\u2026"); // Removing incomplete URLs without protocol: "www.example.…rest"
   
-  // Removing incomplete URLs without protocol: "www.example.…rest"
-  result = result.replace(/(?:www\.)?[a-zA-Z0-9][a-zA-Z0-9-]*\.[a-zA-Z0-9][^\s]*\u2026[^\s]*/gi, "\u2026");
-  
-  // Normalization of multiple ellipses
-  result = result.replace(/\u2026+/g, "\u2026");
+  result = result.replace(/\u2026+/g, "\u2026");  // Normalization of multiple ellipses
   
   return result.trim();
 }
@@ -548,8 +529,7 @@ function shouldTruncateRssInput(platform: string, content: any): boolean {
 /** Returns string or empty string if invalid */
 function safeString(value: any): string { return (typeof value === "string") ? value : "";}
 
-// CONTENT VALIDATION AND FILTERING FUNCTIONS /////////////////////////////////
-
+///// CONTENT VALIDATION AND FILTERING FUNCTIONS /////
 /** Checks for banned content using FilterRule system */
 function hasBannedContent(str: string): boolean {
   if (!str || !SETTINGS.PHRASES_BANNED || SETTINGS.PHRASES_BANNED.length === 0) { return false; }
@@ -730,7 +710,7 @@ function matchesFilterRule(str: string, rule: string | FilterRule): boolean {
       } catch (e) { return false; }
     
     case "and": // AND: All keywords must be present (legacy) OR unified structure (NEW in v3.1.0)
-      // NEW v3.1.0: Check for unified structure first
+      // Check for unified structure first
       if (rule.content || rule.contentRegex || rule.username || rule.usernameRegex || rule.domain || rule.domainRegex) { return matchesUnifiedFilter(str, rule, "and"); }
       // Legacy: keywords array
       if (!rule.keywords || rule.keywords.length === 0) return false;
@@ -738,21 +718,21 @@ function matchesFilterRule(str: string, rule: string | FilterRule): boolean {
       return true;
     
     case "or": // OR: At least one keyword must be present (legacy) OR unified structure (NEW in v3.1.0)
-      // NEW v3.1.0: Check for unified structure first
+      // Check for unified structure first
       if (rule.content || rule.contentRegex || rule.username || rule.usernameRegex || rule.domain || rule.domainRegex) { return matchesUnifiedFilter(str, rule, "or"); }
       // Legacy: keywords array
       if (!rule.keywords || rule.keywords.length === 0) return false;
       for (var i = 0; i < rule.keywords.length; i++) { if (lowerStr.indexOf(rule.keywords[i].toLowerCase()) !== -1) { return true;  } }
       return false;
 
-    case "not": // NOT: Inverts the result (legacy nested rule OR unified structure - NEW in v3.1.0)
-      // NEW v3.1.0: Check for unified structure first
+    case "not": // NOT: Inverts result (legacy/unified structure)
+      // Check for unified structure first
       if (rule.content || rule.contentRegex || rule.username || rule.usernameRegex || rule.domain || rule.domainRegex) { return matchesUnifiedFilter(str, rule, "not"); }
       // Legacy: nested rule
       if (!rule.rule) return false;
       return !matchesFilterRule(str, rule.rule); // We recursively evaluate the nested rule and invert the result.
     
-    case "complex": // COMPLEX: Combines multiple rules using AND/OR (v3.1.0)
+    case "complex": // COMPLEX: Combines multiple rules using AND/OR
       if (!rule.rules || rule.rules.length === 0) return false;
       if (!rule.operator) return false;
 
@@ -773,7 +753,6 @@ function matchesFilterRule(str: string, rule: string | FilterRule): boolean {
 }
 
 ///// TEXT PROCESSING AND NORMALIZATION FUNCTIONS /////
-
 /** Applies CONTENT_REPLACEMENTS regex rules */
 function applyContentReplacements(str: string): string {
   if (!str) return "";
@@ -841,11 +820,9 @@ function deduplicateTrailingUrls(text: string): string {
   REGEX_PATTERNS.URL_MATCH.lastIndex = 0;
   while ((match = REGEX_PATTERNS.URL_MATCH.exec(text)) !== null) { urls.push(match[0]); }
   
-  // If we have less than 2 URLs, no deduplication needed
-  if (urls.length < 2) return text;
+  if (urls.length < 2) return text; // If we have less than 2 URLs, no deduplication needed
   
-  // Normalize URL by removing trailing slash for comparison
-  function normalizeUrl(url: string): string { return url.replace(/\/$/, ""); }
+  function normalizeUrl(url: string): string { return url.replace(/\/$/, ""); } // Normalize URL by removing trailing slash for comparison
   
   // Work backwards from the end, removing duplicate URLs
   var result = text;
@@ -868,12 +845,10 @@ function deduplicateTrailingUrls(text: string): string {
     
     // Check if they are identical (after normalization)
     if (normalizeUrl(lastUrl.url) === normalizeUrl(secondLastUrl.url)) {
-      // Check if there's only whitespace between them
-      const betweenText = result.substring(secondLastUrl.index + secondLastUrl.url.length, lastUrl.index);
+      const betweenText = result.substring(secondLastUrl.index + secondLastUrl.url.length, lastUrl.index); // Check if there's only whitespace between them
       
       if (/^\s*$/.test(betweenText)) {
-        // Remove whitespace + last URL
-        result = result.substring(0, secondLastUrl.index + secondLastUrl.url.length);
+        result = result.substring(0, secondLastUrl.index + secondLastUrl.url.length); // Remove whitespace + last URL
         changed = true;
       }
     }
@@ -912,12 +887,8 @@ function normalizeHtml(str: string): string {
 
   const TEMP_NEWLINE = "TEMP_NL_MARKER";
 
-  // CRITICAL FIX: Extract href URLs from anchor tags BEFORE general HTML cleanup
-  // This prevents duplicate URL issues like "https://pic.https://twitter.com/..."
-  str = str.replace(REGEX_PATTERNS.ANCHOR_TAG, function(match: string, hrefUrl: string): string {
-    // Replace entire <a href="URL">text</a> with just the URL from href attribute
-    return hrefUrl || "";
-  });
+  // Extract href URLs from anchor tags before HTML cleanup (prevents URL duplication)
+  str = str.replace(REGEX_PATTERNS.ANCHOR_TAG, function(match: string, hrefUrl: string): string {return hrefUrl || ""; }); // Replace entire <a href="URL">text</a> with just the URL from href attribute
 
   // Single-pass HTML cleanup
   str = str.replace(REGEX_PATTERNS.HTML_CLEANUP, function(match: string, lineBreak: string, tag2: string, headingTag: string, otherTag: string, newline: string): string {
@@ -932,8 +903,7 @@ function normalizeHtml(str: string): string {
 
   // Only apply entity processing if entities are detected
   if (str.indexOf('&') !== -1 || str.indexOf('&#') !== -1) {
-    // Decode numeric entities FIRST (before CHAR_MAP)
-    str = decodeNumericEntities(str);
+    str = decodeNumericEntities(str); // Decode numeric entities FIRST (before CHAR_MAP)
     
     const tokens = Object.keys(CHAR_MAP);
     for (var i = 0; i < tokens.length; i++) {
@@ -971,20 +941,15 @@ function processAmpersands(str: string): string {
 function hasIncompleteUrlAtEnd(str: string): boolean {
   if (!str) return false;
   
-  // URL ending with dot: "https://www.instagram."
-  if (/https?:\/\/[^\s]*\.$/.test(str)) return true;
+  if (/https?:\/\/[^\s]*\.$/.test(str)) return true; // URL ending with dot: "https://www.instagram."
   
-  // Very short domain: "https://www" or "https://in"
-  if (/https?:\/\/[a-zA-Z]{1,4}$/.test(str)) return true;
+  if (/https?:\/\/[a-zA-Z]{1,4}$/.test(str)) return true; // Very short domain: "https://www" or "https://in"
   
-  // Incomplete TLD (1-2 chars): "https://instagram.c"
-  if (/https?:\/\/[a-zA-Z0-9-]+\.[a-zA-Z]{1,2}$/.test(str)) return true;
+  if (/https?:\/\/[a-zA-Z0-9-]+\.[a-zA-Z]{1,2}$/.test(str)) return true; // Incomplete TLD (1-2 chars): "https://instagram.c"
   
-  // Incomplete after www: "https://www.inst"
-  if (/https?:\/\/www\.[a-zA-Z0-9-]{1,10}$/.test(str)) return true;
+  if (/https?:\/\/www\.[a-zA-Z0-9-]{1,10}$/.test(str)) return true; // Incomplete after www: "https://www.inst"
   
-  // Short path segment: "https://domain.com/ab"
-  if (/https?:\/\/[^\s]+\/[a-zA-Z]{1,2}$/.test(str)) return true;
+  if (/https?:\/\/[^\s]+\/[a-zA-Z]{1,2}$/.test(str)) return true; // Short path segment: "https://domain.com/ab"
   
   return false;
 }
@@ -1112,7 +1077,6 @@ function trimUrlQuery(url: string): string {
 }
 
 ///// EXTRACTION FUNCTIONS /////
-
 /** Extracts real author name from TweetEmbedCode */
 function extractRealName(embedCode: string): string {
   if (!embedCode) return "";
@@ -1155,7 +1119,6 @@ function extractUsername(url: string): string {
 }
 
 ///// FORMATTING FUNCTIONS /////
-
 /** Formats @mentions per platform (adds prefix/suffix, skips specified name) */
 function formatMentions(str: string, skipName: string, platform: string): string {
   if (!str) return "";
@@ -1175,12 +1138,10 @@ function formatMentions(str: string, skipName: string, platform: string): string
     return str.replace(regex, function(match: string, username: string, offset: number, fullStr: string): string {
       if (format.type === "prefix") { 
         var result = format.value + username;
-        // Check if next character after match is start of URL (h from http/https)
-        var nextCharIndex = offset + match.length;
+        var nextCharIndex = offset + match.length; // Check if next character after match is start of URL (h from http/https)
         if (nextCharIndex < fullStr.length) {
           var nextChar = fullStr.charAt(nextCharIndex);
-          // If followed by 'h' (likely http/https), add space
-          if (nextChar === 'h' && fullStr.substring(nextCharIndex).match(/^https?:\/\//)) { result += " "; }
+          if (nextChar === 'h' && fullStr.substring(nextCharIndex).match(/^https?:\/\//)) { result += " "; } // If followed by 'h' (likely http/https), add space
         }
         return result;
       }
@@ -1225,7 +1186,6 @@ function formatRepost(content: string, author: string, authorUsername: string, r
 function removeReplyPrefix(str: string): string { return str.replace(REGEX_PATTERNS.RESPONSE_PREFIX, ""); }
 
 ///// CONTENT SELECTION AND COMPOSITION FUNCTIONS /////
-
 /** Composes final content: processContent + formatMentions */
 function composeContent(title: string, author: string, feedTitle: string, rawContent: any, imageUrl: string): string {
   const platform = SETTINGS.POST_FROM;
@@ -1258,17 +1218,13 @@ function composeStatus(content: string, entryUrl: string, imageUrl: string, titl
   // Display imageUrl based on platform and type
   var imageStatus = "";
   
-  if (SETTINGS.POST_FROM === "TW") {
-    // Twitter platform
-    if (!isValidImageUrl(imageUrl) && typeof imageUrl === "string" && (imageUrl.endsWith("/photo/1") || imageUrl.endsWith("/video/1"))) {
-      // Twitter media (photo/video) - respect SHOW_IMAGEURL
+  if (SETTINGS.POST_FROM === "TW") { // Twitter platform
+    if (!isValidImageUrl(imageUrl) && typeof imageUrl === "string" && (imageUrl.endsWith("/photo/1") || imageUrl.endsWith("/video/1"))) { // Twitter media (photo/video) - respect SHOW_IMAGEURL
       imageStatus = SETTINGS.SHOW_IMAGEURL ? SETTINGS.PREFIX_IMAGE_URL + resultImageUrl : "";
-    } else if (isValidImageUrl(imageUrl)) {
-      // Twitter external link - display with FORCE_SHOW_ORIGIN_POSTURL
+    } else if (isValidImageUrl(imageUrl)) { // Twitter external link - display with FORCE_SHOW_ORIGIN_POSTURL
       if (SETTINGS.FORCE_SHOW_ORIGIN_POSTURL) { imageStatus = SETTINGS.PREFIX_POST_URL + resultImageUrl; }
     }
-  } else {
-    // Other platforms (BS, RSS, YT)
+  } else { // Other platforms (BS, RSS, YT)
     if (isValidImageUrl(imageUrl)) { imageStatus = SETTINGS.SHOW_IMAGEURL ? SETTINGS.PREFIX_IMAGE_URL + resultImageUrl : ""; }
   }
   
@@ -1371,7 +1327,7 @@ function processStatus(content: string, entryUrl: string, imageUrl: string, titl
     const hasImage = isValidImageUrl(imageUrl);
 
     if (showUrl || contentHasUrl) {
-      // FIX v3.1.2: Prioritize entryUrl when FORCE_SHOW_ORIGIN_POSTURL is enabled
+      // Prioritize entryUrl when FORCE_SHOW_ORIGIN_POSTURL is enabled
       if (SETTINGS.FORCE_SHOW_ORIGIN_POSTURL || isQuoteTweet) {
         urlToShow = entryUrl;
       } else {
@@ -1445,7 +1401,6 @@ function shouldSkip(content: any, title: string, url: string, imageUrl: string, 
 }
 
 ///// MAIN EXECUTION LOGIC /////
-
 const skipCheck = shouldSkip(entryContent, entryTitle, entryUrl, entryImageUrl, entryAuthor);
 
 if (skipCheck.skip) {
