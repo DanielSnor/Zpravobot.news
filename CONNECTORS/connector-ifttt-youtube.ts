@@ -1,24 +1,11 @@
 ///////////////////////////////////////////////////////////////////////////////
-// connector for IFTTT 📺 webhook - Black Friday rev, Nov 28th, 2025
-///////////////////////////////////////////////////////////////////////////////
-//
-// This connector processes data from various sources (e.g., RSS, Twitter, Bluesky)
-// and provides it to the IFTTT webhook for publishing. The data is filtered and
-// edited according to the settings in AppSettings.
-//
+// connector for IFTTT 📺 webhook - St. Daniel's Day rev, Dec 17th, 2025
 ///////////////////////////////////////////////////////////////////////////////
 
-// Video description.
-const entryContent = Youtube.newPublicVideoFromSubscriptions.Description || "";
-// Video title.
-const entryTitle = Youtube.newPublicVideoFromSubscriptions.Title || "";
-// Video URL.
-const entryUrl = Youtube.newPublicVideoFromSubscriptions.Url || "";
-// Image URL (not available for YouTube).
-const entryImageUrl = "";
-// Channel name.
-const entryAuthor = Youtube.newPublicVideoFromSubscriptions.AuthorName || "";
-// Feed title (video title).
-const feedTitle = Youtube.newPublicVideoFromSubscriptions.Title || "";
-// Feed URL (not available for YouTube).
-const feedUrl = "";
+const entryContent = Youtube.newPublicVideoFromSubscriptions.Description || ""; // Video description.
+const entryTitle = Youtube.newPublicVideoFromSubscriptions.Title || ""; // Video title.
+const entryUrl = Youtube.newPublicVideoFromSubscriptions.Url || ""; // Video URL.
+const entryImageUrl = ""; // Image URL (not available for YouTube).
+const entryAuthor = Youtube.newPublicVideoFromSubscriptions.AuthorName || ""; // Channel name.
+const feedTitle = Youtube.newPublicVideoFromSubscriptions.Title || ""; // Feed title (video title).
+const feedUrl = ""; // Feed URL (not available for YouTube).

@@ -1,24 +1,11 @@
 ///////////////////////////////////////////////////////////////////////////////
-// connector for IFTTT 🦋📙📗📘 webhook - Black Friday rev, Nov 28th, 2025
-///////////////////////////////////////////////////////////////////////////////
-//
-// This connector processes data from various sources (e.g., RSS, Twitter, Bluesky)
-// and provides it to the IFTTT webhook for publishing. The data is filtered and
-// edited according to the settings in AppSettings.
-//
+// connector for IFTTT 🦋📙📗📘 webhook - St. Daniel's Day rev, Dec 17th, 2025
 ///////////////////////////////////////////////////////////////////////////////
 
-// Main text content (EntryContent for BlueSky/RSS).
-const entryContent = Feed.newFeedItem.EntryContent || "";
-// Title (EntryTitle for BlueSky/RSS).
-const entryTitle = Feed.newFeedItem.EntryTitle || "";
-// Post/item URL (direct link for BlueSky/RSS).
-const entryUrl = Feed.newFeedItem.EntryUrl || "";
-// First image/media URL (EntryImageUrl for BlueSky/RSS, may be unreliable).
-const entryImageUrl = Feed.newFeedItem.EntryImageUrl || "";
-// Post author username (EntryAuthor for BlueSky/RSS).
-const entryAuthor = Feed.newFeedItem.EntryAuthor || "";
-// Feed title/username (FeedTitle for BlueSky/RSS).
-const feedTitle = Feed.newFeedItem.FeedTitle || "";
-// Source feed/profile URL (FeedUrl for BlueSky/RSS).
-const feedUrl = Feed.newFeedItem.FeedUrl || "";
+const entryContent = Feed.newFeedItem.EntryContent || ""; // Main text content (EntryContent for BlueSky/RSS).
+const entryTitle = Feed.newFeedItem.EntryTitle || ""; // Title (EntryTitle for BlueSky/RSS).
+const entryUrl = Feed.newFeedItem.EntryUrl || ""; // Post/item URL (direct link for BlueSky/RSS).
+const entryImageUrl = Feed.newFeedItem.EntryImageUrl || ""; // First image/media URL (EntryImageUrl for BlueSky/RSS, may be unreliable).
+const entryAuthor = Feed.newFeedItem.EntryAuthor || ""; // Post author username (EntryAuthor for BlueSky/RSS).
+const feedTitle = Feed.newFeedItem.FeedTitle || ""; // Feed title/username (FeedTitle for BlueSky/RSS).
+const feedUrl = Feed.newFeedItem.FeedUrl || ""; // Source feed/profile URL (FeedUrl for BlueSky/RSS).
