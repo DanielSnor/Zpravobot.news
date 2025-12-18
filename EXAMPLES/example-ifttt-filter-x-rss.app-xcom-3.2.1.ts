@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 📙📗📘 webhook settings - St. Daniel's Day Xcancel rev, Dec 17th, 2025
+// IFTTT 📙📗📘 webhook settings - St. Daniel's Day Xcom rev, Dec 17th, 2025
 ///////////////////////////////////////////////////////////////////////////////
 
 // Application settings definition 
@@ -65,9 +65,9 @@ const SETTINGS: AppSettings = {
     "youtu.be", "youtube.com", // Youtube
   ], // URLs in this list are excluded from trimming but still encoded.  
   URL_REPLACE_FROM: ["https://x.com/", "https://twitter.com/"], // Source URL pattern(s) to replace. String or array.
-  URL_REPLACE_TO: "https://xcancel.com/", // Target URL pattern for replacement.
+  URL_REPLACE_TO: "https://xcom.com/", // Target URL pattern for replacement.
   // OUTPUT FORMATTING & PREFIXES //
-  MENTION_FORMATTING: { "RSS": { type: "prefix", value: "https://xcancel.com/" }, }, // Prefix for Twitter mentions
+  MENTION_FORMATTING: { "RSS": { type: "prefix", value: "https://xcom.com/" }, }, // Prefix for Twitter mentions
   PREFIX_IMAGE_URL: "", // E.g., "" | "🖼️ ". Prefix for image URLs if shown.
   PREFIX_POST_URL: "\n", // E.g., "" | "\n\n🦋 " | "\n\n𝕏 " | "\n🔗 ". Formatting for post URLs.
   PREFIX_QUOTE: " 𝕏📝💬 ", // E.g., "" | "comments post from" | "🦋📝💬" | "𝕏📝💬". Formatting for quoted content.
@@ -1387,7 +1387,7 @@ function selectContent(content: any, title: any): string {
   // For RSS: combine title and content if enabled
   if (SETTINGS.POST_FROM === "RSS" && SETTINGS.COMBINE_TITLE_AND_CONTENT) {
   const titleStr = safeString(title);
-  const contentStr = safeString(content);
+  const contentStr = normalizeHtml(safeString(content));
   if (titleStr && contentStr) { return titleStr + SETTINGS.CONTENT_TITLE_SEPARATOR + contentStr; }
   return titleStr || contentStr || "";
   }
