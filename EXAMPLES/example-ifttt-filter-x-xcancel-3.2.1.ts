@@ -97,7 +97,7 @@ const feedTitle = Twitter.newTweetFromSearch.UserName || ""; // Feed title/usern
 const feedUrl = "https://x.com/" + (Twitter.newTweetFromSearch.UserName || ""); // Source profile URL (constructed from username).
 
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.2.0 - St. Daniel's Day, Dec 17th, 2025
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.2.1 - Bake Cookies Day, Dec 18th, 2025
 ///////////////////////////////////////////////////////////////////////////////
 
 // Filter rule definition for advanced filtering logic

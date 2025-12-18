@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.2.0 - St. Daniel's Day, Dec 17th, 2025
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.2.1 - Bake Cookies Day, Dec 18th, 2025
 ///////////////////////////////////////////////////////////////////////////////
 
 // Filter rule definition for advanced filtering logic
