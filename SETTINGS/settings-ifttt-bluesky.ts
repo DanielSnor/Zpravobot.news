@@ -35,8 +35,8 @@ interface AppSettings {
   POST_FROM: "BS" | "RSS" | "TW" | "YT"; // Source platform identifier.
   SHOW_REAL_NAME: boolean; // Use author's real name instead of username (reposts, quotes).
   SHOW_TITLE_AS_CONTENT: boolean; // Prioritize entryTitle over entryContent.
-  // RSS-SPECIFIC SETTINGS //
-  COMBINE_TITLE_AND_CONTENT: boolean; // Combine entryTitle and entryContent (RSS only).
+  // CONTENT COMBINATION (RSS & YOUTUBE) //
+  COMBINE_TITLE_AND_CONTENT: boolean; // Combine entryTitle and entryContent (RSS and YT only).
   CONTENT_TITLE_SEPARATOR: string; // Title and Content Separator
   RSS_MAX_INPUT_CHARS: number; // Max RSS input length before processing (0 = no limit).
 }
@@ -77,9 +77,9 @@ const SETTINGS: AppSettings = {
   MOVE_URL_TO_END: true, // Move URLs from beginning to end (useful for RSS).
   POST_FROM: "BS", // "BS" | "RSS" | "TW" | "YT". Set this based on the IFTTT trigger used for the applet.
   SHOW_REAL_NAME: true, // true | false. Prefer real name over username if available.
-  SHOW_TITLE_AS_CONTENT: false, // true | false. Use title as content if set to true.
-  // RSS-SPECIFIC SETTINGS //
-    COMBINE_TITLE_AND_CONTENT: false, // true | false. Combine both title and content for RSS feeds.
-    CONTENT_TITLE_SEPARATOR: "", // Title and Content Separator when COMBINE_TITLE_AND_CONTENT: true
-    RSS_MAX_INPUT_CHARS: 1000, // Limit input to 1000 characters for RSS before HTML processing.
-  };
+  SHOW_TITLE_AS_CONTENT: false, // true | false. Use title as content (lower priority than COMBINE).
+  // CONTENT COMBINATION (RSS & YOUTUBE) //
+  COMBINE_TITLE_AND_CONTENT: false, // Merge title + content for enhanced posts (RSS, YT only).
+  CONTENT_TITLE_SEPARATOR: "", // Title and Content Separator when COMBINE_TITLE_AND_CONTENT: true
+  RSS_MAX_INPUT_CHARS: 1000, // Limit input to 1000 characters for RSS before HTML processing.
+};
