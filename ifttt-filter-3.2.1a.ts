@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.2.1 - Bake Cookies Day, Dec 18th, 2025
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.2.1a - Bake Cookies Day, Dec 18th, 2025
 ///////////////////////////////////////////////////////////////////////////////
 
 // Filter rule definition for advanced filtering logic
@@ -1286,12 +1286,12 @@ function processUrl(url: string): string {
 
 /** Selects primary content source */
 function selectContent(content: any, title: any): string {
-  // For RSS: combine title and content if enabled
-  if (SETTINGS.POST_FROM === "RSS" && SETTINGS.COMBINE_TITLE_AND_CONTENT) {
-  const titleStr = safeString(title);
-  const contentStr = normalizeHtml(safeString(content));
-  if (titleStr && contentStr) { return titleStr + SETTINGS.CONTENT_TITLE_SEPARATOR + contentStr; }
-  return titleStr || contentStr || "";
+  // For RSS AND YOUTUBE: combine title and content if enabled
+  if ((SETTINGS.POST_FROM === "RSS" || SETTINGS.POST_FROM === "YT") && SETTINGS.COMBINE_TITLE_AND_CONTENT) {
+    const titleStr = safeString(title);
+    const contentStr = normalizeHtml(safeString(content));
+    if (titleStr && contentStr) { return titleStr + SETTINGS.CONTENT_TITLE_SEPARATOR + contentStr; }
+    return titleStr || contentStr || "";
   }
 
   if (SETTINGS.SHOW_TITLE_AS_CONTENT) { return title || ""; }
