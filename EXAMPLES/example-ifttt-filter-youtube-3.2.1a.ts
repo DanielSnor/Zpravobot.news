@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 📙📗📘 webhook settings - St. Daniel's Day rev, Dec 17th, 2025
+// IFTTT 📺 webhook settings - St. Daniel's Day rev, Dec 17th, 2025
 ///////////////////////////////////////////////////////////////////////////////
 
 // Application settings definition 
@@ -35,7 +35,7 @@ interface AppSettings {
   POST_FROM: "BS" | "RSS" | "TW" | "YT"; // Source platform identifier.
   SHOW_REAL_NAME: boolean; // Use author's real name instead of username (reposts, quotes).
   SHOW_TITLE_AS_CONTENT: boolean; // Prioritize entryTitle over entryContent.
-  // RSS-SPECIFIC SETTINGS //
+  // CONTENT COMBINATION (RSS & YOUTUBE) //
   COMBINE_TITLE_AND_CONTENT: boolean; // Combine entryTitle and entryContent (RSS only).
   CONTENT_TITLE_SEPARATOR: string; // Title and Content Separator
   RSS_MAX_INPUT_CHARS: number; // Max RSS input length before processing (0 = no limit).
@@ -49,16 +49,13 @@ const SETTINGS: AppSettings = {
   REPOST_ALLOWED: true, // true | false. Determines if reposts are processed or skipped.
   // CONTENT PROCESSING & TRANSFORMATION //
   AMPERSAND_SAFE_CHAR: `⅋`, // Replacement for & char to prevent encoding issues in URLs or text.
-  CONTENT_REPLACEMENTS: [ 
-    { pattern: "^.+?\\s+(Posted|shared|updated status)$", replacement: "", flags: "i", literal: false }, // Removes the FB Posted title
-    { pattern: "(When[^>]+deleted.)", replacement: "", flags: "gim", literal: false }, // Removes the FB deletion message
-  ], // E.g.: { pattern: "what", replacement: "by_what", flags: "gi", literal: false }
-  POST_LENGTH: 200, // 0 - 500 chars. Adjust based on target platform's character limit.
+  CONTENT_REPLACEMENTS: [], // E.g.: { pattern: "what", replacement: "by_what", flags: "gi", literal: false }
+  POST_LENGTH: 250, // 0 - 500 chars. Adjust based on target platform's character limit.
   POST_LENGTH_TRIM_STRATEGY: "smart", // "sentence" | "word" | "smart". Preserve meaningful content.
   SMART_TOLERANCE_PERCENT: 12, // 5-25, rec. 12. % of POST_LENGTH for sentence boundaries.
   TCO_REPLACEMENT: "", // "" | "↗" | "🔗↗️" | "[url]". Placeholder for t.co links (Twitter/X).
   // URL CONFIGURATION //
-  FORCE_SHOW_ORIGIN_POSTURL: false, // Always show original post URL.
+  FORCE_SHOW_ORIGIN_POSTURL: true, // Always show original post URL.
   FORCE_SHOW_FEEDURL: false, // Use feed URL as fallback when URL processing fails.
   SHOW_IMAGEURL: false, // true | false. Include image URLs in output if available.
   URL_DOMAIN_FIXES: [], // Domains that are automatically prefixed with https:// if the protocol is missing.
@@ -70,37 +67,37 @@ const SETTINGS: AppSettings = {
   URL_REPLACE_FROM: "", // Source URL pattern(s) to replace. String or array.
   URL_REPLACE_TO: "", // Target URL pattern for replacement.
   // OUTPUT FORMATTING & PREFIXES //
-  MENTION_FORMATTING: { "RSS": { type: "prefix", value: "https://www.instagram.com/" }, }, // Prefix for Instagram mentions.
+  MENTION_FORMATTING: { "YT": { type: "none", value: "" }, }, // No Prefix for YT mentions
   PREFIX_IMAGE_URL: "", // E.g., "" | "🖼️ ". Prefix for image URLs if shown.
-  PREFIX_POST_URL: "\n", // E.g., "" | "\n\n🦋 " | "\n\n𝕏 " | "\n🔗 ". Formatting for post URLs.
+  PREFIX_POST_URL: "\nYT 📺👇👇👇\n", // E.g., "" | "\n\n🦋 " | "\n\n𝕏 " | "\n🔗 ". Formatting for post URLs.
   PREFIX_QUOTE: "", // E.g., "" | "comments post from" | "🦋📝💬" | "𝕏📝💬". Formatting for quoted content.
   PREFIX_REPOST: "", // E.g., "" | "shares" | "𝕏📤". Formatting prefix for reposts.
   PREFIX_SELF_REFERENCE: "", // Text for self-quotes a self-reposts
   // PLATFORM-SPECIFIC SETTINGS //
   MOVE_URL_TO_END: false, // Move URLs from beginning to end (useful for RSS).
-  POST_FROM: "RSS", // "BS" | "RSS" | "TW" | "YT". Set this based on the IFTTT trigger used for the applet.
+  POST_FROM: "YT", // "BS" | "RSS" | "TW" | "YT". Set this based on the IFTTT trigger used for the applet.
   SHOW_REAL_NAME: true, // true | false. Prefer real name over username if available.
-  SHOW_TITLE_AS_CONTENT: false, // true | false. Use title as content if set to true.
-  // RSS-SPECIFIC SETTINGS //
-  COMBINE_TITLE_AND_CONTENT: false, // true | false. Combine both title and content for RSS feeds.
-  CONTENT_TITLE_SEPARATOR: "\n📰 ", // Title and Content Separator when COMBINE_TITLE_AND_CONTENT: true
+  SHOW_TITLE_AS_CONTENT: false, // true | false. Use title as content (lower priority than COMBINE).
+  // CONTENT COMBINATION (RSS & YOUTUBE) //
+  COMBINE_TITLE_AND_CONTENT: false, // Merge title + content for enhanced posts (RSS, YT only).
+  CONTENT_TITLE_SEPARATOR: "", // Title and Content Separator when COMBINE_TITLE_AND_CONTENT: true
   RSS_MAX_INPUT_CHARS: 1000, // Limit input to 1000 characters for RSS before HTML processing.
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// connector for IFTTT 🦋📙📗📘 webhook - St. Daniel's Day rev, Dec 17th, 2025
+// connector for IFTTT 📺 webhook - St. Daniel's Day rev, Dec 17th, 2025
 ///////////////////////////////////////////////////////////////////////////////
 
-const entryContent = Feed.newFeedItem.EntryContent || ""; // Main text content (EntryContent for BlueSky/RSS).
-const entryTitle = Feed.newFeedItem.EntryTitle || ""; // Title (EntryTitle for BlueSky/RSS).
-const entryUrl = Feed.newFeedItem.EntryUrl || ""; // Post/item URL (direct link for BlueSky/RSS).
-const entryImageUrl = Feed.newFeedItem.EntryImageUrl || ""; // First image/media URL (EntryImageUrl for BlueSky/RSS, may be unreliable).
-const entryAuthor = Feed.newFeedItem.EntryAuthor || ""; // Post author username (EntryAuthor for BlueSky/RSS).
-const feedTitle = Feed.newFeedItem.FeedTitle || ""; // Feed title/username (FeedTitle for BlueSky/RSS).
-const feedUrl = Feed.newFeedItem.FeedUrl || ""; // Source feed/profile URL (FeedUrl for BlueSky/RSS).
+const entryContent = Youtube.newPublicVideoFromSubscriptions.Description || ""; // Video description.
+const entryTitle = Youtube.newPublicVideoFromSubscriptions.Title || ""; // Video title.
+const entryUrl = Youtube.newPublicVideoFromSubscriptions.Url || ""; // Video URL.
+const entryImageUrl = ""; // Image URL (not available for YouTube).
+const entryAuthor = Youtube.newPublicVideoFromSubscriptions.AuthorName || ""; // Channel name.
+const feedTitle = Youtube.newPublicVideoFromSubscriptions.Title || ""; // Feed title (video title).
+const feedUrl = ""; // Feed URL (not available for YouTube).
 
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.2.1 - Bake Cookies Day, Dec 18th, 2025
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.2.1a - Bake Cookies Day, Dec 18th, 2025
 ///////////////////////////////////////////////////////////////////////////////
 
 // Filter rule definition for advanced filtering logic
@@ -1387,12 +1384,12 @@ function processUrl(url: string): string {
 
 /** Selects primary content source */
 function selectContent(content: any, title: any): string {
-  // For RSS: combine title and content if enabled
-  if (SETTINGS.POST_FROM === "RSS" && SETTINGS.COMBINE_TITLE_AND_CONTENT) {
-  const titleStr = safeString(title);
-  const contentStr = normalizeHtml(safeString(content));
-  if (titleStr && contentStr) { return titleStr + SETTINGS.CONTENT_TITLE_SEPARATOR + contentStr; }
-  return titleStr || contentStr || "";
+  // For RSS AND YOUTUBE: combine title and content if enabled
+  if ((SETTINGS.POST_FROM === "RSS" || SETTINGS.POST_FROM === "YT") && SETTINGS.COMBINE_TITLE_AND_CONTENT) {
+    const titleStr = safeString(title);
+    const contentStr = normalizeHtml(safeString(content));
+    if (titleStr && contentStr) { return titleStr + SETTINGS.CONTENT_TITLE_SEPARATOR + contentStr; }
+    return titleStr || contentStr || "";
   }
 
   if (SETTINGS.SHOW_TITLE_AS_CONTENT) { return title || ""; }
