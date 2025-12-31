@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 𝕏 webhook settings - St. Daniel's Day rev, Dec 17th, 2025
+// IFTTT 𝕏 webhook settings - Z Day Xcom rev, Jan 1st, 2026
 ///////////////////////////////////////////////////////////////////////////////
 
 // Application settings definition 
@@ -21,7 +21,7 @@ interface AppSettings {
   SHOW_IMAGEURL: boolean; // Include image URLs in output (using PREFIX_IMAGE_URL).
   URL_DOMAIN_FIXES: string[]; // Domains to add https:// if missing (e.g. "rspkt.cz").
   URL_NO_TRIM_DOMAINS: string[]; // URLs to skip trimUrlQuery but still URL-encode in processAmpersands.
-  URL_REPLACE_FROM: string | string[]; // URL base(s) to replace. String or array.
+  URL_REPLACE_FROM: string[]; // URL base(s) to replace. Array only.
   URL_REPLACE_TO: string; // Target URL base for replacement.
   // OUTPUT FORMATTING & PREFIXES //
   MENTION_FORMATTING: { [platform: string]: { type: "prefix" | "suffix" | "none";value: string } }; // @mention format per platform.
@@ -44,8 +44,8 @@ interface AppSettings {
 // Application settings configuration
 const SETTINGS: AppSettings = {
   // CONTENT FILTERING & VALIDATION //
-  PHRASES_BANNED: [], // E.g. ["advertisement", {type:"regex",pattern:"\\bsale\\b",flags:"i"}]
-  PHRASES_REQUIRED: [], // E.g. ["news", {type:"and",keywords:["tech","innovation"]}]
+  PHRASES_BANNED: [], // E.g. [{type:"regex",pattern:"\\bsale\\b"}]. See FilterRule docs for more.
+  PHRASES_REQUIRED: [], // E.g. [{type:"and",content:["tech","AI"]}]. See FilterRule docs for more.
   REPOST_ALLOWED: true, // true | false. Determines if reposts are processed or skipped.
   // CONTENT PROCESSING & TRANSFORMATION //
   AMPERSAND_SAFE_CHAR: `⅋`, // Replacement for & char to prevent encoding issues in URLs or text.
@@ -61,13 +61,13 @@ const SETTINGS: AppSettings = {
   URL_DOMAIN_FIXES: [], // Domains that are automatically prefixed with https:// if the protocol is missing.
   URL_NO_TRIM_DOMAINS: [
     "facebook.com", "www.facebook.com", "instagram.com", "www.instagram.com", // Facebook and Instagram
-    "bit.ly", "goo.gl", "ift.tt", "ow.ly", "tinyurl.com", // URL shorteners
+    "bit.ly", "goo.gl", "ift.tt", "ow.ly", "t.co", "tinyurl.com", // URL shorteners
     "youtu.be", "youtube.com", // Youtube
   ], // URLs in this list are excluded from trimming but still encoded.
-  URL_REPLACE_FROM: ["https://x.com/", "https://twitter.com/"], // Source URL pattern(s) to replace. String or array.
-  URL_REPLACE_TO: "https://xcancel.com/", // Target URL pattern for replacement.
+  URL_REPLACE_FROM: ["https://x.com/", "https://twitter.com/"], // Array of URL patterns to replace.
+  URL_REPLACE_TO: "https://x.com/", // Target URL pattern for replacement.
   // OUTPUT FORMATTING & PREFIXES //
-  MENTION_FORMATTING: { "TW": { type: "prefix", value: "https://xcancel.com/" }, }, // Prefix for Twitter mentions
+  MENTION_FORMATTING: { "TW": { type: "prefix", value: "https://x.com/" }, }, // Prefix for Twitter mentions
   PREFIX_IMAGE_URL: "", // E.g., "" | "🖼️ ". Prefix for image URLs if shown.
   PREFIX_POST_URL: "\n", // E.g., "" | "\n\n🦋 " | "\n\n𝕏 " | "\n🔗 ". Formatting for post URLs.
   PREFIX_QUOTE: " 𝕏📝💬 ", // E.g., "" | "comments post from" | "🦋📝💬" | "𝕏📝💬". Formatting for quoted content.

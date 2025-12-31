@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋 webhook settings - St. Daniel's Day rev, Dec 17th, 2025
+// IFTTT 🦋 webhook settings - Z Day rev, Jan 1st, 2026
 ///////////////////////////////////////////////////////////////////////////////
 
 // Application settings definition 
@@ -21,7 +21,7 @@ interface AppSettings {
   SHOW_IMAGEURL: boolean; // Include image URLs in output (using PREFIX_IMAGE_URL).
   URL_DOMAIN_FIXES: string[]; // Domains to add https:// if missing (e.g. "rspkt.cz").
   URL_NO_TRIM_DOMAINS: string[]; // URLs to skip trimUrlQuery but still URL-encode in processAmpersands.
-  URL_REPLACE_FROM: string | string[]; // URL base(s) to replace. String or array.
+  URL_REPLACE_FROM: string[]; // URL base(s) to replace. Array only.
   URL_REPLACE_TO: string; // Target URL base for replacement.
   // OUTPUT FORMATTING & PREFIXES //
   MENTION_FORMATTING: { [platform: string]: { type: "prefix" | "suffix" | "none";value: string } }; // @mention format per platform.
@@ -36,7 +36,7 @@ interface AppSettings {
   SHOW_REAL_NAME: boolean; // Use author's real name instead of username (reposts, quotes).
   SHOW_TITLE_AS_CONTENT: boolean; // Prioritize entryTitle over entryContent.
   // CONTENT COMBINATION (RSS & YOUTUBE) //
-  COMBINE_TITLE_AND_CONTENT: boolean; // Combine entryTitle and entryContent (RSS and YT only).
+  COMBINE_TITLE_AND_CONTENT: boolean; // Combine entryTitle and entryContent (RSS only).
   CONTENT_TITLE_SEPARATOR: string; // Title and Content Separator
   RSS_MAX_INPUT_CHARS: number; // Max RSS input length before processing (0 = no limit).
 }
@@ -44,8 +44,8 @@ interface AppSettings {
 // Application settings configuration
 const SETTINGS: AppSettings = {
   // CONTENT FILTERING & VALIDATION //
-  PHRASES_BANNED: [], // E.g. ["advertisement", {type:"regex",pattern:"\\bsale\\b",flags:"i"}]
-  PHRASES_REQUIRED: [], // E.g. ["news", {type:"and",keywords:["tech","innovation"]}]
+  PHRASES_BANNED: [], // E.g. [{type:"regex",pattern:"\\bsale\\b"}]. See FilterRule docs for more.
+  PHRASES_REQUIRED: [], // E.g. [{type:"and",content:["tech","AI"]}]. See FilterRule docs for more.
   REPOST_ALLOWED: true, // true | false. Determines if reposts are processed or skipped.
   // CONTENT PROCESSING & TRANSFORMATION //
   AMPERSAND_SAFE_CHAR: `⅋`, // Replacement for & char to prevent encoding issues in URLs or text.
@@ -64,7 +64,7 @@ const SETTINGS: AppSettings = {
     "bit.ly", "goo.gl", "ift.tt", "ow.ly", "t.co", "tinyurl.com", // URL shorteners
     "youtu.be", "youtube.com", // Youtube
   ], // URLs in this list are excluded from trimming but still encoded.  
-  URL_REPLACE_FROM: "", // Source URL pattern(s) to replace. String or array.
+  URL_REPLACE_FROM: [], // Array of URL patterns to replace.
   URL_REPLACE_TO: "", // Target URL pattern for replacement.
   // OUTPUT FORMATTING & PREFIXES //
   MENTION_FORMATTING: { "BS": { type: "prefix", value: "https://bsky.app/profile/" }, }, // Prefix for BlueSky mentions

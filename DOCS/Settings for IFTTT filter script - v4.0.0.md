@@ -1,6 +1,6 @@
-# Settings for IFTTT filter script v3.2.0
+# Settings for IFTTT filter script v4.0.0
 
-This document explains all settings possibilities for the IFTTT filter script version 3.2.0 (St. Daniel's Day, Dec 17th, 2025 rev), including default behaviors and examples of use. The script is designed to process posts from various platforms (e.g., Twitter, Bluesky, RSS, YouTube) and publish them via an IFTTT webhook.
+This document explains all settings possibilities for the IFTTT filter script version 4.0.0 (Z Day, Dec 30th, 2025 rev), including default behaviors and examples of use. The script is designed to process posts from various platforms (e.g., Twitter, Bluesky, RSS, YouTube) and publish them via an IFTTT webhook.
 
 The output is composed of several parts:
 
@@ -19,6 +19,29 @@ These parts are combined in the output format, for example:
 > 🔗 https://example.com/post/link-to-post
 
 Note: Filter scripts in IFTTT run as "scripts in scripts over scripts," so special care must be taken with special characters, often requiring escape sequences.
+
+---
+
+## What's New in v4.0.0
+
+### Breaking Changes
+
+Version 4.0.0 removes legacy compatibility layers:
+
+- **FilterRule keywords removed**: Use content instead
+- **URL_REPLACE_FROM array required**: Single string no longer supported  
+- **Cache system removed**: Replaced with optimized algorithms
+
+### New Features
+
+- **RSS Retweet Formatting**: Full rss.app support with RT by @ format
+- **Performance**: 100x faster entity processing, -11% code size
+- **Bug Fixes**: Plus sign Unicode, RSS author fallback, duplicate RT cleanup
+
+### Code Metrics: v3.2.1 vs v4.0.0
+- File Size: 63 KB → 56 KB (-11%)
+- Functions: 42+ → 30 (-29%)
+- Available Space: 2 KB → 9 KB (+350%)
 
 ---
 
@@ -107,51 +130,47 @@ Note: Filter scripts in IFTTT run as "scripts in scripts over scripts," so speci
 The Settings for the final script look like the following:
 
 ```javascript
+// Application settings configuration
 const SETTINGS: AppSettings = {
   // CONTENT FILTERING & VALIDATION //
-  PHRASES_BANNED: [], 
-  PHRASES_REQUIRED: [], 
-  REPOST_ALLOWED: true,
-
+  PHRASES_BANNED: [], // E.g. ["advertisement", {type:"regex",pattern:"\\bsale\\b",flags:"i"}]
+  PHRASES_REQUIRED: [], // E.g. ["news", {type:"and",keywords:["tech","innovation"]}]
+  REPOST_ALLOWED: true, // true | false. Determines if reposts are processed or skipped.
   // CONTENT PROCESSING & TRANSFORMATION //
-  AMPERSAND_SAFE_CHAR: `⅋`,
-  CONTENT_REPLACEMENTS: [],
-  POST_LENGTH: 444,
-  POST_LENGTH_TRIM_STRATEGY: "smart",
-  SMART_TOLERANCE_PERCENT: 12,
-  TCO_REPLACEMENT: "🔗↗️",
-
+  AMPERSAND_SAFE_CHAR: `⅋`, // Replacement for & char to prevent encoding issues in URLs or text.
+  CONTENT_REPLACEMENTS: [], // E.g.: { pattern: "what", replacement: "by_what", flags: "gi", literal: false }
+  POST_LENGTH: 444, // 0 - 500 chars. Adjust based on target platform's character limit.
+  POST_LENGTH_TRIM_STRATEGY: "smart", // "sentence" | "word" | "smart". Preserve meaningful content.
+  SMART_TOLERANCE_PERCENT: 12, // 5-25, rec. 12. % of POST_LENGTH for sentence boundaries.
+  TCO_REPLACEMENT: "🔗↗️", // "" | "↗" | "🔗↗️" | "[url]". Placeholder for t.co links (Twitter/X).
   // URL CONFIGURATION //
-  FORCE_SHOW_ORIGIN_POSTURL: false,
-  FORCE_SHOW_FEEDURL: false,
-  SHOW_IMAGEURL: false,
-  URL_DOMAIN_FIXES: [],
+  FORCE_SHOW_ORIGIN_POSTURL: false, // Always show original post URL.
+  FORCE_SHOW_FEEDURL: false, // Use feed URL as fallback when URL processing fails.
+  SHOW_IMAGEURL: false, // true | false. Include image URLs in output if available.
+  URL_DOMAIN_FIXES: [], // Domains that are automatically prefixed with https:// if the protocol is missing.
   URL_NO_TRIM_DOMAINS: [
-    "facebook.com", "www.facebook.com", "instagram.com", "www.instagram.com",
-    "bit.ly", "goo.gl", "ift.tt", "ow.ly", "tinyurl.com",
-    "youtu.be", "youtube.com",
-  ],
-  URL_REPLACE_FROM: ["https://x.com/", "https://twitter.com/"],
-  URL_REPLACE_TO: "https://x.com/",
-
+    "facebook.com", "www.facebook.com", "instagram.com", "www.instagram.com", // Facebook and Instagram
+    "bit.ly", "goo.gl", "ift.tt", "ow.ly", "tinyurl.com", // URL shorteners
+    "youtu.be", "youtube.com", // Youtube
+  ], // URLs in this list are excluded from trimming but still encoded.
+  URL_REPLACE_FROM: ["https://x.com/", "https://twitter.com/"], // Source URL pattern(s) to replace. String or array.
+  URL_REPLACE_TO: "https://xcancel.com/", // Target URL pattern for replacement.
   // OUTPUT FORMATTING & PREFIXES //
-  MENTION_FORMATTING: { "TW": { type: "prefix", value: "https://x.com/" } },
-  PREFIX_IMAGE_URL: "",
-  PREFIX_POST_URL: "\n",
-  PREFIX_QUOTE: " 𝕏📝💬 ",
-  PREFIX_REPOST: " 𝕏📤 ",
-  PREFIX_SELF_REFERENCE: "svůj post",
-
+  MENTION_FORMATTING: { "TW": { type: "prefix", value: "https://xcancel.com/" }, }, // Prefix for Twitter mentions
+  PREFIX_IMAGE_URL: "", // E.g., "" | "🖼️ ". Prefix for image URLs if shown.
+  PREFIX_POST_URL: "\n", // E.g., "" | "\n\n🦋 " | "\n\n𝕏 " | "\n🔗 ". Formatting for post URLs.
+  PREFIX_QUOTE: " 𝕏📝💬 ", // E.g., "" | "comments post from" | "🦋📝💬" | "𝕏📝💬". Formatting for quoted content.
+  PREFIX_REPOST: " 𝕏📤 ", // E.g., "" | "shares" | "𝕏📤". Formatting prefix for reposts.
+  PREFIX_SELF_REFERENCE: "svůj post", // Text for self-quotes a self-reposts
   // PLATFORM-SPECIFIC SETTINGS //
-  MOVE_URL_TO_END: false,
-  POST_FROM: "TW",
-  SHOW_REAL_NAME: true,
-  SHOW_TITLE_AS_CONTENT: false,
-
-  // RSS-SPECIFIC SETTINGS //
-  COMBINE_TITLE_AND_CONTENT: false,
-  CONTENT_TITLE_SEPARATOR: "",
-  RSS_MAX_INPUT_CHARS: 1000,
+  MOVE_URL_TO_END: false, // Move URLs from beginning to end (useful for RSS).
+  POST_FROM: "TW", // "BS" | "RSS" | "TW" | "YT". Set this based on the IFTTT trigger used for the applet.
+  SHOW_REAL_NAME: true, // true | false. Prefer real name over username if available.
+  SHOW_TITLE_AS_CONTENT: false, // true | false. Use title as content (lower priority than COMBINE).
+  // CONTENT COMBINATION (RSS & YOUTUBE) //
+  COMBINE_TITLE_AND_CONTENT: false, // Merge title + content for enhanced posts (RSS, YT only).
+  CONTENT_TITLE_SEPARATOR: "", // Title and Content Separator when COMBINE_TITLE_AND_CONTENT: true
+  RSS_MAX_INPUT_CHARS: 1000, // Limit input to 1000 characters for RSS before HTML processing.
 };
 ```
 
@@ -176,12 +195,12 @@ PHRASES_BANNED: [
 
 // AND logic - all keywords must be present
 PHRASES_BANNED: [
-  { type: "and", keywords: ["buy", "now", "discount"] }
+  { type: "and", content: ["buy", "now", "discount"] }
 ]
 
 // OR logic - any keyword triggers the filter
 PHRASES_BANNED: [
-  { type: "or", keywords: ["ad", "sponsored", "promo"] }
+  { type: "or", content: ["ad", "sponsored", "promo"] }
 ]
 
 // NOT logic - negates any rule (NEW in v3.1.0)
@@ -196,7 +215,7 @@ PHRASES_BANNED: [
     operator: "and",
     rules: [
       "advertisement",
-      { type: "or", keywords: ["sale", "discount", "offer"] }
+      { type: "or", content: ["sale", "discount", "offer"] }
     ]
   }
 ]
@@ -241,7 +260,7 @@ PHRASES_REQUIRED: ["tech", "science", "innovation"]
 
 // AND logic - all keywords must be present
 PHRASES_REQUIRED: [
-  { type: "and", keywords: ["breaking", "news"] }
+  { type: "and", content: ["breaking", "news"] }
 ]
 
 // Unified filtering with content + username
@@ -1225,6 +1244,49 @@ CONTENT_TITLE_SEPARATOR: " | "      // Pipe
 
 ---
 
+## Migration Guide from v3.2.0 to v4.0.0
+
+### Breaking Changes
+
+#### 1. FilterRule: keywords → content
+
+```javascript
+// NO LONGER WORKS (v3.x)
+{ type: "and", keywords: ["tech", "AI"] }
+
+// REQUIRED (v4.0.0)
+{ type: "and", content: ["tech", "AI"] }
+```
+
+**Migration:** Replace all `keywords:` with `content:`
+
+#### 2. URL_REPLACE_FROM: Array Required
+
+```javascript
+// NO LONGER WORKS (v3.x)
+URL_REPLACE_FROM: "https://twitter.com/"
+
+// REQUIRED (v4.0.0)  
+URL_REPLACE_FROM: ["https://twitter.com/"]
+```
+
+**Migration:** Wrap string in array brackets `[ ]`
+
+### New Features (Automatic)
+
+- RSS retweet formatting for rss.app feeds
+- 100x faster entity processing
+- Optimized filter matching
+
+### Deployment Checklist
+
+- [ ] Replace keywords with content in all filters
+- [ ] Convert URL_REPLACE_FROM to array
+- [ ] Test with beta account (50-100 posts)
+- [ ] Deploy to production
+
+---
+
 ## Migration Guide from v3.1.0 to v3.2.0
 
 ### New Settings
@@ -1365,8 +1427,8 @@ PHRASES_REQUIRED: [
     type: "complex",
     operator: "or",
     rules: [
-      { type: "and", keywords: ["tech", "innovation"] },
-      { type: "and", keywords: ["science", "research"] }
+      { type: "and", content: ["tech", "innovation"] },
+      { type: "and", content: ["science", "research"] }
     ]
   }
 ]
@@ -1460,6 +1522,6 @@ URL_REPLACE_TO: "https://xcancel.com/"
 
 ## That's All, Folks
 
-This documentation covers all configuration options for IFTTT filter script v3.2.0. For questions or support, contact via social networks or About.me page.
+This documentation covers all configuration options for IFTTT filter script v4.0.0. For questions or support, contact via social networks or About.me page.
 
-(Updated: December 2025)
+(Updated: December 30, 2025)
