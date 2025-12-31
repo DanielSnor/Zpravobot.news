@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// Connector for IFTTT 𝕏 webhook - St. Daniel's Day rev, Dec 17th, 2025
+// Connector for IFTTT 𝕏 webhook - Z Day rev, Jan 1st, 2026
 ///////////////////////////////////////////////////////////////////////////////
 
 const entryContent = Twitter.newTweetFromSearch.TweetEmbedCode || ""; // Main text content (TweetEmbedCode - HTML embed).

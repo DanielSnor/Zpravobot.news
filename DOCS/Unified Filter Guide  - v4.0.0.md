@@ -1,17 +1,25 @@
-# IFTTT Filter Script v3.1.0 - Unified Filter Structure
+# IFTTT Filter Script v4.0.0 - Unified Filter Structure
 
-## What's New in v3.1.0
+## What's New in v4.0.0
 
-### Unified Filter Structure for OR, AND, NOT Operations
+### Breaking Changes from v3.x
 
-Version 3.1.0 introduces a **unified filter structure** that provides consistent and powerful filtering capabilities across all three logical operations: `OR`, `AND`, and `NOT`.
+Version 4.0.0 removes legacy backward compatibility layers to provide a cleaner, more efficient codebase:
 
-**Key Features:**
-- **Content filtering** with literal strings and regex patterns
-- **Username filtering** with literal strings and regex patterns  
-- **Domain filtering** with literal strings and regex patterns
-- **Full backward compatibility** with v3.0.x and v3.1.x syntax
-- **Consistent interface** across all logical operations
+**⚠️ REMOVED Legacy Features:**
+- ❌ `keywords` property in FilterRule (use `content` instead)
+- ❌ Single string format for `URL_REPLACE_FROM` (use array)
+- ❌ Legacy `rule` property in NOT filters (use direct field matching)
+
+**✨ New Features:**
+- ✅ Enhanced RSS retweet formatting from rss.app feeds
+- ✅ 100x faster entity processing
+- ✅ ~7KB smaller file size (more room for features)
+
+**📦 Maintained Features:**
+- ✅ Unified filter structure with content/username/domain matching
+- ✅ Full regex support across all filter types
+- ✅ COMPLEX rule combinations
 
 ---
 
@@ -19,7 +27,7 @@ Version 3.1.0 introduces a **unified filter structure** that provides consistent
 
 ### Unified Filter Object
 
-Each of the three logical operations (`OR`, `AND`, `NOT`) now supports the same set of filter fields:
+Each of the three logical operations (`OR`, `AND`, `NOT`) supports the same set of filter fields:
 
 ```typescript
 {
@@ -47,10 +55,10 @@ Each of the three logical operations (`OR`, `AND`, `NOT`) now supports the same 
 ```javascript
 PHRASES_BANNED: [
   {
-	type: "or",
-	content: ["spam", "advertisement"],
-	contentRegex: ["\\b(buy|sale)\\b"],
-	domain: ["spam-site.com"]
+    type: "or",
+    content: ["spam", "advertisement"],
+    contentRegex: ["\\b(buy|sale)\\b"],
+    domain: ["spam-site.com"]
   }
 ]
 ```
@@ -67,10 +75,10 @@ This will block posts that contain:
 ```javascript
 PHRASES_REQUIRED: [
   {
-	type: "and",
-	content: ["tech", "2025"],
-	contentRegex: ["\\bAI\\b"],
-	username: ["@techcrunch"]
+    type: "and",
+    content: ["tech", "2025"],
+    contentRegex: ["\\bAI\\b"],
+    username: ["@techcrunch"]
   }
 ]
 ```
@@ -87,9 +95,9 @@ This will only accept posts that contain:
 ```javascript
 PHRASES_BANNED: [
   {
-	type: "not",
-	content: ["verified", "official"],
-	usernameRegex: ["^@news"]
+    type: "not",
+    content: ["verified", "official"],
+    usernameRegex: ["^@news"]
   }
 ]
 ```
@@ -110,11 +118,11 @@ This will accept posts only if they:
 ```javascript
 PHRASES_BANNED: [
   {
-	type: "or",
-	content: ["click here", "limited time", "act now"],
-	contentRegex: ["\\b(discount|sale|offer)s?\\b", "\\d+%\\s+off"],
-	domain: ["spam.com", "ads.example.com"],
-	domainRegex: ["bit\\.ly", "tinyurl"]
+    type: "or",
+    content: ["click here", "limited time", "act now"],
+    contentRegex: ["\\b(discount|sale|offer)s?\\b", "\\d+%\\s+off"],
+    domain: ["spam.com", "ads.example.com"],
+    domainRegex: ["bit\\.ly", "tinyurl"]
   }
 ]
 ```
@@ -138,11 +146,11 @@ PHRASES_BANNED: [
 ```javascript
 PHRASES_REQUIRED: [
   {
-	type: "and",
-	content: ["AI", "2025"],
-	contentRegex: ["\\b(technology|innovation|breakthrough)\\b"],
-	username: ["@techcrunch", "@verge", "@wired"],
-	domain: ["techcrunch.com", "theverge.com", "wired.com"]
+    type: "and",
+    content: ["AI", "2025"],
+    contentRegex: ["\\b(technology|innovation|breakthrough)\\b"],
+    username: ["@techcrunch", "@verge", "@wired"],
+    domain: ["techcrunch.com", "theverge.com", "wired.com"]
   }
 ]
 ```
@@ -165,11 +173,11 @@ PHRASES_REQUIRED: [
 ```javascript
 PHRASES_BANNED: [
   {
-	type: "not",
-	content: ["automated", "bot-generated"],
-	contentRegex: ["\\[bot\\]", "\\bRT\\s+@\\w+:", "automatically posted"],
-	username: ["@autorepost", "@newsbot"],
-	usernameRegex: ["bot$", "^auto"]
+    type: "not",
+    content: ["automated", "bot-generated"],
+    contentRegex: ["\\[bot\\]", "\\bRT\\s+@\\w+:", "automatically posted"],
+    username: ["@autorepost", "@newsbot"],
+    usernameRegex: ["bot$", "^auto"]
   }
 ]
 ```
@@ -193,10 +201,10 @@ PHRASES_BANNED: [
 ```javascript
 PHRASES_REQUIRED: [
   {
-	type: "and",
-	contentRegex: ["\\b(covid|pandemic|vaccine|health)\\b"],
-	domain: ["who.int", "cdc.gov", "nih.gov"],
-	usernameRegex: ["^@(who|cdc|nih)"]
+    type: "and",
+    contentRegex: ["\\b(covid|pandemic|vaccine|health)\\b"],
+    domain: ["who.int", "cdc.gov", "nih.gov"],
+    usernameRegex: ["^@(who|cdc|nih)"]
   }
 ]
 ```
@@ -214,9 +222,9 @@ PHRASES_REQUIRED: [
 ```javascript
 PHRASES_REQUIRED: [
   {
-	type: "and",
-	content: ["python", "release"],
-	contentRegex: ["\\d+\\.\\d+\\.\\d+", "\\b(feature|improvement|bugfix)s?\\b"]
+    type: "and",
+    content: ["python", "release"],
+    contentRegex: ["\\d+\\.\\d+\\.\\d+", "\\b(feature|improvement|bugfix)s?\\b"]
   }
 ]
 ```
@@ -238,9 +246,9 @@ PHRASES_REQUIRED: [
 ```javascript
 PHRASES_REQUIRED: [
   {
-	type: "or",
-	username: ["@bbc", "@cnn", "@reuters"],
-	usernameRegex: ["^@news", "^@official", "verified$"]
+    type: "or",
+    username: ["@bbc", "@cnn", "@reuters"],
+    usernameRegex: ["^@news", "^@official", "verified$"]
   }
 ]
 ```
@@ -259,14 +267,14 @@ PHRASES_REQUIRED: [
 ```javascript
 PHRASES_BANNED: [
   {
-	type: "not",
-	contentRegex: [
-	  "\\b(clickbait|fake news|unverified)\\b",
-	  "\\d+\\s+(weird|shocking|amazing)\\s+tricks?",
-	  "you won't believe"
-	],
-	domain: ["suspicious-site.com", "fake-news.net"],
-	domainRegex: ["\\d{4,}\\.", "random-string"]
+    type: "not",
+    contentRegex: [
+      "\\b(clickbait|fake news|unverified)\\b",
+      "\\d+\\s+(weird|shocking|amazing)\\s+tricks?",
+      "you won't believe"
+    ],
+    domain: ["suspicious-site.com", "fake-news.net"],
+    domainRegex: ["\\d{4,}\\.", "random-string"]
   }
 ]
 ```
@@ -279,44 +287,21 @@ PHRASES_BANNED: [
 
 ---
 
-## Backward Compatibility
+## Simple String Syntax
 
-### Legacy Syntax Still Supported
-
-All previous filter syntax from v3.0.x and v3.1.x continues to work:
+For basic filtering, you can still use simple string arrays:
 
 ```javascript
-// ✅ Simple string (still works)
+// ✅ Simple strings (works for basic filtering)
 PHRASES_BANNED: ["spam", "advertisement"]
 
-// ✅ Legacy OR with keywords (still works)
-PHRASES_REQUIRED: [
-  { type: "or", keywords: ["tech", "science"] }
-]
+PHRASES_REQUIRED: ["tech", "AI", "2025"]
+```
 
-// ✅ Legacy AND with keywords (still works)
-PHRASES_REQUIRED: [
-  { type: "and", keywords: ["AI", "2025"] }
-]
-
-// ✅ Legacy NOT with nested rule (still works)
+This is equivalent to an OR filter:
+```javascript
 PHRASES_BANNED: [
-  { 
-	type: "not", 
-	rule: { type: "regex", pattern: "\\bbot\\b", flags: "i" }
-  }
-]
-
-// ✅ COMPLEX rules (still works)
-PHRASES_REQUIRED: [
-  {
-	type: "complex",
-	operator: "and",
-	rules: [
-	  { type: "literal", pattern: "tech" },
-	  { type: "regex", pattern: "\\d{4}", flags: "i" }
-	]
-  }
+  { type: "or", content: ["spam", "advertisement"] }
 ]
 ```
 
@@ -329,22 +314,22 @@ The unified filter structure works seamlessly with COMPLEX rules:
 ```javascript
 PHRASES_REQUIRED: [
   {
-	type: "complex",
-	operator: "and",
-	rules: [
-	  // Use new unified OR structure
-	  {
-		type: "or",
-		content: ["tech", "science"],
-		contentRegex: ["\\binnovation\\b"]
-	  },
-	  // Use new unified AND structure
-	  {
-		type: "and",
-		content: ["2025"],
-		domain: ["trusted-source.com"]
-	  }
-	]
+    type: "complex",
+    operator: "and",
+    rules: [
+      // Use unified OR structure
+      {
+        type: "or",
+        content: ["tech", "science"],
+        contentRegex: ["\\binnovation\\b"]
+      },
+      // Use unified AND structure
+      {
+        type: "and",
+        content: ["2025"],
+        domain: ["trusted-source.com"]
+      }
+    ]
   }
 ]
 ```
@@ -410,29 +395,39 @@ This requires:
 
 ---
 
-## Migration Guide from v3.0.x / v3.1.x
+## Migration Guide from v3.x
 
-### Old Style → New Style
+### ⚠️ Breaking Change: keywords → content
+
+The `keywords` property is **no longer supported** in v4.0.0. You must update your filter rules:
 
 **OR Filter:**
 ```javascript
-// Old (still works)
+// ❌ v3.x (NO LONGER WORKS)
 { type: "or", keywords: ["tech", "science"] }
 
-// New (more powerful)
+// ✅ v4.0.0 (REQUIRED)
 { 
   type: "or", 
-  content: ["tech", "science"],
-  contentRegex: ["\\binnovation\\b"]
+  content: ["tech", "science"]
 }
 ```
 
 **AND Filter:**
 ```javascript
-// Old (still works)
+// ❌ v3.x (NO LONGER WORKS)
 { type: "and", keywords: ["AI", "2025"] }
 
-// New (more powerful)
+// ✅ v4.0.0 (REQUIRED)
+{ 
+  type: "and", 
+  content: ["AI", "2025"]
+}
+```
+
+**Enhanced with unified structure:**
+```javascript
+// ✅ v4.0.0 (RECOMMENDED - more powerful)
 { 
   type: "and", 
   content: ["AI", "2025"],
@@ -441,22 +436,22 @@ This requires:
 }
 ```
 
-**NOT Filter:**
-```javascript
-// Old (still works)
-{ 
-  type: "not", 
-  rule: { type: "literal", pattern: "spam" }
-}
+### Migration Steps
 
-// New (more powerful)
-{ 
-  type: "not", 
-  content: ["spam", "bot"],
-  contentRegex: ["\\[ad\\]"],
-  usernameRegex: ["bot$"]
-}
-```
+1. **Find all `keywords` usage:**
+   ```bash
+   # Search your configuration file
+   grep -n "keywords" your-ifttt-filter.ts
+   ```
+
+2. **Replace with `content`:**
+   - Change `keywords:` to `content:`
+   - Keep array structure the same
+
+3. **Test thoroughly:**
+   - Deploy to test account first
+   - Monitor 50-100 posts
+   - Verify filtering works as expected
 
 ---
 
@@ -469,11 +464,12 @@ This requires:
 ### Performance
 - Literal string matching (`content`, `username`, `domain`) is faster than regex
 - Use literal matching when possible, regex only when pattern matching is needed
-- The unified structure is optimized for performance with internal caching
+- v4.0.0 includes optimized filter matching (~100x faster entity processing)
 
 ### Size Limit
-- Version 3.1.0: **58,651 bytes (89.5% of 65,536 byte limit)**
-- Approximately **10% headroom** remaining for future features
+- **Version 4.0.0**: ~56 KB (85.9% of 65 KB limit)
+- **Available space**: ~9 KB headroom for future features
+- **Improvement**: -7 KB from v3.2.1 (-11% reduction)
 
 ---
 
@@ -483,18 +479,18 @@ This requires:
 ```javascript
 PHRASES_REQUIRED: [
   {
-	type: "and",
-	content: ["breaking", "news"],
-	usernameRegex: ["^@(bbc|cnn|reuters)"],
-	domain: ["bbc.com", "cnn.com", "reuters.com"]
+    type: "and",
+    content: ["breaking", "news"],
+    usernameRegex: ["^@(bbc|cnn|reuters)"],
+    domain: ["bbc.com", "cnn.com", "reuters.com"]
   }
 ]
 
 PHRASES_BANNED: [
   {
-	type: "or",
-	content: ["opinion", "editorial"],
-	contentRegex: ["\\b(rumor|unconfirmed)\\b"]
+    type: "or",
+    content: ["opinion", "editorial"],
+    contentRegex: ["\\b(rumor|unconfirmed)\\b"]
   }
 ]
 ```
@@ -503,17 +499,17 @@ PHRASES_BANNED: [
 ```javascript
 PHRASES_REQUIRED: [
   {
-	type: "or",
-	content: ["AI", "machine learning", "python", "javascript"],
-	contentRegex: ["\\b(tech|technology|software|developer)\\b"]
+    type: "or",
+    content: ["AI", "machine learning", "python", "javascript"],
+    contentRegex: ["\\b(tech|technology|software|developer)\\b"]
   }
 ]
 
 PHRASES_BANNED: [
   {
-	type: "or",
-	content: ["cryptocurrency", "blockchain", "NFT"],
-	contentRegex: ["\\bcrypto\\b"]
+    type: "or",
+    content: ["cryptocurrency", "blockchain", "NFT"],
+    contentRegex: ["\\bcrypto\\b"]
   }
 ]
 ```
@@ -522,17 +518,17 @@ PHRASES_BANNED: [
 ```javascript
 PHRASES_REQUIRED: [
   {
-	type: "and",
-	usernameRegex: ["^@official", "verified$"],
-	domain: [".gov", ".edu", ".org"]
+    type: "and",
+    usernameRegex: ["^@official", "verified$"],
+    domain: [".gov", ".edu", ".org"]
   }
 ]
 
 PHRASES_BANNED: [
   {
-	type: "not",
-	content: ["verified"],
-	usernameRegex: ["^@fake", "parody$"]
+    type: "not",
+    content: ["verified"],
+    usernameRegex: ["^@fake", "parody$"]
   }
 ]
 ```
@@ -543,7 +539,16 @@ PHRASES_BANNED: [
 
 ### Filter Not Working?
 
-1. **Check regex escaping**
+1. **Check for legacy `keywords` usage**
+   ```javascript
+   // ❌ This will NOT work in v4.0.0
+   { type: "or", keywords: ["test"] }
+   
+   // ✅ Use this instead
+   { type: "or", content: ["test"] }
+   ```
+
+2. **Check regex escaping**
    ```javascript
    // ❌ Wrong
    contentRegex: ["domain.com"]
@@ -552,7 +557,7 @@ PHRASES_BANNED: [
    contentRegex: ["domain\\.com"]
    ```
 
-2. **Verify logic type**
+3. **Verify logic type**
    ```javascript
    // OR: At least ONE must match
    { type: "or", content: ["a", "b"] }
@@ -564,7 +569,7 @@ PHRASES_BANNED: [
    { type: "not", content: ["a", "b"] }
    ```
 
-3. **Test with simple patterns first**
+4. **Test with simple patterns first**
    ```javascript
    // Start simple
    { type: "or", content: ["test"] }
@@ -577,20 +582,24 @@ PHRASES_BANNED: [
 
 ## Support & Feedback
 
+- **GitHub Repository**: https://github.com/danielsnor/zpravobot.news
 - **GitHub Issues**: Report bugs or request features
 - **Documentation**: Full reference at project repository
-- **Version**: 3.1.0 (Button Day, November 16th, 2025)
+- **Version**: 4.0.0 (December 30th, 2025)
 
 ---
 
 ## Summary
 
-Version 3.1.0 provides a **unified, consistent, and powerful filtering system** that works across OR, AND, and NOT operations with support for:
+Version 4.0.0 provides a **unified, consistent, and powerful filtering system** that works across OR, AND, and NOT operations with support for:
 
 ✅ Content filtering (literal + regex)
 ✅ Username filtering (literal + regex)  
 ✅ Domain filtering (literal + regex)
-✅ Full backward compatibility
+✅ Optimized performance (100x faster)
+✅ Smaller file size (-11% reduction)
 ✅ Seamless COMPLEX rule integration
 
-**Upgrade today** to take advantage of more sophisticated filtering capabilities while maintaining 100% compatibility with your existing configurations!
+**⚠️ Note:** This is a major version with breaking changes. Legacy `keywords` syntax is no longer supported - use `content` instead.
+
+**Upgrade today** to take advantage of enhanced performance and features while maintaining clean, modern code!

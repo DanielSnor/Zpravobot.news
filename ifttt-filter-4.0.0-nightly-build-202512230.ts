@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 📙📗📘 webhook settings - St. Daniel's Day Xcancel rev, Dec 17th, 2025
+// IFTTT 𝕏 webhook settings - Z Day Xcom rev, Jan 1st, 2026
 ///////////////////////////////////////////////////////////////////////////////
 
 // Application settings definition 
@@ -21,7 +21,7 @@ interface AppSettings {
   SHOW_IMAGEURL: boolean; // Include image URLs in output (using PREFIX_IMAGE_URL).
   URL_DOMAIN_FIXES: string[]; // Domains to add https:// if missing (e.g. "rspkt.cz").
   URL_NO_TRIM_DOMAINS: string[]; // URLs to skip trimUrlQuery but still URL-encode in processAmpersands.
-  URL_REPLACE_FROM: string | string[]; // URL base(s) to replace. String or array.
+  URL_REPLACE_FROM: string[]; // URL base(s) to replace. Array only.
   URL_REPLACE_TO: string; // Target URL base for replacement.
   // OUTPUT FORMATTING & PREFIXES //
   MENTION_FORMATTING: { [platform: string]: { type: "prefix" | "suffix" | "none";value: string } }; // @mention format per platform.
@@ -44,8 +44,8 @@ interface AppSettings {
 // Application settings configuration
 const SETTINGS: AppSettings = {
   // CONTENT FILTERING & VALIDATION //
-  PHRASES_BANNED: [], // E.g. ["advertisement", {type:"regex",pattern:"\\bsale\\b",flags:"i"}]
-  PHRASES_REQUIRED: [], // E.g. ["news", {type:"and",keywords:["tech","innovation"]}]
+  PHRASES_BANNED: [], // E.g. [{type:"regex",pattern:"\\bsale\\b"}]. See FilterRule docs for more.
+  PHRASES_REQUIRED: [], // E.g. [{type:"and",content:["tech","AI"]}]. See FilterRule docs for more.
   REPOST_ALLOWED: true, // true | false. Determines if reposts are processed or skipped.
   // CONTENT PROCESSING & TRANSFORMATION //
   AMPERSAND_SAFE_CHAR: `⅋`, // Replacement for & char to prevent encoding issues in URLs or text.
@@ -53,29 +53,29 @@ const SETTINGS: AppSettings = {
   POST_LENGTH: 444, // 0 - 500 chars. Adjust based on target platform's character limit.
   POST_LENGTH_TRIM_STRATEGY: "smart", // "sentence" | "word" | "smart". Preserve meaningful content.
   SMART_TOLERANCE_PERCENT: 12, // 5-25, rec. 12. % of POST_LENGTH for sentence boundaries.
-  TCO_REPLACEMENT: "", // "" | "↗" | "🔗↗️" | "[url]". Placeholder for t.co links (Twitter/X).
+  TCO_REPLACEMENT: "🔗↗️", // "" | "↗" | "🔗↗️" | "[url]". Placeholder for t.co links (Twitter/X).
   // URL CONFIGURATION //
-  FORCE_SHOW_ORIGIN_POSTURL: true, // Always show original post URL.
+  FORCE_SHOW_ORIGIN_POSTURL: false, // Always show original post URL.
   FORCE_SHOW_FEEDURL: false, // Use feed URL as fallback when URL processing fails.
   SHOW_IMAGEURL: false, // true | false. Include image URLs in output if available.
   URL_DOMAIN_FIXES: [], // Domains that are automatically prefixed with https:// if the protocol is missing.
   URL_NO_TRIM_DOMAINS: [
     "facebook.com", "www.facebook.com", "instagram.com", "www.instagram.com", // Facebook and Instagram
-    "bit.ly", "goo.gl", "ift.tt", "ow.ly", "t.co", "tinyurl.com", // URL shorteners
+    "bit.ly", "goo.gl", "ift.tt", "ow.ly", "tinyurl.com", // URL shorteners
     "youtu.be", "youtube.com", // Youtube
-  ], // URLs in this list are excluded from trimming but still encoded.  
-  URL_REPLACE_FROM: ["https://x.com/", "https://twitter.com/"], // Source URL pattern(s) to replace. String or array.
-  URL_REPLACE_TO: "https://xcancel.com/", // Target URL pattern for replacement.
+  ], // URLs in this list are excluded from trimming but still encoded.
+  URL_REPLACE_FROM: ["https://x.com/", "https://twitter.com/"], // Array of URL patterns to replace.
+  URL_REPLACE_TO: "https://x.com/", // Target URL pattern for replacement.
   // OUTPUT FORMATTING & PREFIXES //
-  MENTION_FORMATTING: { "RSS": { type: "prefix", value: "https://xcancel.com/" }, }, // Prefix for Twitter mentions
+  MENTION_FORMATTING: { "TW": { type: "prefix", value: "https://x.com/" }, }, // Prefix for Twitter mentions
   PREFIX_IMAGE_URL: "", // E.g., "" | "🖼️ ". Prefix for image URLs if shown.
   PREFIX_POST_URL: "\n", // E.g., "" | "\n\n🦋 " | "\n\n𝕏 " | "\n🔗 ". Formatting for post URLs.
   PREFIX_QUOTE: " 𝕏📝💬 ", // E.g., "" | "comments post from" | "🦋📝💬" | "𝕏📝💬". Formatting for quoted content.
   PREFIX_REPOST: " 𝕏📤 ", // E.g., "" | "shares" | "𝕏📤". Formatting prefix for reposts.
   PREFIX_SELF_REFERENCE: "svůj post", // Text for self-quotes a self-reposts
-  ///// PLATFORM-SPECIFIC SETTINGS /////
-  MOVE_URL_TO_END: false, // true | false. Move URLs from beginning to end of content (useful for RSS feeds).
-  POST_FROM: "RSS", // "BS" | "RSS" | "TW" | "YT". Set this based on the IFTTT trigger used for the applet.
+  // PLATFORM-SPECIFIC SETTINGS //
+  MOVE_URL_TO_END: false, // Move URLs from beginning to end (useful for RSS).
+  POST_FROM: "TW", // "BS" | "RSS" | "TW" | "YT". Set this based on the IFTTT trigger used for the applet.
   SHOW_REAL_NAME: true, // true | false. Prefer real name over username if available.
   SHOW_TITLE_AS_CONTENT: false, // true | false. Use title as content (lower priority than COMBINE).
   // CONTENT COMBINATION (RSS & YOUTUBE) //
@@ -85,145 +85,125 @@ const SETTINGS: AppSettings = {
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// connector for IFTTT 🦋📙📗📘 webhook - St. Daniel's Day rev, Dec 17th, 2025
+// Connector for IFTTT 𝕏 webhook - Z Day rev, Jan 1st, 2026
 ///////////////////////////////////////////////////////////////////////////////
 
-const entryContent = Feed.newFeedItem.EntryContent || ""; // Main text content (EntryContent for BlueSky/RSS).
-const entryTitle = Feed.newFeedItem.EntryTitle || ""; // Title (EntryTitle for BlueSky/RSS).
-const entryUrl = Feed.newFeedItem.EntryUrl || ""; // Post/item URL (direct link for BlueSky/RSS).
-const entryImageUrl = Feed.newFeedItem.EntryImageUrl || ""; // First image/media URL (EntryImageUrl for BlueSky/RSS, may be unreliable).
-const entryAuthor = Feed.newFeedItem.EntryAuthor || ""; // Post author username (EntryAuthor for BlueSky/RSS).
-const feedTitle = Feed.newFeedItem.FeedTitle || ""; // Feed title/username (FeedTitle for BlueSky/RSS).
-const feedUrl = Feed.newFeedItem.FeedUrl || ""; // Source feed/profile URL (FeedUrl for BlueSky/RSS).
+const entryContent = Twitter.newTweetFromSearch.TweetEmbedCode || ""; // Main text content (TweetEmbedCode - HTML embed).
+const entryTitle = Twitter.newTweetFromSearch.Text || ""; // Title (Text - clean content without HTML).
+const entryUrl = Twitter.newTweetFromSearch.LinkToTweet || ""; // Tweet URL.
+const entryImageUrl = Twitter.newTweetFromSearch.FirstLinkUrl || ""; // First image/media URL (FirstLinkUrl).
+const entryAuthor = Twitter.newTweetFromSearch.UserName || ""; // Post author username.
+const feedTitle = Twitter.newTweetFromSearch.UserName || ""; // Feed title/username.
+const feedUrl = "https://x.com/" + (Twitter.newTweetFromSearch.UserName || ""); // Source profile URL (constructed from username).
 
 ///////////////////////////////////////////////////////////////////////////////
-// IFTTT 🦋📙📗📘𝕏📺 webhook filter v3.2.1a - Bake Cookies Day, Dec 18th, 2025
+// IFTTT 🦋📙📗📘𝕏📺 webhook filter v4.0.0 - Nightly build 20251230 10:50
 ///////////////////////////////////////////////////////////////////////////////
 
 // Filter rule definition for advanced filtering logic
-interface FilterRule { type: "literal" | "regex" | "and" | "or" | "not" | "complex"; pattern?: string; keywords?: string[]; flags?: string;
-  rule?: FilterRule; // For NOT rule (legacy support)
-  operator?: "and" | "or"; rules?: FilterRule[]; // For COMPLEX rule
-  content?: string[]; contentRegex?: string[]; // Literal content matches and Regex content patterns
-  username?: string[]; usernameRegex?: string[]; // Literal username matches and Regex username patterns
-  domain?: string[]; domainRegex?: string[]; // Literal domain matches and Regex domain patterns
+interface FilterRule {
+  type: "literal" | "regex" | "and" | "or" | "not" | "complex"; pattern ? : string; flags ? : string; operator ? : "and" | "or";
+  rules ? : FilterRule[]; // For COMPLEX rule
+  content ? : string[];contentRegex ? : string[]; // Literal content matches and Regex content patterns
+  username ? : string[];usernameRegex ? : string[]; // Literal username matches and Regex username patterns
+  domain ? : string[];domainRegex ? : string[]; // Literal domain matches and Regex domain patterns
 }
 
 // Type definitions for Object.entries (standard augmentation)
 interface ObjectConstructor { entries < T > (o: { [s: string]: T } | ArrayLike < T > ): [string, T][]; }
+// Type definitions for ES6 String methods (runtime confirmed, TS needs declarations)
+interface String { startsWith(searchString: string, position?: number): boolean;  endsWith(searchString: string, endPosition?: number): boolean; includes(searchString: string, position?: number): boolean; }
+// Type definitions for ES6 Array methods (runtime confirmed, TS needs declarations)
+interface ArrayConstructor { from<T>(arrayLike: ArrayLike<T>): T[]; from<T, U>(arrayLike: ArrayLike<T>, mapfn: (v: T, k: number) => U, thisArg?: any): U[]; }
 // Type definitions for Platform configurations
 interface PlatformConfig { useParsedText ? : boolean; useFeedTitleAuthor ? : boolean; handleReplies ? : boolean; handleRetweets ? : boolean; handleQuotes ? : boolean; useGetContent ? : boolean; }
 // Type definitions for processed content result
 interface ProcessedContent { content: string; feedAuthor: string; userNameToSkip: string; wasRssTruncated: boolean; }
 // Type definitions for processed status result
 interface ProcessedStatus { trimmedContent: string; needsEllipsis: boolean; urlToShow: string; }
-// Type definitions for string manipulation (standard augmentation)
-interface String { startsWith(searchString: string, position ? : number): boolean; endsWith(searchString: string, endPosition ? : number): boolean; }
-// Array.from polyfill (ES6 feature, runtime check for ES5 compatibility)
-interface ArrayConstructor { from < T > (arrayLike: ArrayLike < T > ): T[]; from < T, U > (arrayLike: ArrayLike < T >, mapfn: (v: T, k: number) => U, thisArg ? : any): U[]; }
 // Type definitions for trim result
 interface TrimResult { content: string; needsEllipsis: boolean; }
 // Type definition for truncate RSS result
 interface TruncateRssResult { content: string; wasTruncated: boolean; }
 
-// Polyfill for String.prototype.startsWith (ES5 compatibility)
-if (typeof String.prototype.startsWith !== "function") {
-  String.prototype.startsWith = function(searchString: string, position?: number): boolean {
-  position = position || 0;
-  return this.indexOf(searchString, position) === position;
-  };
-}
-
-// Polyfill for String.prototype.endsWith (ES5 compatibility)
-if (typeof String.prototype.endsWith !== "function") {
-  String.prototype.endsWith = function(searchString: string, endPosition?: number): boolean {
-  var subjectString = this.toString();
-  if (typeof endPosition !== "number" || !isFinite(endPosition) || Math.floor(endPosition) !== endPosition || endPosition > subjectString.length) { endPosition = subjectString.length; }
-  endPosition -= searchString.length;
-  var lastIndex = subjectString.indexOf(searchString, endPosition);
-  return lastIndex !== -1 && lastIndex === endPosition;
-  };
-}
-
-// Unified cache object and FIFO queue for both regex and escaped strings
-const MAX_CACHE_SIZE = 500;
-const cache: { [key: string]: any } = {};
-const fifoQueue: string[] = [];
-
-// Define platform specific content cleaning.
+// Platform-specific content cleaning configuration
 const platformConfigs: { [key: string]: PlatformConfig } = {
-  BS: { useFeedTitleAuthor: true, handleQuotes: true, useGetContent: true },
-  RSS: { useGetContent: true },
-  TW: { useParsedText: true, handleReplies: true, handleRetweets: true, handleQuotes: true },
+  BS: { handleQuotes: true, useFeedTitleAuthor: true, useGetContent: true },
+  RSS: { handleRetweets: true, useGetContent: true },
+  TW: { handleQuotes: true, handleReplies: true, handleRetweets: true, useFeedTitleAuthor: true, useParsedText: true },
   YT: { useGetContent: true }
 };
 
 /** Character map: HTML entities → Unicode */
 const CHAR_MAP: { [key: string]: string } = {
-   // Czech characters (named entities only)
-   "&Aacute;": "Á", "&aacute;": "á",
-   "&Auml;": "Ä", "&auml;": "ä",
-   "&Ccaron;": "Č", "&ccaron;": "č",
-   "&Dcaron;": "Ď", "&dcaron;": "ď",
-   "&Eacute;": "É", "&eacute;": "é",
-   "&Euml;": "Ë", "&euml;": "ë",
-   "&Ecaron;": "Ě", "&ecaron;": "ě",
-   "&Iacute;": "Í", "&iacute;": "í",
-   "&Iuml;": "Ï", "&iuml;": "ï",
-   "&Ncaron;": "Ň", "&ncaron;": "ň",
-   "&Oacute;": "Ó", "&oacute;": "ó",
-   "&Ouml;": "Ö", "&ouml;": "ö",
-   "&Odblac;": "Ő", "&odblac;": "ő",
-   "&Rcaron;": "Ř", "&rcaron;": "ř",
-   "&Scaron;": "Š", "&scaron;": "š",
-   "&Tcaron;": "Ť", "&tcaron;": "ť",
-   "&Uacute;": "Ú", "&uacute;": "ú",
-   "&Uuml;": "Ü", "&uuml;": "ü",
-   "&Uring;": "Ů", "&uring;": "ů",
-   "&Udblac;": "Ű", "&udblac;": "ű",
-   "&Yacute;": "Ý", "&yacute;": "ý",
-   "&Zcaron;": "Ž", "&zcaron;": "ž",
-   // CRITICAL entities
-   "&nbsp;": " ", // Non-breaking space
-   "&hellip;": "…", // Ellipsis
-   "&mdash;": "—", "&ndash;": "–", // Dash
-   "&lt;": "<", "&gt;": ">", // Less than and Greater than
-   "&quot;": '"', // Quotation mark
-   "&apos;": "'", // Apostrophe
-   // IMPORTANT named entities
-   "&euro;": "€", "&pound;": "£", // Euro sign, British pound
-   "&yen;": "¥", "&cent;": "¢", // Japanese yen, Cent
-   "&copy;": "©", // Copyright - common
-   "&reg;": "®", "&trade;": "™", // Registered trademark, Trademark
-   "&deg;": "°", // Degree symbol
-   "&plusmn;": "±", // Plus-minus
-   "&times;": "×", // Multiplication
-   "&divide;": "÷", // Division
-   "&frac14;": "¼", "&frac34;": "¾", // 1/4 and 3/4 fraction
-   "&frac12;": "½", "&half;": "½", // 1/2 fraction and alternative
-   // Additional common symbols
-   "&laquo;": "«", "&raquo;": "»", // Left and Right angle quote
-   "&lsquo;": "\u2018", "&rsquo;": "\u2019", // Left and Right single quote
-   "&ldquo;": "\u201C", "&rdquo;": "\u201D", // Left and Right double quote
-   "&sbquo;": "\u201A", "&bdquo;": "\u201E", // Single and Double low-9 quotation mark
-   "&prime;": "′", "&Prime;": "″", // Prime and Double prime
-   "&permil;": "‰", // Per mille
-   "&thickapprox;": "≈", // Approximately equal
-   "&ne;": "≠", // Not equal
-   "&minus;": "−", // Minus sign
-   "&bull;": "•", // Bullet
-   "&middot;": "·", "&centerdot;": "·", // Middle and Center dot
-   "&sect;": "§", "&para;": "¶", // Section and Paragraph sign
-   "&dagger;": "†", "&Dagger;": "‡", // Dagger and Double dagger
-   "&shy;": "-", // Soft hyphen
-   // Special cases: wrapped ellipsis entities
-   "[&hellip;]": "…", "[&amp;hellip;]": "…", "&amp;hellip;": "…",
-   "[&mldr;]": "…", "[&amp;mldr;]": "…", "&mldr;": "…", "&amp;mldr;": "…",
-   // Ampersand variants (must be LAST to avoid replacing & in other entities)
-   "&amp;": SETTINGS.AMPERSAND_SAFE_CHAR, "&": SETTINGS.AMPERSAND_SAFE_CHAR
- };
+  // Czech characters (named entities only)
+  "&Aacute;": "Á", "&aacute;": "á", "&Auml;": "Ä", "&auml;": "ä",
+  "&Ccaron;": "Č", "&ccaron;": "č",
+  "&Dcaron;": "Ď", "&dcaron;": "ď",
+  "&Eacute;": "É", "&eacute;": "é", "&Euml;": "Ë", "&euml;": "ë", "&Ecaron;": "Ě", "&ecaron;": "ě",
+  "&Iacute;": "Í", "&iacute;": "í", "&Iuml;": "Ï", "&iuml;": "ï",
+  "&Ncaron;": "Ň", "&ncaron;": "ň",
+  "&Oacute;": "Ó", "&oacute;": "ó", "&Ouml;": "Ö", "&ouml;": "ö", "&Odblac;": "Ő", "&odblac;": "ő",
+  "&Rcaron;": "Ř", "&rcaron;": "ř",
+  "&Scaron;": "Š", "&scaron;": "š",
+  "&Tcaron;": "Ť", "&tcaron;": "ť",
+  "&Uacute;": "Ú", "&uacute;": "ú", "&Uuml;": "Ü", "&uuml;": "ü", "&Uring;": "Ů", "&uring;": "ů", "&Udblac;": "Ű", "&udblac;": "ű",
+  "&Yacute;": "Ý", "&yacute;": "ý",
+  "&Zcaron;": "Ž", "&zcaron;": "ž",
+  // CRITICAL entities
+  "&nbsp;": " ", // Non-breaking space
+  "&hellip;": "…", // Ellipsis
+  "&mdash;": "—", "&ndash;": "–", // Dash
+  "&lt;": "<", "&gt;": ">", // Less than and Greater than
+  "&quot;": '"', // Quotation mark
+  "&apos;": "'", // Apostrophe
+  // IMPORTANT named entities
+  "&euro;": "€", "&pound;": "£", // Euro sign, British pound
+  "&yen;": "¥", "&cent;": "¢", // Japanese yen, Cent
+  "&copy;": "©", // Copyright - common
+  "&reg;": "®", "&trade;": "™", // Registered trademark, Trademark
+  "&deg;": "°", // Degree symbol
+  "&plusmn;": "±", // Plus-minus
+  "&times;": "×", // Multiplication
+  "&divide;": "÷", // Division
+  "&frac14;": "¼", "&frac34;": "¾", // 1/4 and 3/4 fraction
+  "&frac12;": "½", "&half;": "½", // 1/2 fraction and alternative
+  // Additional common symbols
+  "&laquo;": "«", "&raquo;": "»", // Left and Right angle quote
+  "&lsquo;": "\u2018", "&rsquo;": "\u2019", // Left and Right single quote
+  "&ldquo;": "\u201C", "&rdquo;": "\u201D", // Left and Right double quote
+  "&sbquo;": "\u201A", "&bdquo;": "\u201E", // Single and Double low-9 quotation mark
+  "&prime;": "′", "&Prime;": "″", // Prime and Double prime
+  "&permil;": "‰", // Per mille
+  "&thickapprox;": "≈", // Approximately equal
+  "&ne;": "≠", // Not equal
+  "&minus;": "−", // Minus sign
+  "&bull;": "•", // Bullet
+  "&middot;": "·", "&centerdot;": "·", // Middle and Center dot
+  "&sect;": "§", "&para;": "¶", // Section and Paragraph sign
+  "&dagger;": "†", "&Dagger;": "‡", // Dagger and Double dagger
+  "&shy;": "-", // Soft hyphen
+  // Special cases: wrapped ellipsis entities
+  "[&hellip;]": "…", "[&amp;hellip;]": "…", "&amp;hellip;": "…", "[&mldr;]": "…", "[&amp;mldr;]": "…", "&mldr;": "…", "&amp;mldr;": "…",
+  // Ampersand variants (must be LAST to avoid replacing & in other entities)
+  "&amp;": SETTINGS.AMPERSAND_SAFE_CHAR,
+  "&": SETTINGS.AMPERSAND_SAFE_CHAR
+};
 
-/** Precompiled regex patterns (TS 2.9.2 compatible) */
+// Pre-compile CHAR_MAP regex for efficient single-pass replacement
+const CHAR_MAP_REGEX = (function(): RegExp {
+  var keys = Object.keys(CHAR_MAP);
+  // Sort by length (longest first) to match longer patterns before shorter ones
+  keys.sort(function(a: string, b: string): number { return b.length - a.length; });
+  // Escape special regex characters in entity keys
+  var escapedKeys = keys.map(function(key: string): string {
+    return key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  });
+  // Create alternation pattern: (&entity1;|&entity2;|...)
+  return new RegExp(escapedKeys.join("|"), "g");
+})();
+
+/** Precompiled regex patterns */
 const REGEX_PATTERNS = {
   ANCHOR_TAG: /<a\s+[^>]*href=["']([^"']+)["'][^>]*>(.*?)<\/a>/gi,
   BS_QUOTE: /\[contains quote post or other embedded content\]/gi,
@@ -234,11 +214,11 @@ const REGEX_PATTERNS = {
   MEDIA_SUFFIX: /\/(photo|video)\/\d+$/i,
   REAL_NAME: /&mdash;\s*([^<\(]+)\s*\(@/i,
   REPLY_START: /^(\.?@[\w]+|R to @[\w]+(\s|:|))/i,
-  REPOST_PREFIX: /^(RT @([^:]+): )/i,
+  REPOST_PREFIX: /^(RT (?:by )?@([^:]+): )/i,
   REPOST_URL: /href="(https:\/\/twitter\.com[^"]+)"/gi,
-  REPOST_USER: /RT (@[a-z0-9_]+)/gi,
+  REPOST_USER: /RT (?:by )?(@[a-z0-9_]+)/gi,
   RESPONSE_PREFIX: /^R to (.*?): /,
-  RT_PREFIX: /^RT\s+@[\w]+/i,
+  RT_PREFIX: /^RT\s+(?:by\s+)?@[\w]+/i,
   SPACE_BEFORE_URL: /[ \t]+(?=https?)/g,
   SPECIAL_CHARS: /[.*+?^${}()|[\]\\]/g,
   TCO_URL: /https:\/\/t\.co\/[^\s]+/gi,
@@ -257,131 +237,107 @@ const REGEX_PATTERNS = {
 // Pre-process URL_DOMAIN_FIXES: add https:// prefix + update URL_MATCH regex
 (function initializeDomainFixes(): void {
   if (SETTINGS.URL_DOMAIN_FIXES && SETTINGS.URL_DOMAIN_FIXES.length > 0) {
-  const domainPatterns: any[] = [];
+    const domainPatterns: any[] = [];
 
-  SETTINGS.URL_DOMAIN_FIXES
-    .filter(function(d: string): boolean { return !!d; })
-    .forEach(function(domain: string): void {
-    const escapedDomain = domain.replace(/\./g, '\\.');
+    SETTINGS.URL_DOMAIN_FIXES
+      .filter(function(d: string): boolean { return !!d; })
+      .forEach(function(domain: string): void {
+        const escapedDomain = domain.replace(/\./g, '\\.');
+        // Process in specific order to avoid double-processing
+        domainPatterns.push({ // Protect valid URLs (no modification)
+          pattern: "(https?:\\/\\/)" + escapedDomain + "(\\/[^\\s]*|[\\s]|$)",
+          replacement: "$1" + domain + "$2",
+          flags: "gm",
+          literal: false
+        });
+        domainPatterns.push({ // Add https:// to bare domains
+          pattern: "(^|[\\s\\(\\[\\{<\"'])" + escapedDomain + "(\\/[^\\s\\)\\]\\}>\"',;]*|[\\s\\)\\]\\}>\"',;]|$)",
+          replacement: "$1https://" + domain + "$2",
+          flags: "gm",
+          literal: false
+        });
+      });
 
-    // Process in specific order to avoid double-processing
-    // Pattern 1: Protect valid URLs (no modification)
-    domainPatterns.push({
-      pattern: "(https?:\\/\\/)" + escapedDomain + "(\\/[^\\s]*|[\\s]|$)",
-      replacement: "$1" + domain + "$2",
-      flags: "gm",
-      literal: false
-    });
-    // Pattern 2: Add https:// to bare domains
-    domainPatterns.push({
-      pattern: "(^|[\\s\\(\\[\\{<\"'])" + escapedDomain + "(\\/[^\\s\\)\\]\\}>\"',;]*|[\\s\\)\\]\\}>\"',;]|$)",
-      replacement: "$1https://" + domain + "$2",
-      flags: "gm",
-      literal: false
-    });
-    });
+    SETTINGS.CONTENT_REPLACEMENTS = domainPatterns.concat(SETTINGS.CONTENT_REPLACEMENTS || []);
 
-  SETTINGS.CONTENT_REPLACEMENTS = domainPatterns.concat(SETTINGS.CONTENT_REPLACEMENTS || []);
+    // Update URL_MATCH to detect domains without protocol
+    const escapedDomains = SETTINGS.URL_DOMAIN_FIXES
+      .filter(function(d: string): boolean { return !!d; })
+      .map(function(domain: string): string { return domain.replace(/\./g, '\\.'); })
+      .join("|");
 
-  // Update URL_MATCH to detect domains without protocol
-  const escapedDomains = SETTINGS.URL_DOMAIN_FIXES
-    .filter(function(d: string): boolean { return !!d; })
-    .map(function(domain: string): string { return domain.replace(/\./g, '\\.'); })
-    .join("|");
-
-  // Matches: URLs with protocol OR listed domains without protocol
-  const pattern = "(?:https?:\\/\\/[^\\s]+|(?:" + escapedDomains + ")(?:\\/[^\\s]*)?)";
-  REGEX_PATTERNS.URL_MATCH = getCachedRegex(pattern, "g");
+    // Matches: URLs with protocol OR listed domains without protocol
+    const pattern = "(?:https?:\\/\\/[^\\s]+|(?:" + escapedDomains + ")(?:\\/[^\\s]*)?)";
+    REGEX_PATTERNS.URL_MATCH = new RegExp(pattern, "g");
   }
 })();
 
 // OPTIMIZED HELPER FUNCTIONS //
+/** Converts code point to character (handles surrogate pairs for BMP+) */
+function codePointToChar(cp: number): string {
+  if (cp > 0xFFFF) { cp -= 0x10000; return String.fromCharCode(0xD800 + (cp >> 10), 0xDC00 + (cp & 0x3FF)); }
+  return String.fromCharCode(cp);
+}
+
 /** Escapes special chars for regex use */
 function escapeRegExp(str: string): string {
   if (!str) return "";
-  return getCached("escape:" + str, function(): string { return str.replace(REGEX_PATTERNS.SPECIAL_CHARS, "\\$&"); });
+  return str.replace(REGEX_PATTERNS.SPECIAL_CHARS, "\\$&");
 }
 
 /** Finds last valid period (excludes dates, abbreviations) */
 function findLastSentenceEnd(str: string, maxLength: number): number {
-  var searchText = str.slice(0, maxLength);
-  var i = searchText.length - 1;
-  
-  // Search backwards for periods
+  var len = Math.min(str.length, maxLength);
+  var i = len - 1;
+
   while (i >= 0) {
-  if (searchText.charAt(i) === ".") { // Check what's AFTER the period
-    var nextCharIndex = i + 1;
-    var charAfterPeriod = "";
-    var foundChar = false;
-
-    while (nextCharIndex < str.length) { // Skip whitespace to find next character
-    var c = str.charAt(nextCharIndex);
-    if (c !== " " && c !== "\t" && c !== "\n") {
-      charAfterPeriod = c;
-      foundChar = true;
-      break;
-    }
-    nextCharIndex++;
-    }
-
-    // Nothing after period (end of text)
-    if (!foundChar) {
-    var beforePeriod = searchText.slice(Math.max(0, i - 2), i); // Check if this is a date period (number 1-31 before it)
-    var isDate = false;
-    if (/\d{1,2}$/.test(beforePeriod)) {
-      var numMatch = beforePeriod.match(/\d{1,2}$/);
-      if (numMatch) {
-      var num = parseInt(numMatch[0], 10);
-      if (num >= 1 && num <= 31) { isDate = true; }
+    if (str.charAt(i) === ".") {
+      // Find next non-whitespace character
+      var nextCharIndex = i + 1;
+      var charAfterPeriod = "";
+      while (nextCharIndex < str.length) {
+        var c = str.charAt(nextCharIndex);
+        if (c !== " " && c !== "\t" && c !== "\n") {
+          charAfterPeriod = c;
+          break;
+        }
+        nextCharIndex++;
       }
-    }
-    if (!isDate) { return i; } // Valid terminator if not a date
-    i--; continue;
-    }
 
-    // Lowercase letter follows - likely abbreviation or date continuation
-    if (charAfterPeriod === charAfterPeriod.toLowerCase() && charAfterPeriod !== charAfterPeriod.toUpperCase()) {
-    var beforePeriod = searchText.slice(Math.max(0, i - 2), i); // Check if this is a date (number 1-31 before period)
-    if (/\d{1,2}$/.test(beforePeriod)) {
-      var numMatch = beforePeriod.match(/\d{1,2}$/);
-      if (numMatch) {
-      var num = parseInt(numMatch[0], 10);
-      if (num >= 1 && num <= 31) { i--; continue; } // This is a date like "12. listopadu" - not a sentence end
+      // Check for date pattern (1-31 before period) using charAt
+      var isDate = false;
+      if (i >= 1) {
+        var c1 = str.charAt(i - 1);
+        var c2 = i >= 2 ? str.charAt(i - 2) : "";
+        if (c1 >= "0" && c1 <= "9") {
+          var num = parseInt(c1, 10);
+          if (c2 >= "0" && c2 <= "9") { num = parseInt(c2 + c1, 10); }
+          if (num >= 1 && num <= 31) { isDate = true; }
+        }
       }
+
+      // Nothing after period (end of text)
+      if (!charAfterPeriod) {
+        if (!isDate) { return i; }
+        i--;
+        continue;
+      }
+
+      // Lowercase follows - abbreviation or date continuation
+      if (charAfterPeriod === charAfterPeriod.toLowerCase() && charAfterPeriod !== charAfterPeriod.toUpperCase()) {
+        if (isDate) { i--; continue; }
+        i--;
+        continue;
+      }
+
+      // Uppercase follows - valid sentence end
+      if (charAfterPeriod === charAfterPeriod.toUpperCase() && charAfterPeriod !== charAfterPeriod.toUpperCase().toLowerCase()) { return i; }
+      i--;
+      continue;
     }
-    i--; continue; // Not a date, but lowercase follows - abbreviation like "např."
-    }
-
-    // Uppercase letter follows - potential sentence end
-    if (charAfterPeriod === charAfterPeriod.toUpperCase() && charAfterPeriod !== charAfterPeriod.toUpperCase().toLowerCase()) { return i; } // Valid sentence terminator
-    i--; continue; // Other character (number, punctuation, etc.) - treat as not a sentence end
+    i--;
   }
-  i--;
-  }
-  
-  return -1; // No valid terminator found
-}
-
-/** Generic cache with FIFO eviction */
-function getCached < T > (key: string, factory: () => T): T {
-  if (cache[key]) return cache[key];
-
-  const value = factory();
-  cache[key] = value;
-  fifoQueue.push(key);
-
-  if (fifoQueue.length > MAX_CACHE_SIZE) {
-  const oldest = fifoQueue.shift();
-  if (oldest) delete cache[oldest];
-  }
-
-  return value;
-}
-
-/** Returns cached RegExp */
-function getCachedRegex(pattern: string, flags: string): RegExp {
-  const key = "regex:" + pattern + "|" + flags;
-  return getCached(key, function(): RegExp { return new RegExp(pattern, flags); });
+  return -1;
 }
 
 /** Gets platform config with RSS fallback */
@@ -390,118 +346,69 @@ function getPlatformConfig(platform: string): PlatformConfig { return platformCo
 /** Validates non-empty string */
 function isValidString(value: any): boolean { return typeof value === "string" && value.length > 0; }
 
-/** Safely truncates string (ES5/ES6 compatible) */
+/** Safely truncates string respecting Unicode code points (ES6+) */
 function safeTruncate(str: string, maxCodePoints: number): { result: string;wasTruncated: boolean } {
   if (!str || maxCodePoints <= 0) { return { result: "", wasTruncated: false }; }
 
   // Fast path: if string is definitely shorter, no need to process
   if (str.length <= maxCodePoints) { return { result: str, wasTruncated: false }; }
 
-  // Modern path: Use Array.from if available (ES6+)
-  if (typeof Array.from === "function") {
-  try {
-    var arr = Array.from(str);
-    var wasTruncated = arr.length > maxCodePoints;
-    return {
-    result: wasTruncated ? arr.slice(0, maxCodePoints).join("") : str,
-    wasTruncated: wasTruncated
-    };
-  } catch (e) {} // Fallback if Array.from fails for any reason
-  }
-
-  // ES5 fallback: Manual surrogate pair handling
-  var codePointCount = 0;
-  var truncateAt = 0;
-  var i = 0;
-
-  while (i < str.length && codePointCount < maxCodePoints) {
-  var charCode = str.charCodeAt(i);
-  // Check for high surrogate (0xD800-0xDBFF)
-  if (charCode >= 0xD800 && charCode <= 0xDBFF && i + 1 < str.length) {
-    var nextCharCode = str.charCodeAt(i + 1);
-    // Check for low surrogate (0xDC00-0xDFFF)
-    if (nextCharCode >= 0xDC00 && nextCharCode <= 0xDFFF) {
-    // Valid surrogate pair - advance by 2 code units
-    codePointCount++;
-    i += 2;
-    truncateAt = i;
-    continue;
-    }
-  }
-  // Regular character - advance by 1 code unit
-  codePointCount++;
-  i++;
-  truncateAt = i;
-  }
-
-  if (truncateAt >= str.length) { return { result: str, wasTruncated: false }; }
-
-  return { result: str.substring(0, truncateAt), wasTruncated: true };
+  // Use Array.from to properly handle surrogate pairs and emoji
+  var arr = Array.from(str);
+  var wasTruncated = arr.length > maxCodePoints;
+  return { result: wasTruncated ? arr.slice(0, maxCodePoints).join("") : str, wasTruncated: wasTruncated };
 }
 
 /** Truncates RSS input before HTML processing */
 function truncateRssInput(content: string): TruncateRssResult {
   if (SETTINGS.POST_FROM !== "RSS" || SETTINGS.RSS_MAX_INPUT_CHARS <= 0 || !content) { return { content: content || "", wasTruncated: false }; }
-
-  // Use safe truncation to avoid breaking surrogate pairs
   var truncated = safeTruncate(content, SETTINGS.RSS_MAX_INPUT_CHARS);
-  // Defensive check for compatibility
-  if (!truncated || typeof truncated !== "object") { return { content: content, wasTruncated: false }; }
-
   return { content: truncated.result || content, wasTruncated: truncated.wasTruncated || false };
 }
 
 /** Detects truncated URLs (call before processAmpersands) */
 function hasTruncatedUrl(text: any): boolean {
   if (!text || typeof text !== "string") return false;
-
   if (/https?:\/\/[^\s]*\u2026/i.test(text)) return true; // Detection of URLs with ellipsis: "https://domain/…" or "https://domain/…/path…"  
   if (/https?:\/\/[^\s]*\/\u2026/i.test(text)) return true; // Detecting URLs with /… somewhere in the path
-
   return false;
 }
 
 /** Removes truncated URLs, replaces with ellipsis */
 function removeTruncatedUrl(text: any): string {
   if (!text || typeof text !== "string") return text;
-
   var result = text;
   result = result.replace(/https?:\/\/[^\s]*\u2026[^\s]*/gi, "\u2026"); // Removing the complete URL with ellipsis anywhere in it
   result = result.replace(/(?:www\.)?[a-zA-Z0-9][a-zA-Z0-9-]*\.[a-zA-Z0-9][^\s]*\u2026[^\s]*/gi, "\u2026"); // Removing incomplete URLs without protocol: "www.example.…rest"
-  result = result.replace(/\u2026+/g, "\u2026");  // Normalization of multiple ellipses
-
+  result = result.replace(/\u2026+/g, "\u2026"); // Normalization of multiple ellipses
   return result.trim();
 }
 
 /** Returns string or empty string if invalid */
-function safeString(value: any): string { return (typeof value === "string") ? value : "";}
+function safeString(value: any): string { return (typeof value === "string") ? value : ""; }
 
 // CONTENT VALIDATION AND FILTERING FUNCTIONS //
 /** Checks for banned content using FilterRule system */
 function hasBannedContent(str: string): boolean {
   if (!str || !SETTINGS.PHRASES_BANNED || SETTINGS.PHRASES_BANNED.length === 0) { return false; }
-
   for (var i = 0; i < SETTINGS.PHRASES_BANNED.length; i++) {
-  const rule = SETTINGS.PHRASES_BANNED[i];
-  if (!rule) continue;
-  if (matchesFilterRule(str, rule)) return true;
+    const rule = SETTINGS.PHRASES_BANNED[i];
+    if (!rule) continue;
+    if (matchesFilterRule(str, rule)) return true;
   }
-
   return false;
 }
 
 /** Checks for required keywords using FilterRule system */
 function hasRequiredKeywords(str: string): boolean {
   if (!SETTINGS.PHRASES_REQUIRED || SETTINGS.PHRASES_REQUIRED.length === 0) { return true; }
-
   if (!str) return false;
 
   for (var i = 0; i < SETTINGS.PHRASES_REQUIRED.length; i++) {
-  const rule = SETTINGS.PHRASES_REQUIRED[i];
-  if (!rule) continue;
-  if (matchesFilterRule(str, rule)) return true;
+    const rule = SETTINGS.PHRASES_REQUIRED[i];
+    if (!rule) continue;
+    if (matchesFilterRule(str, rule)) return true;
   }
-
   return false;
 }
 
@@ -514,20 +421,15 @@ function isEmpty(str: string): boolean { return !str || str === "(none)" || str.
 /** Checks if post is a quote (platform-specific) */
 function isQuote(content: string, imageUrl: string, platform: string, author: string): boolean {
   if (platform === "BS") { return REGEX_PATTERNS.BS_QUOTE.test(content); }
-
   if (platform === "TW" && typeof imageUrl === "string") {
-  const isStatus = REGEX_PATTERNS.TWEET_STATUS.test(imageUrl);
-  if (!isStatus) return false;
-
-  const isMedia = REGEX_PATTERNS.MEDIA_SUFFIX.test(imageUrl);
-  if (isMedia) return false;
-
-  const quotedUser = extractUsername(imageUrl);
-  if (!quotedUser) return false;
-
-  return true;
+    const isStatus = REGEX_PATTERNS.TWEET_STATUS.test(imageUrl);
+    if (!isStatus) return false;
+    const isMedia = REGEX_PATTERNS.MEDIA_SUFFIX.test(imageUrl);
+    if (isMedia) return false;
+    const quotedUser = extractUsername(imageUrl);
+    if (!quotedUser) return false;
+    return true;
   }
-
   return false;
 }
 
@@ -547,7 +449,7 @@ function isSelfRepost(str: string, author: string): boolean {
   if (!str || !author) return false;
   const name = author.startsWith("@") ? author.substring(1) : author;
   const escapedName = escapeRegExp(name);
-  const regex = getCachedRegex("^RT @" + escapedName + ": ", "i");
+  const regex = new RegExp("^RT (?:by )?@" + escapedName + ": ", "i");
   return regex.test(str);
 }
 
@@ -562,139 +464,69 @@ function isValidImageUrl(str: string): boolean {
 function matchesUnifiedFilter(str: string, rule: FilterRule, matchType: "or" | "and" | "not"): boolean {
   if (!str) return false;
   const lowerStr = str.toLowerCase();
-  var hasAnyCondition = false;
   var results: boolean[] = [];
 
-  // Process content filters
-  if (rule.content && rule.content.length > 0) {
-  hasAnyCondition = true;
-  for (var i = 0; i < rule.content.length; i++) { results.push(lowerStr.indexOf(rule.content[i].toLowerCase()) !== -1); }
+  // Process literal arrays (content, username, domain)
+  var literalArrays = [rule.content, rule.username, rule.domain];
+  for (var a = 0; a < literalArrays.length; a++) {
+    var arr = literalArrays[a];
+    if (arr && arr.length > 0) { for (var i = 0; i < arr.length; i++) { results.push(lowerStr.includes(arr[i].toLowerCase())); } }
   }
 
-  // Process contentRegex filters
-  if (rule.contentRegex && rule.contentRegex.length > 0) {
-  hasAnyCondition = true;
-  for (var i = 0; i < rule.contentRegex.length; i++) {
-    try {
-    const regex = new RegExp(rule.contentRegex[i], "i");
-    results.push(regex.test(str));
-    } catch (e) { results.push(false); }
-  }
-  }
-
-  // Process username filters
-  if (rule.username && rule.username.length > 0) {
-  hasAnyCondition = true;
-  for (var i = 0; i < rule.username.length; i++) { results.push(lowerStr.indexOf(rule.username[i].toLowerCase()) !== -1); }
+  // Process regex arrays (contentRegex, usernameRegex, domainRegex)
+  var regexArrays = [rule.contentRegex, rule.usernameRegex, rule.domainRegex];
+  for (var a = 0; a < regexArrays.length; a++) {
+    var arr = regexArrays[a];
+    if (arr && arr.length > 0) {
+      for (var i = 0; i < arr.length; i++) {
+        try { results.push(new RegExp(arr[i], "i").test(str)); }
+        catch (e) { results.push(false); }
+      }
+    }
   }
 
-  // Process usernameRegex filters
-  if (rule.usernameRegex && rule.usernameRegex.length > 0) {
-  hasAnyCondition = true;
-  for (var i = 0; i < rule.usernameRegex.length; i++) {
-    try {
-    const regex = new RegExp(rule.usernameRegex[i], "i");
-    results.push(regex.test(str));
-    } catch (e) { results.push(false); }
-  }
-  }
+  if (results.length === 0) return false;
 
-  // Process domain filters
-  if (rule.domain && rule.domain.length > 0) {
-  hasAnyCondition = true;
-  for (var i = 0; i < rule.domain.length; i++) { results.push(lowerStr.indexOf(rule.domain[i].toLowerCase()) !== -1); }
-  }
-
-  // Process domainRegex filters
-  if (rule.domainRegex && rule.domainRegex.length > 0) {
-  hasAnyCondition = true;
-  for (var i = 0; i < rule.domainRegex.length; i++) {
-    try {
-    const regex = new RegExp(rule.domainRegex[i], "i");
-    results.push(regex.test(str));
-    } catch (e) { results.push(false); }
-  }
-  }
-
-  // If no conditions were defined, return false
-  if (!hasAnyCondition) return false;
-
-  // Evaluate results based on match type
-  if (matchType === "or") { // OR: At least one condition must be true
-  for (var i = 0; i < results.length; i++) { if (results[i]) return true; }
-  return false;
-  } else if (matchType === "and") { // AND: All conditions must be true
-  for (var i = 0; i < results.length; i++) { if (!results[i]) return false; }
-  return results.length > 0;
-  } else if (matchType === "not") { // NOT: Invert OR logic (none of the conditions should be true)
-  for (var i = 0; i < results.length; i++) { if (results[i]) return false; }
-  return results.length > 0;
-  }
-
-  return false;
+  // Evaluate based on match type
+  if (matchType === "or") { for (var i = 0; i < results.length; i++) { if (results[i]) return true; } return false; }
+  if (matchType === "and") { for (var i = 0; i < results.length; i++) { if (!results[i]) return false; } return true; }
+  // "not": none should be true
+  for (var i = 0; i < results.length; i++) { if (results[i]) return false; } return true;
 }
 
 /** Checks if string matches FilterRule */
 function matchesFilterRule(str: string, rule: string | FilterRule): boolean {
   if (!str) return false; // An empty input never matches
-  
   const lowerStr = str.toLowerCase();
-
-  if (typeof rule === "string") { return lowerStr.indexOf(rule.toLowerCase()) !== -1; } // SIMPLE STRING - case-insensitive substring match
+  if (typeof rule === "string") { return lowerStr.includes(rule.toLowerCase()); } // SIMPLE STRING - case-insensitive substring match
   if (typeof rule !== "object") return false; // OBJECT VALIDATION
 
   switch (rule.type) { // PROCESSING BY RULE TYPE
-  case "literal": // LITERAL: Case-insensitive substring match
-    if (!rule.pattern) return false;
-    return lowerStr.indexOf(rule.pattern.toLowerCase()) !== -1;
-
-  case "regex": // REGEX: Regular expression matching
-    if (!rule.pattern) return false;
-    try {
-    const regex = new RegExp(rule.pattern, rule.flags || "i");
-    return regex.test(str);
-    } catch (e) { return false; }
-
-  case "and": // AND: All keywords must be present (legacy) OR unified structure (NEW in v3.1.0)
-    // Check for unified structure first
-    if (rule.content || rule.contentRegex || rule.username || rule.usernameRegex || rule.domain || rule.domainRegex) { return matchesUnifiedFilter(str, rule, "and"); }
-    // Legacy: keywords array
-    if (!rule.keywords || rule.keywords.length === 0) return false;
-    for (var i = 0; i < rule.keywords.length; i++) { if (lowerStr.indexOf(rule.keywords[i].toLowerCase()) === -1) { return false; } }
-    return true;
-
-  case "or": // OR: At least one keyword must be present (legacy) OR unified structure (NEW in v3.1.0)
-    // Check for unified structure first
-    if (rule.content || rule.contentRegex || rule.username || rule.usernameRegex || rule.domain || rule.domainRegex) { return matchesUnifiedFilter(str, rule, "or"); }
-    // Legacy: keywords array
-    if (!rule.keywords || rule.keywords.length === 0) return false;
-    for (var i = 0; i < rule.keywords.length; i++) { if (lowerStr.indexOf(rule.keywords[i].toLowerCase()) !== -1) { return true;  } }
-    return false;
-
-  case "not": // NOT: Inverts result (legacy/unified structure)
-    // Check for unified structure first
-    if (rule.content || rule.contentRegex || rule.username || rule.usernameRegex || rule.domain || rule.domainRegex) { return matchesUnifiedFilter(str, rule, "not"); }
-    // Legacy: nested rule
-    if (!rule.rule) return false;
-    return !matchesFilterRule(str, rule.rule); // We recursively evaluate the nested rule and invert the result.
-
-  case "complex": // COMPLEX: Combines multiple rules using AND/OR
-    if (!rule.rules || rule.rules.length === 0) return false;
-    if (!rule.operator) return false;
-
-    if (rule.operator === "and") { // AND logic: All nested rules must be satisfied
-    for (var i = 0; i < rule.rules.length; i++) { if (!matchesFilterRule(str, rule.rules[i])) { return false; } }
-    return true;
-    }
-
-    if (rule.operator === "or") { // OR logic: At least one nested rule must be satisfied
-    for (var i = 0; i < rule.rules.length; i++) { if (matchesFilterRule(str, rule.rules[i])) { return true; } }
-    return false;
-    }
-
-    return false;
+    case "literal": // LITERAL: Case-insensitive substring match
+      if (!rule.pattern) return false;
+      return lowerStr.includes(rule.pattern.toLowerCase());
+    case "regex": // REGEX: Regular expression matching
+      if (!rule.pattern) return false;
+      try {
+        const regex = new RegExp(rule.pattern, rule.flags || "i");
+        return regex.test(str);
+      } catch (e) { return false; }
+    case "and": return matchesUnifiedFilter(str, rule, "and"); // AND: All conditions in unified structure must match
+    case "or": return matchesUnifiedFilter(str, rule, "or"); // OR: At least one condition in unified structure must match
+    case "not": return matchesUnifiedFilter(str, rule, "not"); // NOT: Inverts unified structure result
+    case "complex": // COMPLEX: Combines multiple rules using AND/OR
+      if (!rule.rules || rule.rules.length === 0) return false;
+      if (!rule.operator) return false;
+      if (rule.operator === "and") { // AND logic: All nested rules must be satisfied
+        for (var i = 0; i < rule.rules.length; i++) { if (!matchesFilterRule(str, rule.rules[i])) { return false; } }
+        return true;
+      }
+      if (rule.operator === "or") { // OR logic: At least one nested rule must be satisfied
+        for (var i = 0; i < rule.rules.length; i++) { if (matchesFilterRule(str, rule.rules[i])) { return true; } }
+        return false;
+      }
+      return false;
   }
-
   return false;
 }
 
@@ -702,87 +534,48 @@ function matchesFilterRule(str: string, rule: string | FilterRule): boolean {
 /** Applies CONTENT_REPLACEMENTS regex rules */
 function applyContentReplacements(str: string): string {
   if (!str) return "";
-
   const patterns = SETTINGS.CONTENT_REPLACEMENTS;
   if (!patterns || patterns.length === 0) return str;
 
   var result = str;
   for (var i = 0; i < patterns.length; i++) {
-  const replacementRule = patterns[i];
-  try {
-    const pattern = replacementRule.literal ? escapeRegExp(replacementRule.pattern) : replacementRule.pattern;
-    const flags = (replacementRule.flags || "gi").replace(/[^gimuy]/g, "");
-    const regex = getCachedRegex(pattern, flags);
-    result = result.replace(regex, replacementRule.replacement);
-  } catch (e) { continue; }
+    const replacementRule = patterns[i];
+    try {
+      const pattern = replacementRule.literal ? escapeRegExp(replacementRule.pattern) : replacementRule.pattern;
+      const flags = (replacementRule.flags || "gi").replace(/[^gimuy]/g, "");
+      const regex = new RegExp(pattern, flags);
+      result = result.replace(regex, replacementRule.replacement);
+    } catch (e) { continue; }
   }
-
   return result;
 }
 
-/** Decodes numeric HTML entities (ES5 compatible) */
+/** Decodes numeric HTML entities */
 function decodeNumericEntities(str: string): string {
-  if (!str || str.indexOf("&#") === -1) return str;
-
-  // Decode decimal entities: &#127758; &#233; etc.
-  str = str.replace(/&#(\d+);/g, function(match: string, dec: string): string {
-  var codePoint = parseInt(dec, 10);
-
-  // For characters outside BMP (> 0xFFFF), use surrogate pair
-  if (codePoint > 0xFFFF) {
-    codePoint -= 0x10000;
-    return String.fromCharCode(
-    0xD800 + (codePoint >> 10),
-    0xDC00 + (codePoint & 0x3FF)
-    );
-  }
-
-  return String.fromCharCode(codePoint);
-  });
-
-  // Decode hexadecimal entities: &#x1F30E; &#xE9; &#XE9; etc.
-  str = str.replace(/&#x([0-9a-fA-F]+);/gi, function(match: string, hex: string): string {
-  var codePoint = parseInt(hex, 16);
-
-  // For characters outside BMP (> 0xFFFF), use surrogate pair
-  if (codePoint > 0xFFFF) {
-    codePoint -= 0x10000;
-    return String.fromCharCode( 0xD800 + (codePoint >> 10), 0xDC00 + (codePoint & 0x3FF) );
-  }
-
-  return String.fromCharCode(codePoint);
-  });
-
-  return str;
+  if (!str || !str.includes("&#")) return str;
+  return str.replace(/&#(?:x([0-9a-fA-F]+)|(\d+));/gi, function(m: string, hex: string, dec: string): string { return codePointToChar(parseInt(hex || dec, hex ? 16 : 10)); });
 }
 
 /** Finds all pattern occurrences with positions */
-function findAllOccurrences(text: string, pattern: RegExp): Array<{value: string; start: number; end: number}> {
+function findAllOccurrences(text: string, pattern: RegExp): Array < { value: string;start: number;end: number } > {
   if (!text) return [];
-
-  const results: Array<{value: string; start: number; end: number}> = [];
+  const results: Array < { value: string;start: number;end: number } > = [];
   var match;
   pattern.lastIndex = 0;
-
-  while ((match = pattern.exec(text)) !== null) { results.push({ value: match[0], start: match.index, end: match.index + match[0].length }); }
-
-  return results;
+  while ((match = pattern.exec(text)) !== null) { results.push({ value: match[0], start: match.index, end: match.index + match[0].length }); } return results;
 }
 
 /** Removes duplicate placeholders */
 function deduplicatePlaceholder(text: string, placeholder: string): string {
   if (!text || !placeholder) return text;
-
   const escapedPlaceholder = escapeRegExp(placeholder);
   const dedupPattern = new RegExp("(" + escapedPlaceholder + ")(\\s+" + escapedPlaceholder + ")+", "g");
-
   return text.replace(dedupPattern, "$1");
 }
 
 /** Removes duplicate PREFIX_POST_URL, normalizes whitespace */
 function deduplicatePrefix(text: string, prefix: string): string {
   if (!text || !prefix) return text;
-
   const urls = findAllOccurrences(text, REGEX_PATTERNS.URL_MATCH);
   if (urls.length === 0) return text;
 
@@ -795,7 +588,6 @@ function deduplicatePrefix(text: string, prefix: string): string {
   while (textPart.length >= prefix.length && textPart.substring(textPart.length - prefix.length) === prefix) { textPart = textPart.substring(0, textPart.length - prefix.length); }
   // NOW remove any remaining trailing whitespace
   textPart = textPart.replace(/\s+$/, "");
-
   // Add exactly one PREFIX_POST_URL
   return textPart + prefix + afterLastUrl;
 }
@@ -803,7 +595,6 @@ function deduplicatePrefix(text: string, prefix: string): string {
 /** Removes duplicate URLs from the end of the status text */
 function deduplicateUrls(text: string): string {
   if (!text) return text;
-
   const urls = findAllOccurrences(text, REGEX_PATTERNS.URL_MATCH);
   if (urls.length < 2) return text;
 
@@ -814,36 +605,31 @@ function deduplicateUrls(text: string): string {
   var changed = true;
 
   while (changed) {
-  changed = false;
+    changed = false;
+    const currentUrls = findAllOccurrences(result, REGEX_PATTERNS.URL_MATCH);
+    if (currentUrls.length < 2) break;
 
-  const currentUrls = findAllOccurrences(result, REGEX_PATTERNS.URL_MATCH);
-  if (currentUrls.length < 2) break;
+    // Get last two URLs
+    const lastUrl = currentUrls[currentUrls.length - 1];
+    const secondLastUrl = currentUrls[currentUrls.length - 2];
 
-  // Get last two URLs
-  const lastUrl = currentUrls[currentUrls.length - 1];
-  const secondLastUrl = currentUrls[currentUrls.length - 2];
-
-  // Check if they are identical (after normalization)
-  if (normalizeUrl(lastUrl.value) === normalizeUrl(secondLastUrl.value)) {
-    const betweenText = result.substring(secondLastUrl.end, lastUrl.start);
-
-    if (/^\s*$/.test(betweenText)) {
-    result = result.substring(0, secondLastUrl.end); // Remove whitespace + last URL
-    changed = true;
+    // Check if they are identical (after normalization)
+    if (normalizeUrl(lastUrl.value) === normalizeUrl(secondLastUrl.value)) {
+      const betweenText = result.substring(secondLastUrl.end, lastUrl.start);
+      if (/^\s*$/.test(betweenText)) {
+        result = result.substring(0, secondLastUrl.end); // Remove whitespace + last URL
+        changed = true;
+      }
     }
   }
-  }
-
   return result;
 }
 
 /** Moves first URL to end of string */
 function moveUrlToEnd(str: string): string {
   if (!str) return "";
-
   const match = str.match(REGEX_PATTERNS.URL_MATCH);
   if (!match || !match[0]) return str;
-
   const url = match[0];
   const withoutUrl = str.replace(url, "").trim();
   return withoutUrl ? withoutUrl + " " + url : url;
@@ -852,7 +638,6 @@ function moveUrlToEnd(str: string): string {
 /** Removes HTML, decodes entities, normalizes whitespace */
 function normalizeHtml(str: string): string {
   if (!str) return "";
-
   const TEMP_NEWLINE = "TEMP_NL_MARKER";
 
   // Extract text from anchor tags, discard href URLs (prevents URL duplication, preserves readable text)
@@ -860,33 +645,27 @@ function normalizeHtml(str: string): string {
 
   // Single-pass HTML cleanup
   str = str.replace(REGEX_PATTERNS.HTML_CLEANUP, function(match: string, lineBreak: string, tag2: string, headingTag: string, otherTag: string, newline: string): string {
-  if (lineBreak) return "\n";
-  if (headingTag) return "\n\n";
-  if (otherTag) return "";
-  if (newline) return TEMP_NEWLINE;
-  return match;
+    if (lineBreak) return "\n";
+    if (headingTag) return "\n\n";
+    if (otherTag) return "";
+    if (newline) return TEMP_NEWLINE;
+    return match;
   });
 
-  str = str.replace(/\+/g, "\uFE63");
+  str = str.replace(/\+/g, "\uFE62");  // Protect plus signs during entity processing
 
   // Only apply entity processing if entities are detected
-  if (str.indexOf('&') !== -1 || str.indexOf('&#') !== -1) {
-  str = decodeNumericEntities(str); // Decode numeric entities FIRST (before CHAR_MAP)
-
-  const tokens = Object.keys(CHAR_MAP);
-  for (var i = 0; i < tokens.length; i++) {
-    const token = tokens[i];
-    if (str.indexOf(token) !== -1) { str = str.split(token).join(CHAR_MAP[token]); }
-  }
+  if (str.includes('&') || str.includes('&#')) {
+    str = decodeNumericEntities(str); // Decode numeric entities FIRST (before CHAR_MAP)
+    // Single-pass replacement using pre-compiled regex (replaces 70+ iterations)
+    str = str.replace(CHAR_MAP_REGEX, function(match: string): string { return CHAR_MAP[match] || match; });
   }
 
   // Restore temporary newline markers
   str = str.split(TEMP_NEWLINE).join("\n");
-
   // Normalize ellipsis and whitespace
   str = str.replace(REGEX_PATTERNS.ELLIPSIS_NORMALIZE, "\u2026");
   str = str.replace(REGEX_PATTERNS.WHITESPACE, function(match: string, eolGroup: string): string { return eolGroup ? "\n\n" : " "; });
-
   return str.trim();
 }
 
@@ -895,42 +674,34 @@ function processAmpersands(str: string): string {
   if (!str) return "";
 
   return str.replace(REGEX_PATTERNS.URL_IN_WORD, function(word: string): string {
-  if (!hasUrl(word)) return word;
-
-  const isExcluded = SETTINGS.URL_NO_TRIM_DOMAINS.some(function(domain: string): boolean { return word.toLowerCase().indexOf(domain.toLowerCase()) !== -1; });
-
-  if (isExcluded) { return word.replace(/&/g, "%26"); }
-
-  return encodeURI(trimUrlQuery(word));
+    if (!hasUrl(word)) return word;
+    const isExcluded = SETTINGS.URL_NO_TRIM_DOMAINS.some(function(domain: string): boolean { return word.toLowerCase().includes(domain.toLowerCase()); });
+    if (isExcluded) { return word.replace(/&/g, "%26"); }
+    return encodeURI(trimUrlQuery(word));
   });
 }
 
 /** Detects incomplete URL at end */
 function hasIncompleteUrlAtEnd(str: string): boolean {
   if (!str) return false;
-
   if (/https?:\/\/[^\s]*\.$/.test(str)) return true; // URL ending with dot: "https://www.instagram."
   if (/https?:\/\/[a-zA-Z]{1,4}$/.test(str)) return true; // Very short domain: "https://www" or "https://in"
   if (/https?:\/\/[a-zA-Z0-9-]+\.[a-zA-Z]{1,2}$/.test(str)) return true; // Incomplete TLD (1-2 chars): "https://instagram.c"
   if (/https?:\/\/www\.[a-zA-Z0-9-]{1,10}$/.test(str)) return true; // Incomplete after www: "https://www.inst"
   if (/https?:\/\/[^\s]+\/[a-zA-Z]{1,2}$/.test(str)) return true; // Short path segment: "https://domain.com/ab"
   if (REGEX_PATTERNS.URL_FRAG.test(str)) return true; // Protocol fragments: "h…" "ht…" "http…" "https…"
-
   return false;
 }
 
 /** Removes incomplete URL from end after trimming */
 function removeIncompleteUrlFromEnd(str: string): string {
   if (!str) return "";
-
-  // Remove protocol fragments with ellipsis first
-  str = str.replace(REGEX_PATTERNS.URL_FRAG, "");
+  str = str.replace(REGEX_PATTERNS.URL_FRAG, ""); // Remove protocol fragments with ellipsis first
 
   // Find last URL protocol
   const httpIndex = str.lastIndexOf("http://");
   const httpsIndex = str.lastIndexOf("https://");
   const urlStartIndex = Math.max(httpIndex, httpsIndex);
-
   // If no URL protocol found, return original string
   if (urlStartIndex === -1) return str;
   // Check if URL is preceded by space or is at start
@@ -943,21 +714,18 @@ function removeIncompleteUrlFromEnd(str: string): string {
   if (isLikelyComplete) { return str; } // URL looks complete, keep it
   // Remove incomplete URL
   const textBeforeUrl = str.substring(0, urlStartIndex).trim();
-
   return textBeforeUrl;
 }
 
 /** Trims to POST_LENGTH with smart ellipsis + URL protection */
 function trimContent(str: string, wasPreTruncated: boolean): TrimResult {
   if (!str) return { content: "", needsEllipsis: false };
-
   str = str.trim();
   if (!str) return { content: "", needsEllipsis: false };
 
   // Normalize ellipsis characters
   str = str.replace(REGEX_PATTERNS.ELLIPSIS_NORMALIZE, "\u2026");
   str = str.replace(REGEX_PATTERNS.ELLIPSIS_MULTI, "\u2026");
-
   var needsEllipsis = wasPreTruncated;
 
   // Twitter-specific ellipsis logic for near-limit content
@@ -972,9 +740,7 @@ function trimContent(str: string, wasPreTruncated: boolean): TrimResult {
       const trailingPlaceholderRegex = new RegExp(escapedPlaceholder + "$");
       strForCheck = str.replace(trailingPlaceholderRegex, "").trim();
     }
-
     const hasTerminator = REGEX_PATTERNS.URL_TERMINATOR.test(strForCheck) || REGEX_PATTERNS.EMOJI.test(strForCheck.slice(-4)) || REGEX_PATTERNS.TERMINATOR_CHECK.test(strForCheck) || /\s>>$/.test(strForCheck);
-
     if (str.length >= threshold && str.length <= SETTINGS.POST_LENGTH && !hasTerminator) {
       str += "\u2026";
       needsEllipsis = true;
@@ -997,7 +763,6 @@ function trimContent(str: string, wasPreTruncated: boolean): TrimResult {
     } else if (SETTINGS.POST_LENGTH_TRIM_STRATEGY === "smart") {
       const toleranceChars = Math.floor(SETTINGS.POST_LENGTH * (SETTINGS.SMART_TOLERANCE_PERCENT || 12) / 100);
       const minAcceptable = SETTINGS.POST_LENGTH - toleranceChars;
-
       const lastPeriod = findLastSentenceEnd(str, SETTINGS.POST_LENGTH);
       if (lastPeriod > 0) {
         const sentenceLen = lastPeriod + 1;
@@ -1022,8 +787,7 @@ function trimContent(str: string, wasPreTruncated: boolean): TrimResult {
     }
   }
 
-  // Remove incomplete URLs that may result from trimming long links
-  if (hasIncompleteUrlAtEnd(str)) {
+  if (hasIncompleteUrlAtEnd(str)) { // Remove incomplete URLs that may result from trimming long links
     str = removeIncompleteUrlFromEnd(str);
     str = str.trim();
     needsEllipsis = true; // Mark that we need ellipsis since we removed content
@@ -1033,7 +797,6 @@ function trimContent(str: string, wasPreTruncated: boolean): TrimResult {
     const hasSimpleTerminator = REGEX_PATTERNS.TERMINATOR_CHECK.test(str);
     if (!hasSimpleTerminator && !str.endsWith("\u2026")) { str += "\u2026"; }
   }
-
   return { content: str, needsEllipsis: needsEllipsis };
 }
 
@@ -1049,8 +812,8 @@ function trimUrlQuery(url: string): string {
 function extractRealName(embedCode: string): string {
   if (!embedCode) return "";
   try {
-  const match = embedCode.match(REGEX_PATTERNS.REAL_NAME);
-  return match && match[1] ? match[1].trim() : "";
+    const match = embedCode.match(REGEX_PATTERNS.REAL_NAME);
+    return match && match[1] ? match[1].trim() : "";
   } catch (e) { return ""; }
 }
 
@@ -1074,8 +837,8 @@ function extractRepostUser(str: string): string {
 function extractTweetText(embedCode: string): string {
   if (!embedCode) return "";
   try {
-  const match = embedCode.match(REGEX_PATTERNS.TWEET_TEXT);
-  return match && match[1] ? match[1].trim() : "";
+    const match = embedCode.match(REGEX_PATTERNS.TWEET_TEXT);
+    return match && match[1] ? match[1].trim() : "";
   } catch (e) { return ""; }
 }
 
@@ -1090,11 +853,8 @@ function extractUsername(url: string): string {
 /** Formats @mentions per platform */
 function formatMentions(str: string, skipName: string, platform: string): string {
   if (!str) return "";
-
   const format = SETTINGS.MENTION_FORMATTING[platform] || SETTINGS.MENTION_FORMATTING["DEFAULT"] || { type: "none", value: "" };
-
   if (format.type === "none" || !format.value) return str;
-
   const skipClean = skipName ? (skipName.startsWith("@") ? skipName.substring(1) : skipName) : "";
 
   // Captures character before @ (if any) and username
@@ -1103,40 +863,35 @@ function formatMentions(str: string, skipName: string, platform: string): string
   pattern += "([a-zA-Z0-9_.]+)\\b";
 
   try {
-  const regex = getCachedRegex(pattern, "gi");
-  return str.replace(regex, function(match: string, prefix: string, username: string, offset: number, fullStr: string): string {
-    if (format.type === "prefix") { 
-    var result = prefix + format.value + username;
-    var nextCharIndex = offset + match.length;
-    if (nextCharIndex < fullStr.length) {
-      var nextChar = fullStr.charAt(nextCharIndex);
-      if (nextChar === 'h' && fullStr.substring(nextCharIndex).match(/^https?:\/\//)) { result += " "; }
-    }
-    return result;
-    }
-    return prefix + match.substring(prefix.length) + format.value;
-  });
+    const regex = new RegExp(pattern, "gi");
+    return str.replace(regex, function(match: string, prefix: string, username: string, offset: number, fullStr: string): string {
+      if (format.type === "prefix") {
+        var result = prefix + format.value + username;
+        var nextCharIndex = offset + match.length;
+        if (nextCharIndex < fullStr.length) {
+          var nextChar = fullStr.charAt(nextCharIndex);
+          if (nextChar === 'h' && fullStr.substring(nextCharIndex).match(/^https?:\/\//)) { result += " "; }
+        }
+        return result;
+      }
+      return prefix + match.substring(prefix.length) + format.value;
+    });
   } catch (e) { return str; }
 }
 
 /** Formats quote post with author attribution */
 function formatQuote(content: string, author: string, authorUsername: string, platform: string, quotedUrl: string): string {
   if (platform === "BS") {
-  const cleaned = content.replace(REGEX_PATTERNS.BS_QUOTE, "").trim();
-  return cleaned ? author + SETTINGS.PREFIX_QUOTE + ":\n" + cleaned : content;
+    const cleaned = content.replace(REGEX_PATTERNS.BS_QUOTE, "").trim();
+    return cleaned ? author + SETTINGS.PREFIX_QUOTE + ":\n" + cleaned : content;
   }
-
   if (platform === "TW" && typeof quotedUrl === "string" && REGEX_PATTERNS.TWEET_STATUS.test(quotedUrl)) {
-  const username = extractUsername(quotedUrl);
-
-  const currentUser = authorUsername.startsWith("@") ? authorUsername.substring(1) : authorUsername;
-  const isSelf = username && username.toLowerCase() === currentUser.toLowerCase();
-
-  const mention = isSelf ? SETTINGS.PREFIX_SELF_REFERENCE : (username ? "@" + username : "");
-
-  return author + SETTINGS.PREFIX_QUOTE + mention + ":\n" + content;
+    const username = extractUsername(quotedUrl);
+    const currentUser = authorUsername.startsWith("@") ? authorUsername.substring(1) : authorUsername;
+    const isSelf = username && username.toLowerCase() === currentUser.toLowerCase();
+    const mention = isSelf ? SETTINGS.PREFIX_SELF_REFERENCE : (username ? "@" + username : "");
+    return author + SETTINGS.PREFIX_QUOTE + mention + ":\n" + content;
   }
-
   return content;
 }
 
@@ -1144,11 +899,14 @@ function formatQuote(content: string, author: string, authorUsername: string, pl
 function formatRepost(content: string, author: string, authorUsername: string, repostedUser: string): string {
   const currentUser = authorUsername.startsWith("@") ? authorUsername.substring(1) : authorUsername;
   const repostedClean = repostedUser.startsWith("@") ? repostedUser.substring(1) : repostedUser;
-  const isSelf = repostedClean.toLowerCase() === currentUser.toLowerCase();
-
-  const mention = isSelf ? SETTINGS.PREFIX_SELF_REFERENCE : repostedUser;
-
-  return content.replace(REGEX_PATTERNS.REPOST_PREFIX, author + SETTINGS.PREFIX_REPOST + mention + ":\n");
+  const isSelf = repostedClean.toLowerCase() === currentUser.toLowerCase();  
+  var mention = isSelf ? SETTINGS.PREFIX_SELF_REFERENCE : repostedUser;
+  
+  // For RSS: swap author and mention (display retweeter + link to original author)
+  var displayAuthor = author;
+  if (SETTINGS.POST_FROM === "RSS") { displayAuthor = repostedClean; mention = isSelf ? SETTINGS.PREFIX_SELF_REFERENCE : ("@" + currentUser); }
+  
+  return content.replace(REGEX_PATTERNS.REPOST_PREFIX, displayAuthor + SETTINGS.PREFIX_REPOST + mention + ":\n");
 }
 
 /** Removes "R to @username: " prefix */
@@ -1161,27 +919,29 @@ function composeContent(title: string, author: string, feedTitle: string, rawCon
 
   var wasRssTruncated = false;
   if (platform === "RSS") {
-  const truncResult = truncateRssInput(rawContent);
-  rawContent = truncResult.content;
-  wasRssTruncated = truncResult.wasTruncated;
+    const truncResult = truncateRssInput(rawContent);
+    rawContent = truncResult.content;
+    wasRssTruncated = truncResult.wasTruncated;
   }
 
   const trimmedTitle = (title || "").trim();
   const trimmedFeed = (feedTitle || "").trim();
+  
+  // Normalize duplicate RT prefixes for RSS (rss.app bug)
+  var normalizedTitle = trimmedTitle;
+  if (platform === "RSS" && isRepost(trimmedTitle)) { normalizedTitle = trimmedTitle.replace(/^(RT (?:by )?@[^:]+:\s*)(RT (?:by )?@[^:]+:\s*)+/i, "$1"); }
+  
+  if (isEmpty(rawContent) && isEmpty(normalizedTitle)) { return { content: "", feedAuthor: "", userNameToSkip: "", wasRssTruncated: false }; }
+  const processed = processContent(rawContent, normalizedTitle, trimmedFeed, imageUrl, author, wasRssTruncated);
 
-  if (isEmpty(rawContent) && isEmpty(trimmedTitle)) { return { content: "", feedAuthor: "", userNameToSkip: "", wasRssTruncated: false }; }
-
-  const processed = processContent(rawContent, trimmedTitle, trimmedFeed, imageUrl, author, wasRssTruncated);
-
-  if (processed.userNameToSkip) { 
-  return { 
-    content: formatMentions(processed.content, processed.userNameToSkip, SETTINGS.POST_FROM),
-    feedAuthor: processed.feedAuthor,
-    userNameToSkip: processed.userNameToSkip,
-    wasRssTruncated: wasRssTruncated
-  };
+  if (processed.userNameToSkip) {
+    return {
+      content: formatMentions(processed.content, processed.userNameToSkip, SETTINGS.POST_FROM),
+      feedAuthor: processed.feedAuthor,
+      userNameToSkip: processed.userNameToSkip,
+      wasRssTruncated: wasRssTruncated
+    };
   }
-
   return { content: processed.content, feedAuthor: processed.feedAuthor, userNameToSkip: processed.userNameToSkip, wasRssTruncated: wasRssTruncated };
 }
 
@@ -1193,49 +953,28 @@ function composeStatus(content: string, entryUrl: string, imageUrl: string, titl
 
   // Display imageUrl based on platform and type
   var imageStatus = "";
-
   if (SETTINGS.POST_FROM === "TW") { // Twitter platform
-  if (!isValidImageUrl(imageUrl) && typeof imageUrl === "string" && (imageUrl.endsWith("/photo/1") || imageUrl.endsWith("/video/1"))) { // Twitter media
-    imageStatus = SETTINGS.SHOW_IMAGEURL ? SETTINGS.PREFIX_IMAGE_URL + resultImageUrl : "";
-  } else if (isValidImageUrl(imageUrl)) { // Twitter external link - display with FORCE_SHOW_ORIGIN_POSTURL
-    if (SETTINGS.FORCE_SHOW_ORIGIN_POSTURL) { imageStatus = SETTINGS.PREFIX_POST_URL + resultImageUrl; }
-  }
+    if (!isValidImageUrl(imageUrl) && typeof imageUrl === "string" && (imageUrl.endsWith("/photo/1") || imageUrl.endsWith("/video/1"))) { // Twitter media
+      imageStatus = SETTINGS.SHOW_IMAGEURL ? SETTINGS.PREFIX_IMAGE_URL + resultImageUrl : "";
+    } else if (isValidImageUrl(imageUrl)) { // Twitter external link - display with FORCE_SHOW_ORIGIN_POSTURL
+      if (SETTINGS.FORCE_SHOW_ORIGIN_POSTURL) { imageStatus = SETTINGS.PREFIX_POST_URL + resultImageUrl; }
+    }
   } else { // Other platforms (BS, RSS, YT)
-  if (isValidImageUrl(imageUrl)) { imageStatus = SETTINGS.SHOW_IMAGEURL ? SETTINGS.PREFIX_IMAGE_URL + resultImageUrl : ""; }
+    if (isValidImageUrl(imageUrl)) { imageStatus = SETTINGS.SHOW_IMAGEURL ? SETTINGS.PREFIX_IMAGE_URL + resultImageUrl : ""; }
   }
-
   const finalUrl = (status.urlToShow && typeof status.urlToShow === "string") ? SETTINGS.PREFIX_POST_URL + processUrl(status.urlToShow) : "";
 
-  // Remove trailing TCO_REPLACEMENT placeholder if we're adding URLs at the end
   var finalContent = status.trimmedContent;
-  if ((imageStatus || finalUrl) && SETTINGS.TCO_REPLACEMENT && SETTINGS.POST_FROM === "TW") {
-  const escapedPlaceholder = escapeRegExp(SETTINGS.TCO_REPLACEMENT);
-
-  // Try to remove full placeholder first
-  const trailingPattern = new RegExp(escapedPlaceholder + "[\\s.!?]*$");
-  finalContent = finalContent.replace(trailingPattern, "").replace(/\s+$/, "");
-
-  // Always check for first char (handles visual repetition like 🔗 before 🔗↗️)
-  const firstCharMatch = SETTINGS.TCO_REPLACEMENT.match(/^(?:[\uD800-\uDBFF][\uDC00-\uDFFF]|.)/);
-  const firstChar = firstCharMatch ? firstCharMatch[0] : "";
-  if (firstChar) {
-    const escapedFirst = escapeRegExp(firstChar);
-    finalContent = finalContent.replace(new RegExp(escapedFirst + "[\\s.!?]*$"), "").replace(/\s+$/, "");
-  }
-  }
-
   // Compose the final status
   const composedStatus = finalContent + imageStatus + finalUrl;
-
   // Apply all deduplications in correct order on the complete status
   var result = composedStatus;
-  // 1. Deduplicate URLs at the end (without normalizing prefix)
+  // Deduplicate URLs at the end (without normalizing prefix)
   result = deduplicateUrls(result);
-  // 2. Deduplicate TCO_REPLACEMENT placeholders (Twitter only)
+  // Deduplicate TCO_REPLACEMENT placeholders (Twitter only)
   if (SETTINGS.POST_FROM === "TW" && SETTINGS.TCO_REPLACEMENT) { result = deduplicatePlaceholder(result, SETTINGS.TCO_REPLACEMENT); }
-  // 3. Deduplicate PREFIX_POST_URL and normalize whitespace before last URL
+  // Deduplicate PREFIX_POST_URL and normalize whitespace before last URL
   if (SETTINGS.PREFIX_POST_URL) { result = deduplicatePrefix(result, SETTINGS.PREFIX_POST_URL); }
-
   return result;
 }
 
@@ -1243,7 +982,6 @@ function composeStatus(content: string, entryUrl: string, imageUrl: string, titl
 function processContent(rawContent: any, title: string, feedTitle: string, imageUrl: string, author: string, wasRssTruncated: boolean): ProcessedContent {
   const platform = SETTINGS.POST_FROM;
   const config = getPlatformConfig(platform);
-
   const trimmedTitle = (title || "").trim();
   const trimmedFeed = (feedTitle || "").trim();
 
@@ -1252,56 +990,53 @@ function processContent(rawContent: any, title: string, feedTitle: string, image
   var feedUsername = "";
   var skipName = "";
 
-  if (platform === "BS") {
-  const sep = trimmedFeed.indexOf(" - ");
-  feedUsername = sep !== -1 ? trimmedFeed.substring(0, sep) : trimmedFeed;
-  const realName = sep !== -1 ? trimmedFeed.substring(sep + 3) : trimmedFeed;
-  feedAuthor = SETTINGS.SHOW_REAL_NAME ? realName : feedUsername;
-  skipName = feedUsername;
-  } else if (platform === "TW") {
-  feedUsername = trimmedFeed;
-  const realName = extractRealName(rawContent) || feedUsername;
-  feedAuthor = SETTINGS.SHOW_REAL_NAME ? realName : feedUsername;
-  skipName = feedUsername;
+  if (config.useFeedTitleAuthor) {
+    if (platform === "BS") {
+      const sep = trimmedFeed.indexOf(" - ");
+      feedUsername = sep !== -1 ? trimmedFeed.substring(0, sep) : trimmedFeed;
+      const realName = sep !== -1 ? trimmedFeed.substring(sep + 3) : trimmedFeed;
+      feedAuthor = SETTINGS.SHOW_REAL_NAME ? realName : feedUsername;
+    } else {
+      feedUsername = trimmedFeed;
+      const realName = extractRealName(rawContent) || feedUsername;
+      feedAuthor = SETTINGS.SHOW_REAL_NAME ? realName : feedUsername;
+    }
+    skipName = feedUsername;
   } else {
-  skipName = "(none)";
+    skipName = "(none)";
   }
-
+  
   if (config.useParsedText) {
-  content = extractTweetText(rawContent) || trimmedTitle;
+    content = extractTweetText(rawContent) || trimmedTitle;
   } else if (config.useGetContent) {
-  content = selectContent(rawContent, trimmedTitle);
+    content = selectContent(rawContent, trimmedTitle);
   } else {
-  content = trimmedTitle;
+    content = trimmedTitle;
   }
   content = normalizeHtml(content);
 
   // This ensures ellipsis (…) is detected before URL encoding turns it into %E2%80%A6
   if (hasTruncatedUrl(content)) { content = removeTruncatedUrl(content); }
   content = processAmpersands(content);
-
   // Platform-specific content modifications
   if (SETTINGS.MOVE_URL_TO_END) { content = moveUrlToEnd(content); }
   if (config.handleReplies) { content = removeReplyPrefix(content); }
   if (config.handleRetweets && isRepost(trimmedTitle)) {
-  const repostedUser = extractRepostUser(trimmedTitle);
-  content = formatRepost(content, feedAuthor, feedUsername, repostedUser);
+    const repostedUser = extractRepostUser(trimmedTitle);
+    content = formatRepost(content, feedAuthor, feedUsername || author, repostedUser);
   }
   if (config.handleQuotes && isQuote(content, imageUrl, platform, author)) { content = formatQuote(content, feedAuthor, feedUsername, platform, imageUrl); }
-
   // Replace t.co shortened links with placeholder (Twitter only) - must be before applyContentReplacements
   if (platform === "TW" && SETTINGS.TCO_REPLACEMENT) {
-  // Get first character of TCO_REPLACEMENT (handling surrogate pairs for emoji)
-  const firstCharMatch = SETTINGS.TCO_REPLACEMENT.match(/^(?:[\uD800-\uDBFF][\uDC00-\uDFFF]|.)/);
-  const firstChar = firstCharMatch ? firstCharMatch[0] : "";
-  if (firstChar) { content = content.replace(new RegExp(escapeRegExp(firstChar) + "\\s+(?=https?:\\/\\/t\\.co\\/)", "g"), ""); }
-  // Then replace t.co shortened links with placeholder
-  content = content.replace(REGEX_PATTERNS.TCO_URL, SETTINGS.TCO_REPLACEMENT);
+    // Get first character of TCO_REPLACEMENT (handling surrogate pairs for emoji)
+    const firstCharMatch = SETTINGS.TCO_REPLACEMENT.match(/^(?:[\uD800-\uDBFF][\uDC00-\uDFFF]|.)/);
+    const firstChar = firstCharMatch ? firstCharMatch[0] : "";
+    if (firstChar) { content = content.replace(new RegExp(escapeRegExp(firstChar) + "\\s+(?=https?:\\/\\/t\\.co\\/)", "g"), ""); }
+    // Then replace t.co shortened links with placeholder
+    content = content.replace(REGEX_PATTERNS.TCO_URL, SETTINGS.TCO_REPLACEMENT);
   }
-
   // Apply content replacements as final step to work on fully processed output
   content = applyContentReplacements(content);
-
   return { content: content, feedAuthor: feedAuthor, userNameToSkip: skipName, wasRssTruncated: wasRssTruncated };
 }
 
@@ -1319,34 +1054,31 @@ function processStatus(content: string, entryUrl: string, imageUrl: string, titl
   if (platform === "RSS") { showUrl = true; }
 
   if (platform === "TW") {
-  const isMedia = typeof imageUrl === "string" && (imageUrl.endsWith("/photo/1") || imageUrl.endsWith("/video/1"));
-  const isExtRepost = isRepost(title) && !isSelfRepost(title, author) && SETTINGS.REPOST_ALLOWED;
-  const hasRepostUrl = extractRepostUrl(content) !== "";
-
-  if (!hasUrl(content) && !isMedia) { showUrl = true; }
-  showUrl = showUrl || hasRepostUrl || isExtRepost || isMedia;
+    const isMedia = typeof imageUrl === "string" && (imageUrl.endsWith("/photo/1") || imageUrl.endsWith("/video/1"));
+    const isExtRepost = isRepost(title) && !isSelfRepost(title, author) && SETTINGS.REPOST_ALLOWED;
+    const hasRepostUrl = extractRepostUrl(content) !== "";
+    if (!hasUrl(content) && !isMedia) { showUrl = true; }
+    showUrl = showUrl || hasRepostUrl || isExtRepost || isMedia;
   }
 
   var urlToShow = "";
   if (platform === "TW") {
-  const contentHasUrl = hasUrl(trimmedContent);
-  const hasImage = isValidImageUrl(imageUrl);
-
-  if (showUrl || contentHasUrl) {
-    // Prioritize entryUrl when FORCE_SHOW_ORIGIN_POSTURL is enabled
-    if (SETTINGS.FORCE_SHOW_ORIGIN_POSTURL || isQuoteTweet) {
-    urlToShow = entryUrl;
-    } else {
-    urlToShow = contentHasUrl ? (hasImage ? imageUrl : entryUrl) : (hasImage ? imageUrl : entryUrl);
+    const contentHasUrl = hasUrl(trimmedContent);
+    const hasImage = isValidImageUrl(imageUrl);
+    if (showUrl || contentHasUrl) {
+      // Prioritize entryUrl when FORCE_SHOW_ORIGIN_POSTURL is enabled
+      if (SETTINGS.FORCE_SHOW_ORIGIN_POSTURL || isQuoteTweet) {
+        urlToShow = entryUrl;
+      } else {
+        urlToShow = hasImage ? imageUrl : entryUrl;
+      }
+      urlToShow = processUrl(urlToShow);
+      if (!urlToShow) { urlToShow = SETTINGS.FORCE_SHOW_FEEDURL ? feedUrl : ""; }
     }
-    urlToShow = processUrl(urlToShow);
-    if (!urlToShow) { urlToShow = SETTINGS.FORCE_SHOW_FEEDURL ? feedUrl : ""; }
-  }
   } else {
-  const hasValid = typeof entryUrl === "string" && entryUrl !== "(none)";
-  if (showUrl && hasValid) { urlToShow = processUrl(entryUrl); }
+    const hasValid = typeof entryUrl === "string" && entryUrl !== "(none)";
+    if (showUrl && hasValid) { urlToShow = processUrl(entryUrl); }
   }
-
   return { trimmedContent: trimmedContent, needsEllipsis: needsEllipsis, urlToShow: urlToShow };
 }
 
@@ -1355,30 +1087,19 @@ function processUrl(url: string): string {
   url = safeString(url);
   if (!url || url === "(none)") return "";
   url = url.trim();
-
-  // URL domain replacement logic (supports both string and array)
-  if (SETTINGS.URL_REPLACE_FROM) {
-  // Check if URL_REPLACE_FROM is an array (multiple domains)
-  if (typeof SETTINGS.URL_REPLACE_FROM === "object" && SETTINGS.URL_REPLACE_FROM.length > 0) {
-    // Process each domain in the array
+  // URL domain replacement logic (array of domains)
+  if (SETTINGS.URL_REPLACE_FROM && SETTINGS.URL_REPLACE_FROM.length > 0) {
     for (var i = 0; i < SETTINGS.URL_REPLACE_FROM.length; i++) {
-    const domain = SETTINGS.URL_REPLACE_FROM[i];
-    if (domain && typeof domain === "string") {
-      const pattern = escapeRegExp(domain);
-      if (pattern) {
-      const regex = getCachedRegex(pattern, "gi");
-      url = url.replace(regex, SETTINGS.URL_REPLACE_TO);
+      const domain = SETTINGS.URL_REPLACE_FROM[i];
+      if (domain && typeof domain === "string") {
+        const pattern = escapeRegExp(domain);
+        if (pattern) {
+          const regex = new RegExp(pattern, "gi");
+          url = url.replace(regex, SETTINGS.URL_REPLACE_TO);
+        }
       }
     }
-    }
-  } 
-  // Single string domain (backward compatible)
-  else if (typeof SETTINGS.URL_REPLACE_FROM === "string") {
-    const pattern = escapeRegExp(SETTINGS.URL_REPLACE_FROM);
-    if (pattern) { url = url.replace(getCachedRegex(pattern, "gi"), SETTINGS.URL_REPLACE_TO); }
   }
-  }
-
   return processAmpersands(url);
 }
 
@@ -1391,7 +1112,6 @@ function selectContent(content: any, title: any): string {
     if (titleStr && contentStr) { return titleStr + SETTINGS.CONTENT_TITLE_SEPARATOR + contentStr; }
     return titleStr || contentStr || "";
   }
-
   if (SETTINGS.SHOW_TITLE_AS_CONTENT) { return title || ""; }
   const contentEmpty = typeof content !== "string" || isEmpty(content);
   return contentEmpty ? (title || "") : content;
@@ -1400,21 +1120,15 @@ function selectContent(content: any, title: any): string {
 /** Determines if post should be skipped */
 function shouldSkip(content: any, title: string, url: string, imageUrl: string, author: string): { skip: boolean;reason: string } {
   if (isEmpty(content) && isEmpty(title) && isEmpty(url)) { return { skip: true, reason: "Empty content, title and URL" }; }
-
   if (isRepost(title) && !isSelfRepost(title, author) && !SETTINGS.REPOST_ALLOWED) { return { skip: true, reason: "External repost not allowed" }; }
-
   if (SETTINGS.PHRASES_BANNED && SETTINGS.PHRASES_BANNED.length > 0) { if (hasBannedContent(title) || hasBannedContent(content) || hasBannedContent(url) || hasBannedContent(imageUrl)) { return { skip: true, reason: "Contains banned phrases" }; } }
-
   if (SETTINGS.PHRASES_REQUIRED && SETTINGS.PHRASES_REQUIRED.length > 0) { if (!hasRequiredKeywords(title) && !hasRequiredKeywords(content)) { return { skip: true, reason: "Missing mandatory keywords" }; } }
-
   if (isReply(title) || isReply(content)) { return { skip: true, reason: "Reply post (starts with @username)" }; }
-
   return { skip: false, reason: "" };
 }
 
 // MAIN EXECUTION LOGIC //
 const skipCheck = shouldSkip(entryContent, entryTitle, entryUrl, entryImageUrl, entryAuthor);
-
 if (skipCheck.skip) {
   MakerWebhooks.makeWebRequest.skip("Skipped due to filter rules: " + skipCheck.reason);
 } else {

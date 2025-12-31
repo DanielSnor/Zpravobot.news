@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// connector for IFTTT 📺 webhook - St. Daniel's Day rev, Dec 17th, 2025
+// connector for IFTTT 📺 webhook - Z Day rev, Jan 1st, 2026
 ///////////////////////////////////////////////////////////////////////////////
 
 const entryContent = Youtube.newPublicVideoFromSubscriptions.Description || ""; // Video description.
