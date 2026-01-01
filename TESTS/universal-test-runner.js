@@ -30,12 +30,12 @@ console.log('');
 
 // Check if files exist
 if (!fs.existsSync(filterScriptPath)) {
-    console.error('✗ CHYBA: Filter script nenalezen: ' + filterScriptPath);
+    console.error('âœ— CHYBA: Filter script nenalezen: ' + filterScriptPath);
     process.exit(1);
 }
 
 if (!fs.existsSync(testSuitePath)) {
-    console.error('✗ CHYBA: Test suite nenalezena: ' + testSuitePath);
+    console.error('âœ— CHYBA: Test suite nenalezena: ' + testSuitePath);
     process.exit(1);
 }
 
@@ -43,7 +43,7 @@ if (!fs.existsSync(testSuitePath)) {
 const filterJS = fs.readFileSync(filterScriptPath, 'utf8');
 const testSuiteJS = fs.readFileSync(testSuitePath, 'utf8');
 
-console.log('✓ Soubory načteny');
+console.log('âœ“ Soubory naÄteny');
 console.log('');
 
 // Create sandbox for filter script
@@ -72,7 +72,7 @@ vm.createContext(filterSandbox);
 try {
     vm.runInContext(filterJS, filterSandbox);
 } catch (error) {
-    console.error('✗ CHYBA při načítání filter scriptu:');
+    console.error('âœ— CHYBA pÅ™i naÄÃ­tÃ¡nÃ­ filter scriptu:');
     console.error(error.message);
     process.exit(1);
 }
@@ -80,12 +80,12 @@ try {
 const MastodonFilter = filterSandbox.MastodonFilter;
 
 if (!MastodonFilter) {
-    console.error('✗ CHYBA: MastodonFilter funkce nebyla nalezena v filter scriptu');
-    console.error('   Ujistěte se, že používáte wrapped verzi skriptu.');
+    console.error('âœ— CHYBA: MastodonFilter funkce nebyla nalezena v filter scriptu');
+    console.error('   UjistÄ›te se, Å¾e pouÅ¾Ã­vÃ¡te wrapped verzi skriptu.');
     process.exit(1);
 }
 
-console.log('✓ Filter funkce načtena');
+console.log('âœ“ Filter funkce naÄtena');
 
 // Create sandbox for test suite
 const testSandbox = {
@@ -99,10 +99,10 @@ vm.createContext(testSandbox);
 try {
     vm.runInContext(testSuiteJS, testSandbox);
 } catch (error) {
-    console.error('✗ CHYBA při načítání test suite:');
+    console.error('âœ— CHYBA pÅ™i naÄÃ­tÃ¡nÃ­ test suite:');
     console.error(error.message);
     console.error('');
-    console.error('Řádek:', error.stack.split('\\n')[1]);
+    console.error('Å˜Ã¡dek:', error.stack.split('\\n')[1]);
     process.exit(1);
 }
 
@@ -112,17 +112,17 @@ let testCases;
 try {
     testCases = testCasesScript.runInContext(testSandbox);
 } catch (error) {
-    console.error('✗ CHYBA: Nepodařilo se extrahovat testCases z test suite');
+    console.error('âœ— CHYBA: NepodaÅ™ilo se extrahovat testCases z test suite');
     console.error(error.message);
     process.exit(1);
 }
 
 if (!testCases || !Array.isArray(testCases)) {
-    console.error('✗ CHYBA: testCases není pole');
+    console.error('âœ— CHYBA: testCases nenÃ­ pole');
     process.exit(1);
 }
 
-console.log('✓ Test suite načtena: ' + testCases.length + ' testů');
+console.log('âœ“ Test suite naÄtena: ' + testCases.length + ' testÅ¯');
 console.log('');
 
 // Group tests by category
@@ -136,7 +136,7 @@ testCases.forEach(test => {
 });
 
 console.log('='.repeat(80));
-console.log('SPOUŠTÍM TESTY');
+console.log('SPOUÅ TÃM TESTY');
 console.log('='.repeat(80));
 console.log('');
 
@@ -149,8 +149,8 @@ const categories = Object.keys(testsByCategory).sort();
 // Run tests by category
 categories.forEach(category => {
     const categoryTests = testsByCategory[category];
-    console.log(`\n📦 ${category} (${categoryTests.length} testů)`);
-    console.log('─'.repeat(80));
+    console.log(`\nðŸ“¦ ${category} (${categoryTests.length} testÅ¯)`);
+    console.log('â”€'.repeat(80));
     
     let categoryPassed = 0;
     let categoryFailed = 0;
@@ -167,18 +167,19 @@ categories.forEach(category => {
                 REPOST_ALLOWED: true,
                 AMPERSAND_SAFE_CHAR: "⅋",
                 CONTENT_REPLACEMENTS: [],
-                POST_LENGTH: 444,
+                POST_LENGTH: 500,
                 POST_LENGTH_TRIM_STRATEGY: "smart",
                 SMART_TOLERANCE_PERCENT: 12,
+                TCO_REPLACEMENT: "🔗↗️",
                 URL_REPLACE_FROM: ["https://x.com/", "https://twitter.com/"],
                 URL_REPLACE_TO: "https://x.com/",
-                URL_NO_TRIM_DOMAINS: [],
+                URL_NO_TRIM_DOMAINS: ["youtu.be", "youtube.com"],
                 URL_DOMAIN_FIXES: [],
-                FORCE_SHOW_ORIGIN_POSTURL: false,
+                FORCE_SHOW_ORIGIN_POSTURL: true,
                 FORCE_SHOW_FEEDURL: false,
                 SHOW_IMAGEURL: false,
                 PREFIX_REPOST: " 𝕏📤 ",
-                PREFIX_QUOTE: " 𝕏📝💬 ",
+                PREFIX_QUOTE: " 𝕏🔍💬 ",
                 PREFIX_IMAGE_URL: "",
                 PREFIX_POST_URL: "\n",
                 PREFIX_SELF_REFERENCE: "svůj post",
@@ -223,11 +224,11 @@ categories.forEach(category => {
                 if (result === '') {
                     categoryPassed++;
                     totalPassed++;
-                    process.stdout.write('✓');
+                    process.stdout.write('âœ“');
                 } else {
                     categoryFailed++;
                     totalFailed++;
-                    process.stdout.write('✗');
+                    process.stdout.write('âœ—');
                     failures.push({
                         id: test.id,
                         category: category,
@@ -245,11 +246,11 @@ categories.forEach(category => {
                 if (normalizedResult === normalizedExpected) {
                     categoryPassed++;
                     totalPassed++;
-                    process.stdout.write('✓');
+                    process.stdout.write('âœ“');
                 } else {
                     categoryFailed++;
                     totalFailed++;
-                    process.stdout.write('✗');
+                    process.stdout.write('âœ—');
                     failures.push({
                         id: test.id,
                         category: category,
@@ -278,17 +279,17 @@ categories.forEach(category => {
 
 // Print summary
 console.log('\n\n' + '='.repeat(80));
-console.log('VÝSLEDKY TESTOVÁNÍ');
+console.log('VÃSLEDKY TESTOVÃNÃ');
 console.log('='.repeat(80));
-console.log(`✓ Úspěšné:   ${totalPassed}/${testCases.length}`);
-console.log(`✗ Neúspěšné: ${totalFailed}/${testCases.length}`);
-console.log(`📊 Úspěšnost: ${((totalPassed / testCases.length) * 100).toFixed(2)}%`);
+console.log(`âœ“ ÃšspÄ›Å¡nÃ©:   ${totalPassed}/${testCases.length}`);
+console.log(`âœ— NeÃºspÄ›Å¡nÃ©: ${totalFailed}/${testCases.length}`);
+console.log(`ðŸ“Š ÃšspÄ›Å¡nost: ${((totalPassed / testCases.length) * 100).toFixed(2)}%`);
 console.log('='.repeat(80));
 
 // Print failures if any (max 50)
 if (failures.length > 0) {
-    console.log('\n❌ SELHANÉ TESTY (prvních 50):');
-    console.log('─'.repeat(80));
+    console.log('\nâŒ SELHANÃ‰ TESTY (prvnÃ­ch 50):');
+    console.log('â”€'.repeat(80));
     
     failures.slice(0, 50).forEach((failure, index) => {
         console.log(`\n${index + 1}. ${failure.id} [${failure.category}]`);
@@ -302,7 +303,7 @@ if (failures.length > 0) {
     });
     
     if (failures.length > 50) {
-        console.log(`\n... a ${failures.length - 50} dalších selhání`);
+        console.log(`\n... a ${failures.length - 50} dalÅ¡Ã­ch selhÃ¡nÃ­`);
     }
 }
 
@@ -320,7 +321,7 @@ const results = {
 };
 
 fs.writeFileSync(resultsFile, JSON.stringify(results, null, 2));
-console.log('\n📄 Výsledky uloženy do: ' + resultsFile);
+console.log('\nðŸ“„ VÃ½sledky uloÅ¾eny do: ' + resultsFile);
 console.log('');
 
 // Exit with appropriate code
