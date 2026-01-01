@@ -1,8 +1,8 @@
-# IFTTT Filter Test Infrastructure v1.0.0
+# IFTTT Filter Test Infrastructure v2.0.0
 
 ## 📋 Přehled
 
-Robustní testovací infrastruktura pro IFTTT webhook filter skripty umožňující opakované testování všech verzí.
+Robustní testovací infrastruktura pro IFTTT webhook filter skripty umožňující opakované testování všech verzí. Aktuálně podporuje v4.0.0 se 141 testy a 100% úspěšností.
 
 ## 📦 Komponenty
 
@@ -11,44 +11,38 @@ Robustní testovací infrastruktura pro IFTTT webhook filter skripty umožňují
 - Podporuje libovolnou verzi filter scriptu
 - Automatické group testing podle kategorií
 - JSON export výsledků
+- Vizuální progress s emoji
 - **Použití:**
   ```bash
   node universal-test-runner.js <filter-script.js> <test-suite.js>
   ```
 
-### 2. **Test Suite** (`complete-test-suite-3_1_4-fixed.ts`)
-- 204 testů pokrývajících všechny verze (v3.0.0 - v3.1.4)
-- Opravené syntaktické chyby
-- Kategorizované testy
-- Připraveno pro TypeScript kompilaci
+### 2. **Test Suite v4.0.0** (`complete-test-suite-4_0_0.ts` / `.js`)
+- **141 testů** pokrývajících baseline i v4.0.0 funkce
+- 23 baseline testů (zděděné z v3.x)
+- 118 testů pro nové/změněné funkce v4.0.0
+- Kategorizované do 25 skupin (A-T + baseline)
+- Připraveno pro TypeScript i JavaScript
 
-### 3. **Wrapped Filter Script** (`filter-script-wrapped.js`)
-- Testovatelná verze filter scriptu
-- Exportuje `MastodonFilter` funkci
-- Kompatibilní s test runnerem
+### 3. **Test Report** (`TEST-REPORT-v4.0.0.md`)
+- Kompletní přehled výsledků testování
+- Breakdown podle kategorií
+- Dokumentace klíčových poznatků
 
 ## 🚀 Rychlý start
 
-### Krok 1: Příprava
+### Krok 1: Spusťte testy
 
 ```bash
-# Zkompilujte filter script do testovatelné podoby
-tsc --target ES5 --module commonjs your-filter-script.ts
-
-# Nebo použijte wrapper creator
-node create-wrapper.js
+# Nejjednodušší - použijte předkompilované soubory
+node universal-test-runner.js example-ifttt-filter-x-xcom-4_0_0.js complete-test-suite-4_0_0.js
 ```
 
-### Krok 2: Zkompilujte test suite
+### Krok 2 (volitelné): Kompilace z TypeScript
 
 ```bash
-tsc --target ES5 --module commonjs --skipLibCheck complete-test-suite-3_1_4-fixed.ts
-```
-
-### Krok 3: Spusťte testy
-
-```bash
-node universal-test-runner.js filter-script-wrapped.js complete-test-suite-3_1_4-fixed.js
+# Pokud chcete kompilovat z .ts
+tsc --target ES5 --module commonjs --skipLibCheck complete-test-suite-4_0_0.ts
 ```
 
 ## 📊 Výstup testování
@@ -59,34 +53,36 @@ node universal-test-runner.js filter-script-wrapped.js complete-test-suite-3_1_4
 UNIVERSAL IFTTT FILTER TEST RUNNER v1.0.0
 ================================================================================
 
-Filter script: filter-script-wrapped.js
-Test suite:    complete-test-suite-3_1_4-fixed.js
+Filter script: example-ifttt-filter-x-xcom-4_0_0.js
+Test suite:    complete-test-suite-4_0_0.js
 
 ✓ Soubory načteny
 ✓ Filter funkce načtena
-✓ Test suite načtena: 204 testů
+✓ Test suite načtena: 141 testů
 
 ================================================================================
 SPOUŠTÍM TESTY
 ================================================================================
 
-📦 Basic Tweets (3 testů)
+📦 Baseline - Basic Tweets (4 testů)
 ────────────────────────────────────────────────────────────────────────────────
-✓✓✓ 3/3 passed
+✓✓✓✓ 4/4 passed
 
-📦 URL Processing (5 testů)
+📦 v4.0.0 - URL_REPLACE_FROM Array (4 testů)
 ────────────────────────────────────────────────────────────────────────────────
-✓✓✓✓✓ 5/5 passed
+✓✓✓✓ 4/4 passed
 
 ...
 
 ================================================================================
 VÝSLEDKY TESTOVÁNÍ
 ================================================================================
-✓ Úspěšné:   XXX/204
-✗ Neúspěšné: YYY/204
-📊 Úspěšnost: ZZ.ZZ%
+✓ Úspěšné:   141/141
+✗ Neúspěšné: 0/141
+📊 Úspěšnost: 100.00%
 ================================================================================
+
+📄 Výsledky uloženy do: test-results-1767281417666.json
 ```
 
 ### JSON output:
@@ -94,59 +90,86 @@ Výsledky se automaticky ukládají do `test-results-[timestamp].json`:
 
 ```json
 {
-  "timestamp": "2025-11-25T11:33:53.182Z",
-  "filterScript": "filter-script-wrapped.js",
-  "testSuite": "complete-test-suite-3_1_4-fixed.js",
-  "total": 204,
-  "passed": XXX,
-  "failed": YYY,
-  "successRate": "ZZ.ZZ%",
-  "failures": [...]
+  "timestamp": "2026-01-01T12:30:17.666Z",
+  "filterScript": "example-ifttt-filter-x-xcom-4_0_0.js",
+  "testSuite": "complete-test-suite-4_0_0.js",
+  "total": 141,
+  "passed": 141,
+  "failed": 0,
+  "successRate": "100.00%",
+  "failures": []
 }
 ```
 
-## 📝 Struktura testů
+## 📝 Struktura testů v4.0.0
 
-### Test kategorie:
-- **Basic Tweets** (3 testy) - Základní tweety
-- **URL Processing** (5 testů) - Zpracování URL
-- **Media Handling** (3 testy) - Práce s médii
-- **Retweet Processing** (5 testů) - Retweety
-- **Quote Tweets** (6 testů) - Citované tweety
-- **Content Filtering** (12 testů) - Filtrování obsahu
-- **Content Trimming** (15 testů) - Zkracování obsahu
-- **RSS Processing** (5 testů) - RSS feedy
-- **Bluesky Platform** (3 testy) - Bluesky podpora
-- **YouTube Platform** (2 testy) - YouTube podpora
-- **v3.0.3 Features** (14 testů) - URL_DOMAIN_FIXES
-- **v3.1.0 Features** (51 testů) - Unified filtering
-- **v3.1.2 Features** (15 testů) - FORCE_SHOW fixes
-- **v3.1.3 Features** (8 testů) - URL deduplication
-- **v3.1.4 Features** (3 testy) - ES5 fix
+### Baseline kategorie (23 testů):
+| Kategorie | Počet | Popis |
+|-----------|-------|-------|
+| Basic Tweets | 4 | Základní tweety |
+| URLs | 4 | Zpracování URL |
+| Reposts & Quotes | 5 | Retweety a citace |
+| HTML Entities | 6 | HTML entity dekódování |
+| Filtering | 4 | Filtrování obsahu |
+
+### v4.0.0 kategorie (118 testů):
+| Skupina | Kategorie | Počet | Popis |
+|---------|-----------|-------|-------|
+| A | URL_REPLACE_FROM Array | 4 | Breaking change - pole URL |
+| B | Unified FilterRule | 8 | 'content' nahrazuje 'keywords' |
+| C | TCO_REPLACEMENT | 6 | t.co URL nahrazení |
+| D | PREFIX_SELF_REFERENCE | 4 | Self-quote/repost prefix |
+| E | COMBINE_TITLE_AND_CONTENT | 5 | Kombinace title + content |
+| F | CHAR_MAP_REGEX | 5 | Pre-compiled regex (100x faster) |
+| G | safeTruncate Unicode | 4 | Unicode/emoji truncation |
+| H | RSS_MAX_INPUT_CHARS | 3 | RSS input truncation |
+| I | Deduplication | 5 | URL deduplikace |
+| J | Platform Configs | 4 | Twitter/Bluesky/RSS/YouTube |
+| K | URL_DOMAIN_FIXES | 5 | Domain prefix fixing |
+| L | RSS RT Normalization | 3 | Duplicate RT prefix |
+| M | Edge Cases | 10 | Hraniční případy |
+| N | URL Whitespace | 7 | Whitespace v URL |
+| O | URL Edge Cases | 7 | URL hraniční případy |
+| P | Anchor Text | 8 | RSS anchor text extraction |
+| Q | Advanced Dedup | 8 | Pokročilá deduplikace |
+| R | Real-World | 6 | Produkční scénáře (ČT24, HN) |
+| S | FilterRule Logic | 8 | Regex, AND/OR logika |
+| T | Edge Cases Empty | 8 | Prázdný obsah |
 
 ## 🔧 Testování nové verze
 
-### Pro novou verzi (např. v3.1.5):
+### Pro novou verzi (např. v4.1.0):
 
-1. **Vytvořte wrapped verzi:**
-   ```bash
-   node create-wrapper.js
-   tsc --target ES5 --module commonjs filter-script-wrapped.ts
+1. **Připravte filter script:**
+   - Script musí exportovat `MastodonFilter` funkci
+   - Nebo být ve wrapped formátu
+
+2. **Přidejte nové testy** (pokud jsou nové funkce):
+   ```typescript
+   const V4_1_NEW_FEATURE: TestCase[] = [
+       {
+           id: "V410-NEW-001",
+           category: "v4.1.0 - New Feature",
+           description: "Test new functionality",
+           priority: "HIGH",
+           input: { ... },
+           expected: { output: "...", shouldSkip: false },
+           settings: { ... }
+       }
+   ];
    ```
-
-2. **Přidejte nové testy do test suite** (pokud jsou nové funkce)
 
 3. **Spusťte regression testy:**
    ```bash
-   node universal-test-runner.js filter-script-wrapped.js complete-test-suite-3_1_4-fixed.js
+   node universal-test-runner.js new-filter.js complete-test-suite-4_0_0.js
    ```
 
-4. **Ověřte 100% pass rate pro critical testy**
+4. **Ověřte 100% pass rate**
 
 ## ⚠️ Známé problémy a řešení
 
-### Problem 1: "e is not defined"
-**Řešení:** Test runner obsahuje fix - `e: undefined` v sandbox
+### Problem 1: "MastodonFilter is not defined"
+**Řešení:** Filter script musí definovat globální funkci `MastodonFilter`
 
 ### Problem 2: Type errors při kompilaci
 **Řešení:** Použijte `--skipLibCheck` flag:
@@ -154,35 +177,61 @@ Výsledky se automaticky ukládají do `test-results-[timestamp].json`:
 tsc --target ES5 --module commonjs --skipLibCheck your-file.ts
 ```
 
-### Problem 3: Multi-line stringy s uvozovkami
-**Řešení:** Escapujte uvozovky nebo použijte template literals
+### Problem 3: Nesprávné expected values
+**Řešení:** Spusťte filter manuálně a porovnejte výstup:
+```javascript
+const result = MastodonFilter(input.TweetEmbedCode, input.Text, ...);
+console.log(result);
+```
 
-### Problem 4: Twitter embed format
-**Řešení:** Test runner automaticky zabalí TweetEmbedCode do `<p>` tagů pokud chybí
+### Problem 4: Unicode/emoji problémy
+**Řešení:** Ověřte UTF-8 encoding souborů a použijte safeTruncate
 
 ## 📚 Příklady použití
 
 ### Testování konkrétní kategorie:
 ```javascript
-// Upravte universal-test-runner.js a přidejte filter:
-const categoriesToTest = ['v3.1.4 URL_DOMAIN_FIXES'];
-// ... filter testsByCategory
+// V test runneru přidejte filter:
+const categoriesToTest = ['v4.0.0 - URL_REPLACE_FROM Array'];
+const filteredTests = allTests.filter(t => categoriesToTest.includes(t.category));
 ```
 
 ### Testování pouze HIGH priority testů:
 ```javascript
-// Před spuštěním testů:
-testCases = testCases.filter(t => t.priority === 'HIGH');
+const highPriorityTests = allTests.filter(t => t.priority === 'HIGH');
 ```
 
 ### Export do CI/CD:
 ```bash
-node universal-test-runner.js filter.js tests.js > results.log
-EXIT_CODE=$?
-if [ $EXIT_CODE -ne 0 ]; then
+#!/bin/bash
+node universal-test-runner.js filter.js tests.js
+
+# Zkontrolujte exit code
+if [ $? -ne 0 ]; then
     echo "Tests failed!"
     exit 1
 fi
+
+# Nebo parsujte JSON výsledky
+FAILED=$(cat test-results-*.json | jq '.failed')
+if [ "$FAILED" -gt 0 ]; then
+    echo "❌ $FAILED tests failed"
+    exit 1
+fi
+echo "✅ All tests passed"
+```
+
+### Porovnání verzí:
+```bash
+# Spusťte testy pro obě verze
+node universal-test-runner.js filter-v3.js tests.js
+mv test-results-*.json results-v3.json
+
+node universal-test-runner.js filter-v4.js tests.js
+mv test-results-*.json results-v4.json
+
+# Porovnejte
+diff <(jq '.failures[].id' results-v3.json) <(jq '.failures[].id' results-v4.json)
 ```
 
 ## 🎯 Best Practices
@@ -192,53 +241,102 @@ fi
 3. **Dokumentujte očekávané chování** v test descriptions
 4. **Používejte priority levels** (HIGH/MEDIUM/LOW) pro kritické testy
 5. **Ukládejte test results** pro porovnání mezi verzemi
+6. **Testujte real-world scénáře** - přidejte testy z produkčních dat
 
 ## 📖 Dokumentace test formátu
 
 ### Test structure:
 ```typescript
-{
-    id: "test-id",
-    category: "Test Category",
-    description: "What this test does",
-    priority: "HIGH" | "MEDIUM" | "LOW",
+interface TestCase {
+    id: string;                    // Unikátní ID (např. "V400-A001")
+    category: string;              // Kategorie testu
+    description: string;           // Popis co test dělá
+    priority: "HIGH" | "MEDIUM" | "LOW";
     input: {
-        TweetEmbedCode: "<p>...</p>",  // HTML embed
-        Text: "...",                    // Plain text
-        LinkToTweet: "https://...",
-        FirstLinkUrl: "...",
-        UserName: "..."
-    },
+        TweetEmbedCode?: string;   // HTML embed (Twitter)
+        Text?: string;             // Plain text
+        LinkToTweet?: string;      // URL tweetu
+        FirstLinkUrl?: string;     // První URL v tweetu
+        UserName?: string;         // Username autora
+        EntryContent?: string;     // RSS content
+        EntryUrl?: string;         // RSS URL
+        EntryTitle?: string;       // RSS title
+        FeedTitle?: string;        // RSS feed name
+    };
     expected: {
-        output: "Expected output text",
-        shouldSkip: false
-    },
-    settings: {
-        // AppSettings configuration
-        ...
-    }
+        output: string;            // Očekávaný výstup
+        shouldSkip: boolean;       // Má se přeskočit?
+    };
+    settings: AppSettings;         // Konfigurace filtru
 }
 ```
+
+### Settings structure:
+```typescript
+interface AppSettings {
+    PHRASES_BANNED: FilterRule[];
+    PHRASES_REQUIRED: FilterRule[];
+    REPOST_ALLOWED: boolean;
+    AMPERSAND_SAFE_CHAR: string;
+    CONTENT_REPLACEMENTS: ContentReplacement[];
+    POST_LENGTH: number;
+    POST_LENGTH_TRIM_STRATEGY: string;
+    SMART_TOLERANCE_PERCENT: number;
+    TCO_REPLACEMENT: string;
+    FORCE_SHOW_FEEDURL: boolean;
+    FORCE_SHOW_ORIGIN_POSTURL: boolean;
+    SHOW_IMAGEURL: boolean;
+    URL_DOMAIN_FIXES: string[];
+    URL_NO_TRIM_DOMAINS: string[];
+    URL_REPLACE_FROM: string[];    // v4.0.0: array!
+    URL_REPLACE_TO: string;
+    MENTION_FORMATTING: MentionConfig;
+    PREFIX_IMAGE_URL: string;
+    PREFIX_POST_URL: string;
+    PREFIX_QUOTE: string;
+    PREFIX_REPOST: string;
+    PREFIX_SELF_REFERENCE: string;
+    MOVE_URL_TO_END: boolean;
+    POST_FROM: string;
+    SHOW_REAL_NAME: boolean;
+    SHOW_TITLE_AS_CONTENT: boolean;
+    COMBINE_TITLE_AND_CONTENT: boolean;
+    CONTENT_TITLE_SEPARATOR: string;
+    RSS_MAX_INPUT_CHARS: number;
+}
+```
+
+## 🗂️ Soubory v infrastruktuře
+
+| Soubor | Popis |
+|--------|-------|
+| `universal-test-runner.js` | Test runner |
+| `complete-test-suite-4_0_0.ts` | Test suite (TypeScript) |
+| `complete-test-suite-4_0_0.js` | Test suite (JavaScript) |
+| `TEST-REPORT-v4.0.0.md` | Kompletní test report |
+| `quickstart-testing.md` | Rychlý průvodce |
+| `test-infrastructure-readme.md` | Tato dokumentace |
 
 ## 🤝 Přispívání
 
 Při přidávání nových testů:
 1. Vytvořte novou kategorii nebo přidejte do existující
-2. Použijte konzistentní ID schema (např. V315-K1, V315-K2...)
+2. Použijte konzistentní ID schema (např. V410-X001, V410-X002...)
 3. Přidejte popis a priority
 4. Otestujte že nový test prochází
-5. Aktualizujte tuto dokumentaci
+5. Aktualizujte dokumentaci
 
 ## 📞 Podpora
 
 Pro otázky nebo problémy:
 - Zkontrolujte sekci "Známé problémy"
 - Prohlédněte test results JSON pro detaily
-- Použijte verbose mode v test runneru
+- Použijte manuální test pro debug
 
 ---
 
-**Verze:** 1.0.0  
-**Datum:** 2025-11-25  
-**Autor:** Zprávobot.news Team  
-**License:** Public Domain
+**Verze:** 2.0.0  
+**Datum:** 2026-01-01  
+**Test Suite:** v4.0.0 (141 testů)  
+**Úspěšnost:** 100%  
+**Autor:** Zprávobot.news Team
