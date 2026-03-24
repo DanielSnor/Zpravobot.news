@@ -1,8 +1,9 @@
-# Zpravobot.news
+# Zpravobot.news - DEPRECATED!!!
 
 [![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](https://unlicense.org)
 [![Mastodon](https://img.shields.io/badge/Mastodon-Instance-6364FF?logo=mastodon&logoColor=white)](https://zpravobot.news)
-[![Version](https://img.shields.io/badge/version-3.1.0-blue)](https://github.com/zpravobot/zpravobot-news/releases)
+[![Version](https://img.shields.io/badge/version-4.0.0-blue)](https://github.com/zpravobot/zpravobot-news/releases)
+![No Maintenance Intended](https://img.shields.io/maintenance/no/2025.svg)
 
 ![Zpravobot.news mascot](https://zpravobot.news/system/site_uploads/files/000/000/002/@2x/49c4aa7df6b81d4a.png 'Zpravobot.news mascot')
 
